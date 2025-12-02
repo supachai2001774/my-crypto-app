@@ -56,6 +56,34 @@
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            transition: .4s;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
+
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -126,6 +154,7 @@
             <i class="fas fa-exchange-alt"></i> ฝาก-ถอน 
             <span id="navTransBadge" class="nav-badge" style="display:none;">0</span>
         </div>
+        <div class="menu-item" onclick="nav('announce')"><i class="fas fa-bullhorn"></i> ประกาศ & ระบบ</div>
 
         <div class="connection-status" style="background: #0f172a; padding: 15px; margin-top: auto; border-radius: 10px; border: 1px solid #334155; text-align: center;">
             <div style="font-size: 0.8rem; color: #94a3b8;">System Status</div>
@@ -366,7 +395,23 @@
                 </div>
             </div>
 
-            <div class="card" style="border-left: 4px solid #f59e0b; margin-bottom: 20px;">
+            <!-- Mobile Connect QR -->
+            <div class="card" style="background: white; color: #0f172a; text-align: center; border: 4px solid #6c5ce7;">
+                <h3 style="color: #6c5ce7; margin-top: 0;"><i class="fas fa-qrcode"></i> เชื่อมต่อมือถือง่ายๆ</h3>
+                <p style="margin-bottom: 15px;">ไม่ต้องพิมพ์เอง! สแกน QR Code นี้ด้วยกล้องมือถือ</p>
+                
+                <div style="background: #f1f5f9; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 10px;">
+                    <img id="mobileQr" src="" style="width: 200px; height: 200px; display: block;">
+                </div>
+                
+                <div style="margin-top: 10px;">
+                    <label style="font-size: 0.8rem; color: #64748b;">IP เครื่องของคุณ (แก้ไขได้ถ้าเปลี่ยน):</label>
+                    <input type="text" id="serverIp" value="172.20.10.12" onkeyup="updateQr()" style="text-align: center; font-weight: bold; width: 150px; padding: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                </div>
+                <div style="font-size: 0.9rem; color: #6c5ce7; font-weight: bold; margin-top: 5px;" id="mobileLinkText"></div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #f59e0b; margin-top: 20px;">
                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                     <i class="fas fa-vial" style="color: #f59e0b; font-size: 1.2rem;"></i>
                     <h3 style="margin:0;">Test Notification System</h3>
@@ -460,6 +505,34 @@
         </div>
 
         <div id="announce" class="section">
+            <div class="card" style="margin-bottom: 30px; border: 2px solid #f59e0b; background: #1e293b;">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <i class="fas fa-tools" style="color: #f59e0b; font-size: 1.8rem;"></i>
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.4rem;">โหมดปรับปรุงระบบ (Maintenance)</h2>
+                        <p style="margin: 5px 0 0; color: #94a3b8; font-size: 0.9rem;">เมื่อเปิดโหมดนี้ ผู้ใช้ทั่วไปจะไม่สามารถเข้าใช้งานแอปได้</p>
+                    </div>
+                </div>
+                
+                <div style="background: #0f172a; padding: 20px; border-radius: 10px; border: 1px solid #334155;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                        <span style="font-size: 1.1rem; color: white;">สถานะระบบ:</span>
+                        <label class="switch">
+                            <input type="checkbox" id="maintToggle" onchange="toggleMaintenance()">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="maintConfig" style="display: none;">
+                        <label style="color: #94a3b8; font-size: 0.9rem; display: block; margin-bottom: 5px;">ข้อความแจ้งเตือน:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="maintMsg" value="กำลังอัปเกรดเซิร์ฟเวอร์..." class="search-bar" style="margin: 0; flex: 1;">
+                            <button onclick="saveMaintMsg()" class="btn-sm btn-green" style="padding: 0 20px; white-space: nowrap;">บันทึกข้อความ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
                     <i class="fas fa-bell" style="color: #f59e0b; font-size: 1.8rem;"></i>
@@ -500,6 +573,13 @@
             renderUsers();
         }
 
+        function updateQr() {
+            const ip = document.getElementById('serverIp').value;
+            const url = `http://${ip}:8000/indexApp.html`;
+            document.getElementById('mobileQr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+            document.getElementById('mobileLinkText').innerText = url;
+        }
+
         function resetSystem() {
             if(confirm('⚠️ คำเตือน: คุณกำลังจะ "ล้างข้อมูลระบบทั้งหมด" รวมถึง:\n- ผู้ใช้งานทั้งหมด\n- ประวัติธุรกรรม\n- ร้านค้า\n- การตั้งค่าต่างๆ\n\nการกระทำนี้ไม่สามารถกู้คืนได้! ยืนยันหรือไม่?')) {
                 if(confirm('ยืนยันครั้งสุดท้าย: ลบข้อมูลทั้งหมดจริงๆ ใช่หรือไม่?')) {
@@ -524,9 +604,10 @@
             renderCurrentAnnounce(); // Show current announce
             renderShop();
             renderReferrals(); // Load Referrals
-            document.getElementById('maintSwitch').checked = localStorage.getItem('mining_maintenance') === 'true';
             document.getElementById('simSwitch').checked = localStorage.getItem('admin_simulation_mode') === 'true';
-            document.getElementById('maintMsg').value = localStorage.getItem('mining_maintenance_msg') || ''; // Load Msg
+            updateQr(); // Init QR
+            initMaintenance(); // Init Maintenance Mode UI
+
             setInterval(renderDashboard, 5000); // Live Dashboard
             setInterval(renderUsers, 2000); // Live update users
             setInterval(renderMining, 1000); // Live Mining Monitor
@@ -748,6 +829,35 @@
             }
         }
 
+        // --- Maintenance Logic ---
+        function initMaintenance() {
+            const isMaint = localStorage.getItem('mining_maintenance') === 'true';
+            const msg = localStorage.getItem('mining_maintenance_msg') || 'กำลังอัปเกรดเซิร์ฟเวอร์...';
+            
+            document.getElementById('maintToggle').checked = isMaint;
+            document.getElementById('maintMsg').value = msg;
+            document.getElementById('maintConfig').style.display = isMaint ? 'block' : 'none';
+        }
+
+        function toggleMaintenance() {
+            const isChecked = document.getElementById('maintToggle').checked;
+            localStorage.setItem('mining_maintenance', isChecked);
+            
+            document.getElementById('maintConfig').style.display = isChecked ? 'block' : 'none';
+            
+            if(isChecked) {
+                alert('🔴 เปิดโหมดปรับปรุงระบบแล้ว ผู้ใช้ทั้งหมดจะถูกตัดการเชื่อมต่อทันที');
+            } else {
+                alert('🟢 ปิดโหมดปรับปรุงระบบแล้ว ผู้ใช้สามารถเข้าใช้งานได้ปกติ');
+            }
+        }
+
+        function saveMaintMsg() {
+            const msg = document.getElementById('maintMsg').value;
+            localStorage.setItem('mining_maintenance_msg', msg);
+            alert('บันทึกข้อความแจ้งเตือนเรียบร้อย');
+        }
+
         // --- Mining Monitor ---
         function renderMining() {
             const users = JSON.parse(localStorage.getItem('mining_users')) || {};
@@ -756,18 +866,34 @@
             if(!document.getElementById('mining').classList.contains('active')) return;
             
             tbody.innerHTML = '';
-            Object.keys(users).forEach(u => {
+            
+            // Sort by Online status first
+            const sortedUsers = Object.keys(users).sort((a, b) => {
+                const lastActiveA = localStorage.getItem(`last_active_${a}`) || 0;
+                const lastActiveB = localStorage.getItem(`last_active_${b}`) || 0;
+                return lastActiveB - lastActiveA;
+            });
+
+            sortedUsers.forEach(u => {
                 const pf = JSON.parse(localStorage.getItem(`pf_${u}`)) || {hashrate:0, balance:0};
                 const lastActive = localStorage.getItem(`last_active_${u}`);
                 const isOnline = lastActive && (Date.now() - parseInt(lastActive) < 5000);
                 
+                // Skip if offline for more than 1 hour
+                if(!isOnline && lastActive && (Date.now() - parseInt(lastActive) > 3600000)) return;
+
                 const status = isOnline ? 
-                    `<span class="badge badge-success">Running</span> <i class="fas fa-bolt" style="color:#f1c40f; animation: pulse 1s infinite;"></i>` : 
-                    `<span class="badge badge-danger">Stopped</span>`;
+                    `<span class="badge badge-success">Online</span> <i class="fas fa-bolt" style="color:#f1c40f; animation: pulse 0.5s infinite;"></i>` : 
+                    `<span class="badge badge-gray">Offline</span>`;
+
+                const rowStyle = isOnline ? 'background: rgba(16, 185, 129, 0.1);' : '';
 
                 tbody.innerHTML += `
-                    <tr>
-                        <td style="font-weight:bold;">${u}</td>
+                    <tr style="${rowStyle}">
+                        <td style="font-weight:bold;">
+                            ${u} 
+                            ${isOnline ? '<span style="font-size:0.7rem; color:#10b981; margin-left:5px;">(Active)</span>' : ''}
+                        </td>
                         <td style="color:#f1c40f; font-family:monospace;">${pf.hashrate.toFixed(1)} MH/s</td>
                         <td style="color:#10b981;">฿${pf.balance.toFixed(2)}</td>
                         <td>${status}</td>
