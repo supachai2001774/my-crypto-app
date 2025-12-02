@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Cyber Command</title>
+    <script src="sync-manager.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -642,36 +643,64 @@
             });
         }
 
-        function deleteUser(username) {
+            function deleteUser(username) {
             if(confirm('ลบผู้ใช้ ' + username + ' หรือไม่?')) {
                 let raw = JSON.parse(localStorage.getItem('mining_users')) || {};
-                if (Array.isArray(raw)) { raw = raw.filter(u => u.username !== username); }
-                else { delete raw[username]; }
+                if (Array.isArray(raw)) { 
+                    raw = raw.filter(u => u.username !== username); 
+                } else { 
+                    delete raw[username]; 
+                }
                 saveUsersRaw(raw);
-                localStorage.removeItem(`mining_rigs_${username}`);
+                localStorage. removeItem(`mining_rigs_${username}`);
                 localStorage.removeItem(`notifications_${username}`);
+                localStorage.removeItem(`pf_${username}`);
+                localStorage.removeItem(`mining_referrals_${username}`);
+                localStorage.removeItem(`active_items_${username}`);
+                
+                // 🔴 Broadcast to all tabs/App
+                syncManager.broadcast('user_deleted', { 
+                    username: username,
+                    timestamp: Date.now()
+                });
+                syncManager.emitLocal('user_deleted', { username });
+                
                 renderUsers();
                 renderDashboard();
                 showToast('ลบผู้ใช้แล้ว', 'success');
             }
         }
         
-        function resetPass(username) {
-             let newPass = prompt('ระบุรหัสผ่านใหม่สำหรับ ' + username + ':');
-             if(newPass) {
-                 let raw = JSON.parse(localStorage.getItem('mining_users')) || {};
-                 if (Array.isArray(raw)) {
-                     let idx = raw.findIndex(u => u.username === username);
-                     if(idx !== -1) { raw[idx].password = newPass; raw[idx].pass = newPass; }
-                 } else {
-                     if (!raw[username]) raw[username] = {};
-                     raw[username].password = newPass;
-                     raw[username].pass = newPass;
-                 }
-                 saveUsersRaw(raw);
-                 showToast('อัปเดตรหัสผ่านแล้ว', 'success');
-             }
-        }
+               function resetPass(username) {
+            let newPass = prompt('ระบุรหัสผ่านใหม่สำหรับ ' + username + ':');
+            if(newPass) {
+                let raw = JSON. parse(localStorage.getItem('mining_users')) || {};
+                if (Array.isArray(raw)) {
+                    let idx = raw.findIndex(u => u. username === username);
+                    if(idx !== -1) { raw[idx].password = newPass; raw[idx].pass = newPass; }
+                } else {
+                    if (! raw[username]) raw[username] = {};
+                    raw[username]. password = newPass;
+                    raw[username].pass = newPass;
+                }
+                saveUsersRaw(raw);
+                
+                // 🔴 Notify user
+                let notifs = JSON.parse(localStorage.getItem(`notifications_${username}`)) || [];
+                notifs. push({
+                    id: Date.now(),
+                    msg: '⚠️ แอดมินรีเซ็ตรหัสผ่านของคุณแล้ว',
+                    type: 'warning',
+                    timestamp: Date.now(),
+                    read: false
+                });
+                localStorage.setItem(`notifications_${username}`, JSON.stringify(notifs));
+                
+                syncManager.broadcast('password_reset', { username });
+                
+                showToast('อัปเดตรหัสผ่านแล้ว', 'success');
+            }
+        } 
 
         // User Rigs (View Only)
         function renderMining() {
@@ -980,32 +1009,57 @@
         }
 
         // Announcements & System
-        function postAnnounce() {
-            const txt = document.getElementById('announceText').value;
-            if(txt) {
+            function postAnnounce() {
+                const txt = document.getElementById('announceText').value;
+                if(txt) {
                 const annObj = { msg: txt, date: new Date().toISOString() };
                 localStorage.setItem('mining_announcement', JSON.stringify(annObj));
                 document.getElementById('currentAnnounce').innerText = txt;
                 document.getElementById('announceText').value = '';
+                
+                // 🔴 Broadcast to all apps
+                syncManager.broadcast('announcement_posted', annObj);
+                syncManager. emitLocal('announcement_posted', annObj);
+                
                 showToast('อัปเดตประกาศแล้ว', 'success');
             }
         }
         
-        function clearAnnounce() {
-            localStorage.removeItem('mining_announcement');
-            document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
-            showToast('ล้างประกาศแล้ว', 'info');
-        }
+                function clearAnnounce() {
+    localStorage.removeItem('mining_announcement');
+    document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
+    
+    // 🔴 Broadcast to all apps
+    syncManager.broadcast('announcement_cleared', { timestamp: Date.now() });
+    syncManager.emitLocal('announcement_cleared', {});
+    
+    showToast('ล้างประกาศแล้ว', 'info');
+}
 
-        function toggleMaint() {
+                function toggleMaint() {
             const isMaint = document.getElementById('maintSwitch').checked;
             localStorage.setItem('mining_maintenance', isMaint);
+            
+            // 🔴 Broadcast to all apps
+            syncManager.broadcast('maintenance_mode_changed', { 
+                enabled: isMaint,
+                timestamp: Date.now()
+            });
+            syncManager.emitLocal('maintenance_mode_changed', { enabled: isMaint });
+            
             showToast(isMaint ? 'เปิดโหมดบำรุงรักษา' : 'ปิดโหมดบำรุงรักษา', isMaint ? 'warning' : 'info');
         }
         
-        function saveMaintMsg() {
-            const msg = document.getElementById('maintMsg').value;
+                function saveMaintMsg() {
+            const msg = document. getElementById('maintMsg').value;
             localStorage.setItem('mining_maintenance_msg', msg);
+            
+            // 🔴 Broadcast to all apps
+            syncManager.broadcast('maintenance_msg_changed', { 
+                message: msg,
+                timestamp: Date.now()
+            });
+            
             showToast('บันทึกข้อความบำรุงรักษาแล้ว', 'success');
         }
         
@@ -1040,6 +1094,42 @@
                 renderReferrals();
             }, 5000);
         };
+                // ============ ADMIN SYNC LISTENERS ============
+        document.addEventListener('DOMContentLoaded', function() {
+            // Listen for forced sync from other tabs
+            syncManager.on('force_sync_requested', () => {
+                console.log('Force sync requested, reloading data');
+                renderDashboard();
+                renderUsers();
+                renderMining();
+                renderShop();
+                renderReferrals();
+                renderTrans();
+            });
+
+            // Monitor transaction updates from other tabs
+            syncManager.on('transactions_updated', (trans) => {
+                console.log('Transactions updated from external source');
+                renderTrans();
+                renderDashboard();
+            });
+
+            // Monitor user updates
+            syncManager.on('users_updated', (users) => {
+                console.log('Users updated from external source');
+                renderUsers();
+                renderDashboard();
+            });
+
+            // Monitor shop updates
+            syncManager.on('shop_updated', () => {
+                console.log('Shop updated from external source');
+                renderShop();
+            });
+
+            console.log('✅ Admin Sync Listeners Registered');
+            console.log('Sync Manager Debug:', syncManager.debugInfo());
+        });
     </script>
 </body>
 </html>

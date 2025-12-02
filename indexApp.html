@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crypto Miner Tycoo123</title>
+    <script src="sync-manager.js"></script>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3067/3067789.png">
     <meta name="theme-color" content="#4e54c8">
@@ -451,6 +452,16 @@
     </div>
 
     <script>
+        function checkUserBanStatus() {
+    if(! currentUser) return;
+    
+    const isBanned = syncManager.isUserBanned(currentUser.username);
+    if(isBanned) {
+        showToast('❌ บัญชีถูกระงับชั่วคราว', 'error');
+        alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน'); 
+        logout();
+    }
+}
         // --- PWA Logic ---
         let deferredPrompt;
 
@@ -491,7 +502,7 @@
         let isMining = true;
 
         window.onload = function() {
-            // Check for Referral Code
+            // ตรวจสอบ Referral Code
             const urlParams = new URLSearchParams(window.location.search);
             const refCode = urlParams.get('ref');
             if(refCode) {
@@ -504,10 +515,9 @@
             if(saved) {
                 try {
                     const u = JSON.parse(saved);
-                    // Check Ban
                     const allUsers = JSON.parse(localStorage.getItem('mining_users')) || {};
-                    if(allUsers[u.username] && allUsers[u.username].banned) {
-                        alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน'); 
+                    if(allUsers[u.username] && allUsers[u.username]. banned) {
+                        alert('ขออภัย บัญชีถูกระงับชั่วคราว');
                         localStorage.removeItem('current_user');
                         window.location.reload();
                     } else {
@@ -515,23 +525,26 @@
                         document.getElementById('loginModal').style.display = 'none';
                         initApp();
                         isValidUser = true;
+                        
+                        console.log('👤 Logged in as:', currentUser.username);
+                        console.log('📊 Initial Data:', { balance, hashrate });
                     }
                 } catch (e) {
-                    console.error("User data corrupted", e);
+                    console.error('User data corrupted', e);
                     localStorage.removeItem('current_user');
                 }
             }
             
             if(!isValidUser) {
-                document.getElementById('loginModal').style.display = 'flex';
+                document.getElementById('loginModal'). style.display = 'flex';
             }
         };
 
-        function initApp() {
+                function initApp() {
             // Default Announcement
-            if(!localStorage.getItem('mining_announcement')) {
-                const defaultAnn = { msg: 'ยินดีต้อนรับสู่ Crypto Miner Tycoon!', date: new Date().toISOString() };
-                localStorage.setItem('mining_announcement', JSON.stringify(defaultAnn));
+            if(! localStorage.getItem('mining_announcement')) {
+                const defaultAnn = { msg: 'ยินดีต้อนรับสู่ Crypto Miner Tycoon! ', date: new Date().toISOString() };
+                localStorage. setItem('mining_announcement', JSON.stringify(defaultAnn));
             }
 
             loadUserData();
@@ -539,74 +552,198 @@
             const paused = localStorage.getItem('mining_paused') === 'true';
             isMining = !paused;
             updateMiningMode();
-            checkExpiration(); // Clean up expired items on load
+            checkExpiration();
             loadShop();
+            
             setInterval(miningLoop, 1000);
-            setInterval(syncAdmin, 2000); // Admin Sync + Heartbeat
+            setInterval(syncAdmin, 2000);
             renderProfile();
             checkAnnounce();
+
+            // ============ 🔴 SYNC LISTENERS ============
+            
+            // เมื่อ Admin ลบผู้ใช้
+            syncManager.on('user_deleted', (data) => {
+                if(currentUser && currentUser.username === data.username) {
+                    showToast('❌ บัญชีของคุณถูกลบโดยแอดมิน', 'error');
+                    setTimeout(() => {
+                        logout();
+                    }, 2000);
+                }
+            });
+
+            // เมื่อ Admin อนุมัติธุรกรรม
+            syncManager.on('transaction_approved', (data) => {
+                if(currentUser && currentUser.username === data.user) {
+                    console.log('Transaction approved:', data);
+                    
+                    const msg = data.status === 'approved' 
+                        ? `✅ ธุรกรรมอนุมัติแล้ว! ฿${data.amount.toLocaleString()}`
+                        : `❌ ธุรกรรมถูกปฏิเสธ`;
+                    
+                    showToast(msg, data.status === 'approved' ?  'success' : 'error');
+                    
+                    if(data.status === 'approved') {
+                        // Reload user data
+                        loadUserData();
+                        updateUI();
+                        renderUserTrans();
+                        addNotification(msg, data.status === 'approved' ?  'success' : 'error');
+                    }
+                    
+                    if(typeof soundMgr !== 'undefined') {
+                        soundMgr.play('emphasis');
+                    }
+                    if(typeof vibMgr !== 'undefined') {
+                        vibMgr.trigger('emphasis');
+                    }
+                }
+            });
+
+            // เมื่อเปิด/ปิดโหมดบำรุงรักษา
+            syncManager.on('maintenance_mode_changed', (data) => {
+                const overlay = document.getElementById('maintenanceOverlay');
+                const msg = data.enabled 
+                    ? 'ระบบกำลังปิดปรับปรุงชั่วคราว.. .'
+                    : 'ระบบพร้อมใช้งานแล้ว';
+                
+                showToast(msg, data.enabled ? 'warning' : 'success');
+                
+                if(data.enabled) {
+                    overlay. style.display = 'flex';
+                } else {
+                    overlay.style.display = 'none';
+                }
+            });
+
+            // เมื่อ Admin เปลี่ยนข้อความบำรุงรักษา
+            syncManager.on('maintenance_msg_changed', (msg) => {
+                const msgEl = document.getElementById('maintMessage');
+                if(msgEl) {
+                    msgEl.innerText = msg;
+                }
+            });
+
+            // เมื่อ Admin โพสต์ประกาศ
+            syncManager.on('announcement_posted', (data) => {
+                if(data && data.msg) {
+                    showToast('📢 มีประกาศใหม่จากระบบ', 'info');
+                    checkAnnounce();
+                    
+                    // Show new badge
+                    const badge = document.getElementById('annBadge');
+                    if(badge) badge.style.display = 'block';
+                }
+            });
+
+            // เมื่อ Admin ล้างประกาศ
+            syncManager.on('announcement_cleared', () => {
+                const annEl = document.getElementById('dashboardAnnounce');
+                if(annEl) {
+                    annEl.innerText = 'ไม่มีประกาศในขณะนี้';
+                }
+            });
+
+            // เมื่อ Admin อัพเดตร้านค้า
+            syncManager. on('shop_updated', () => {
+                console.log('Shop updated from admin');
+                loadShop();
+                checkShopUpdate();
+            });
+
+            // เมื่อ Admin ลบสินค้า/เพิ่มสินค้า
+            syncManager.on('shop_items_updated', (items) => {
+                console.log('Shop items updated:', items);
+                loadShop();
+            });
+
+            // เมื่อ Admin รีเซ็ตรหัสผ่าน
+            syncManager.on('password_reset', (data) => {
+                if(currentUser && currentUser.username === data.username) {
+                    showToast('⚠️ แอดมินรีเซ็ตรหัสผ่านของคุณแล้ว กรุณาเข้าสู่ระบบใหม่', 'warning');
+                    setTimeout(() => {
+                        logout();
+                    }, 2000);
+                }
+            });
+
+            // ล้างข้อมูลเก่า
+            syncManager.cleanOldData();
+
+            console.log('✅ App Sync Listeners Registered');
+            console.log('Sync Manager Debug:', syncManager.debugInfo());
         }
 
         function syncAdmin() {
-            if(!currentUser) return;
-            
-            // Check Ban Status Real-time
-            const allUsers = JSON.parse(localStorage.getItem('mining_users')) || {};
-            if(allUsers[currentUser.username] && allUsers[currentUser.username].banned) {
-                alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน');
-                logout();
-                return;
-            }
+    if(!currentUser) return;
+    
+    // 1. Check Ban Status
+    checkUserBanStatus();
 
-            // Heartbeat
-            localStorage.setItem(`last_active_${currentUser.username}`, Date.now());
-            
-            // Check Announcement
-            checkAnnounce();
-            
-            // Check Shop Update
-            checkShopUpdate();
+    // 2. Heartbeat
+    localStorage.setItem(`last_active_${currentUser.username}`, Date.now());
+    
+    // 3.  Check Announcement
+    checkAnnounce();
+    
+    // 4.  Check Shop Update
+    checkShopUpdate();
 
-            // Check Maintenance
-            const maint = localStorage.getItem('mining_maintenance') === 'true';
-            const maintMsg = localStorage.getItem('mining_maintenance_msg') || 'กำลังอัปเกรดเซิร์ฟเวอร์...';
-            const overlay = document.getElementById('maintenanceOverlay');
-            
-            if(maint) {
-                overlay.style.display = 'flex';
-                document.getElementById('maintMessage').innerText = maintMsg;
-            } else {
-                overlay.style.display = 'none';
-            }
+    // 5. Check Maintenance
+    const maint = localStorage.getItem('mining_maintenance') === 'true';
+    const maintMsg = localStorage.getItem('mining_maintenance_msg') || 'กำลังอัปเกรดเซิร์ฟเวอร์... ';
+    const overlay = document.getElementById('maintenanceOverlay');
+    const bypass = sessionStorage.getItem('maintenance_bypass');
+    
+    if(maint && bypass !== 'true') {
+        overlay.style.display = 'flex';
+        document.getElementById('maintMessage').innerText = maintMsg;
+    } else {
+        overlay.style.display = 'none';
+    }
 
-            // Sync Transactions
-            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            let updated = false;
-            trans.forEach(t => {
-                if(t.user === currentUser.username && !t.processed) {
-                    if(t.status === 'approved' && t.type === 'deposit') { 
-                        balance += t.amount; updated=true; t.processed=true; 
-                        // alert('เงินเข้าแล้ว: '+t.amount); // Replace alert with badge
-                        localStorage.setItem('wallet_badge_deposit', 'true');
-                    }
-                    else if(t.status === 'rejected' && t.type === 'withdraw') { 
-                        balance += t.amount; updated=true; t.processed=true; 
-                        // alert('ถอนไม่ผ่าน เงินคืนแล้ว');
-                        localStorage.setItem('wallet_badge_withdraw', 'true');
-                    }
-                    else if(t.status === 'approved' && t.type === 'withdraw') { 
-                        t.processed=true; updated=true; 
-                        localStorage.setItem('wallet_badge_withdraw', 'true');
-                    } 
-                }
-            });
-            if(updated) {
-                localStorage.setItem('mining_transactions', JSON.stringify(trans));
-                saveData(); updateUI();
-                renderUserTrans();
+    // 6.  Sync Transactions (ตรวจสอบการเปลี่ยนแปลง)
+    let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+    let updated = false;
+    trans. forEach(t => {
+        if(t.user === currentUser.username && ! t.processed) {
+            if(t.status === 'approved' && t.type === 'deposit') { 
+                balance += t.amount; 
+                updated = true; 
+                t.processed = true;
+                localStorage.setItem('wallet_badge_deposit', 'true');
+                addNotification(`✅ เติมเงินสำเร็จ +฿${t.amount.toLocaleString()}`, 'success');
             }
-            checkWalletBadges();
+            else if(t.status === 'rejected' && t.type === 'withdraw') { 
+                balance += t.amount; 
+                updated = true; 
+                t. processed = true;
+                localStorage. setItem('wallet_badge_withdraw', 'true');
+                addNotification(`❌ ถอนไม่ผ่าน เงินคืนแล้ว`, 'error');
+            }
+            else if(t.status === 'approved' && t.type === 'withdraw') { 
+                t.processed = true; 
+                updated = true;
+                localStorage.setItem('wallet_badge_withdraw', 'true');
+                addNotification(`✅ ถอนเงินสำเร็จ ฿${t.amount.toLocaleString()}`, 'success');
+            } 
         }
+    });
+    if(updated) {
+        localStorage.setItem('mining_transactions', JSON.stringify(trans));
+        saveData(); 
+        updateUI();
+        renderUserTrans();
+    }
+    checkWalletBadges();
+
+    // 7. Verify Data Integrity
+    const verification = syncManager.verifyUserData(currentUser.username);
+    if(! verification.isValid) {
+        console.warn('User data invalid, logging out');
+        logout();
+    }
+}
 
         function checkWalletBadges() {
             // Deposit Badge
@@ -934,18 +1071,30 @@
         }
 
         function miningLoop() {
-            checkExpiration(); // Check for expired items
-            autoMiningController(); // Ensure mining state is synced with hashrate/pause status
-            
-            if(isMining) {
-                balance += hashrate;
-                updateUI();
-                saveData();
-            } else {
-                // Ensure UI reflects stopped state
-                updateMiningMode();
-            }
+    checkExpiration();
+    autoMiningController();
+    
+    if(isMining && hashrate > 0) {
+        // เพิ่มรายได้ = hashrate ต่อวินาที
+        balance += hashrate;
+        
+        // บันทึกทุก 10 วินาที
+        if(Math.floor(Date.now() / 10000) % 1 === 0) {
+            saveData();
         }
+        
+        updateUI();
+        
+        console.log(`⛏️ Mining: +${hashrate.toFixed(2)} ฿ | Balance: ${balance. toFixed(2)} ฿`);
+    } else {
+        // ถ้าหยุด แต่ hashrate > 0 ให้ auto restart
+        if(hashrate > 0 && !isMining) {
+            isMining = true;
+            console.log('Auto-restarting mining...');
+            updateMiningMode();
+        }
+    }
+}
 
         function checkAnnounce() {
             try {
@@ -1010,9 +1159,16 @@
         }
 
         function updateUI() {
-            document.getElementById('balanceDisplay').innerText = `฿${balance.toFixed(2)}`;
-            document.getElementById('incomeDisplay').innerText = `+฿${hashrate.toFixed(2)}`;
-            document.getElementById('hashrateDisplay').innerText = hashrate.toFixed(1);
+            // แสดงรายได้ต่อวินาที
+            const incomePerSec = hashrate > 0 ? hashrate : 0;
+            
+            document.getElementById('balanceDisplay').innerText = 
+                `฿${parseFloat(balance). toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('incomeDisplay').innerText = 
+                `+฿${incomePerSec. toFixed(3)}`;
+            document.getElementById('hashrateDisplay').innerText = 
+                hashrate.toFixed(1);
+            
             autoMiningController();
             updateMiningMode();
         }
@@ -1120,8 +1276,22 @@
 
         // --- Data ---
         function saveData() { if(currentUser) { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); pf.balance = balance; pf.hashrate = hashrate; localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf)); } }
-        function loadUserData() { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); if(pf) { balance = pf.balance; hashrate = pf.hashrate; updateUI(); if(hashrate>0){ isMining = true; updateMiningMode(); } } }
-
+                function loadUserData() {
+            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser. username}`));
+            if(pf) {
+                balance = parseFloat(pf.balance || 0);
+                hashrate = parseFloat(pf. hashrate || 0);
+                console.log('📊 Loaded Data:', { balance, hashrate });
+                
+                // ✅ Auto-start mining if hashrate > 0
+                if(hashrate > 0) {
+                    isMining = true;
+                    console.log('🚀 Auto-starting mining...');
+                }
+                
+                updateUI();
+            }
+        }
         function renderProfile() {
             let users = JSON.parse(localStorage.getItem('mining_users'));
             let uData = users[currentUser.username];
@@ -1487,8 +1657,19 @@
                 method: 'referral_commission', fee: 0, net: amount
             });
             localStorage.setItem('mining_transactions', JSON.stringify(trans));
-            
-            saveData();
+                    
+                    function saveData() {
+            if(currentUser) {
+                let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`) || '{}');
+                pf.username = currentUser.username;
+                pf.balance = parseFloat(balance. toFixed(2));
+                pf.hashrate = parseFloat(hashrate.toFixed(2));
+                pf.lastUpdate = Date.now();
+                
+                console.log('💾 Saving:', pf);
+                localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+            }
+        }
             updateUI();
             renderReferralUI();
             
@@ -1670,70 +1851,94 @@
         }
         
         function buyItem(p, s, id) {
-            if(id === 6) {
+            if(id === 6) { // Free Bitcoin Starter 24h
                 let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
                 const existing = active.find(x => x.id === 6);
                 if(existing) {
-                    showToast('คุณมีสินค้านี้ใช้งานอยู่แล้ว', 'warning');
+                    showToast('❌ คุณมีสินค้านี้ใช้งานอยู่แล้ว', 'warning');
                     return;
                 }
+                
                 // 24 Hours Expiration
-                active.push({id: 6, speed: s, expiresAt: Date.now() + (24 * 60 * 60 * 1000)});
+                active.push({
+                    id: 6, 
+                    name: 'Bitcoin Starter 24h',
+                    speed: s, 
+                    expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+                });
                 localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(active));
                 
+                // ✅ เพิ่ม hashrate ทันที
                 hashrate += s;
+                isMining = true; // ✅ เริ่มขุดอัตโนมัติ
+                
                 saveData(); 
                 updateUI(); 
-                loadShop(); // Refresh button state
-                isMining = true;
+                loadShop();
                 updateMiningMode();
-                // Track rig for admin view
+                miningLoop();
+                
                 try {
                     let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
                     const itemsC = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
                     const item = itemsC.find(x => x.id === id) || { name: 'Bitcoin Starter 24h', icon: 'fa-bitcoin' };
-                    rigs.push({ id, name: item.name, speed: s, price: 0, icon: item.icon, status: 'active', timestamp: Date.now(), expiresAt: Date.now() + (24 * 60 * 60 * 1000) });
-                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                    rigs.push({ 
+                        id, 
+                        name: item.name, 
+                        speed: s, 
+                        price: 0, 
+                        icon: item.icon, 
+                        status: 'active', 
+                        timestamp: Date.now(), 
+                        expiresAt: Date.now() + (24 * 60 * 60 * 1000) 
+                    });
+                    localStorage. setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
                 } catch (_) {}
-                miningLoop();
                 
-                showToast('รับ Bitcoin Starter 24h สำเร็จ! เริ่มขุดทันที', 'success');
-                addLiveLog("SYSTEM: Free Starter Pack Activated", "#10b981");
-                addLiveLog(`MINING: Hashrate +${s} MH/s`, "#f1c40f");
-                sendAdminLog(`Activated Free Starter Pack +${s} MH/s`, 'success');
-
+                showToast('✅ รับ Bitcoin Starter 24h สำเร็จ!  เริ่มขุดทันที', 'success');
+                addNotification('✅ ขุดเงินเริ่มแล้ว +' + s. toFixed(2) + ' MH/s', 'success');
+                
                 if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
                 if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
                 return;
             }
 
+            // ✅ สินค้าที่ต้องซื้อ
             if(balance >= p) {
                 balance -= p; 
                 hashrate += s; 
+                isMining = true; // ✅ เริ่มขุดอัตโนมัติ
+                
                 saveData(); 
                 updateUI(); 
-                isMining = true;
                 updateMiningMode();
-                // Track rig for admin view
+                
                 try {
                     let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
                     const itemsC = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
                     const item = itemsC.find(x => x.id === id) || { name: 'Rig', icon: 'fa-microchip' };
-                    rigs.push({ id, name: item.name, speed: s, price: p, icon: item.icon, status: 'active', timestamp: Date.now() });
-                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                    rigs.push({ 
+                        id, 
+                        name: item.name, 
+                        speed: s, 
+                        price: p, 
+                        icon: item.icon, 
+                        status: 'active', 
+                        timestamp: Date. now() 
+                    });
+                    localStorage. setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
                 } catch (_) {}
+                
                 miningLoop();
                 
-                showToast(`สั่งซื้อสำเร็จ! กำลังขุดเพิ่มขึ้น +${s} MH/s`, 'success');
-                addLiveLog(`PURCHASE: New Hardware Installed`, "#10b981");
-                addLiveLog(`SYSTEM: Power rerouted. Hashrate +${s}`, "#f1c40f");
-                sendAdminLog(`Purchased Item (Price: ฿${p}) +${s} MH/s`, 'purchase');
+                showToast(`✅ สั่งซื้อสำเร็จ! +${s} MH/s`, 'success');
+                addNotification(`💰 ซื้ออุปกรณ์ -฿${p. toLocaleString()} | +${s. toFixed(2)} MH/s`, 'success');
                 
                 if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
                 if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
             } else { 
-                showToast('ยอดเงินไม่เพียงพอ', 'error');
-                if(typeof soundMgr !== 'undefined') soundMgr.play('alert');
+                showToast('❌ ยอดเงินไม่เพียงพอ ต้อง ฿' + (p - balance).toFixed(2), 'error');
+                if(typeof soundMgr !== 'undefined') soundMgr. play('alert');
                 if(typeof vibMgr !== 'undefined') vibMgr.trigger('alert');
             }
         }
@@ -1754,34 +1959,50 @@
 
         function autoMiningController() {
             const paused = localStorage.getItem('mining_paused') === 'true';
-            if(paused) return;
             
-            if(hashrate > 0 && !isMining) { 
+            // ถ้าอุปกรณ์มี hashrate > 0 ควรขุด
+            if(hashrate > 0 && !paused && !isMining) {
                 isMining = true;
-                updateMiningMode(); 
+                updateMiningMode();
+                console. log('🔄 Auto-resumed mining');
             }
-            if(hashrate <= 0 && isMining) { 
+            
+            // ถ้าไม่มี hashrate ให้หยุด
+            if(hashrate <= 0 && isMining) {
                 isMining = false;
-                updateMiningMode(); 
+                updateMiningMode();
             }
         }
 
         function startMining() {
+            if(hashrate <= 0) {
+                showToast('❌ คุณต้องซื้ออุปกรณ์ขุดก่อน', 'warning');
+                return;
+            }
+            
             isMining = true;
             localStorage.setItem('mining_paused', 'false');
             updateMiningMode();
+            
+            console.log('🟢 Mining started!  Hashrate:', hashrate);
             miningLoop();
-            showToast('เริ่มขุดแล้ว', 'success');
+            
+            showToast('✅ เริ่มขุดแล้ว', 'success');
+            addNotification('🚀 เริ่มการขุด', 'success');
         }
+
         function stopMining() {
             isMining = false;
             localStorage.setItem('mining_paused', 'true');
             updateMiningMode();
-            showToast('หยุดขุดแล้ว', 'warning');
+            
+            console.log('🔴 Mining stopped');
+            showToast('⏸ หยุดขุดแล้ว', 'warning');
+            addNotification('⏸ หยุดการขุด', 'warning');
         }
 
         function checkExpiration() {
-            if(!currentUser) return;
+            if(! currentUser) return;
             let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
             if(active.length === 0) return;
 
@@ -1801,19 +2022,26 @@
 
             if(hasExpired) {
                 hashrate = Math.max(0, hashrate - expiredSpeed);
-                localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(updatedActive));
+                localStorage.setItem(`active_items_${currentUser. username}`, JSON.stringify(updatedActive));
+                
+                console.log(`⏰ Item expired!  Hashrate: ${hashrate. toFixed(2)}`);
+                
                 saveData();
                 updateUI();
                 autoMiningController();
                 updateMiningMode();
+                
                 try {
-                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
+                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser. username}`)) || [];
                     const nowTs = Date.now();
-                    rigs.forEach(r => { if(r.expiresAt && r.expiresAt <= nowTs) r.status = 'expired'; });
+                    rigs. forEach(r => { if(r.expiresAt && r.expiresAt <= nowTs) r.status = 'expired'; });
                     localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
                 } catch (_) {}
-                loadShop(); // Update button if on shop page
-                // alert('ไอเทมหมดอายุ: แรงขุดลดลง ' + expiredSpeed.toFixed(2) + ' MH/s');
+                
+                loadShop();
+                
+                showToast('⏰ ไอเทมหมดอายุ: แรงขุดลดลง ' + expiredSpeed.toFixed(2) + ' MH/s', 'warning');
+                addNotification(`⏰ ไอเทมหมดอายุ -${expiredSpeed.toFixed(2)} MH/s`, 'warning');
             }
         }
 
