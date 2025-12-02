@@ -153,6 +153,20 @@
                 <i class="fas fa-chevron-right" style="font-size: 1rem; margin: 0;"></i>
             </div>
 
+            <!-- Referral Card -->
+            <div class="menu-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); border: none; margin-bottom: 20px;" onclick="showReferralModal()">
+                <div style="display: flex; align-items: center;">
+                    <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                        <i class="fas fa-user-plus" style="color: #d63031;"></i>
+                    </div>
+                    <div style="flex: 1; color: #d63031;">
+                        <div style="font-weight: bold;">ชวนเพื่อนรับรางวัล</div>
+                        <div style="font-size: 0.8rem; opacity: 0.9;">คุณรับ ฿50 + เพื่อนรับ ฿100</div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color: #d63031;"></i>
+                </div>
+            </div>
+
             <div style="margin-top: 20px; margin-bottom: 10px; color: #94a3b8; font-size: 0.8rem; padding-left: 5px;">การตั้งค่าระบบ (System Settings)</div>
 
             <!-- Sound -->
@@ -945,16 +959,23 @@
             users[u] = {
                 pass: p, id: Math.floor(100000+Math.random()*900000),
                 name: name, bank: bank, acc: acc,
-                regDate: new Date().toISOString(), banned: false
+                regDate: new Date().toISOString(), banned: false,
+                referrer: null
             };
             localStorage.setItem('mining_users', JSON.stringify(users));
             
+            let startBalance = 0;
+
             // Process Referral
             const pendingRef = localStorage.getItem('pending_ref');
             if(pendingRef) {
                 const refId = pendingRef.replace('X','');
                 const referrerName = Object.keys(users).find(k => users[k].id == refId);
                 if(referrerName) {
+                    // Save Referrer Link
+                    users[u].referrer = referrerName;
+                    localStorage.setItem('mining_users', JSON.stringify(users));
+
                     let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrerName}`)) || [];
                     if(!refs.find(r => r.name === u)) {
                         refs.push({
@@ -973,16 +994,29 @@
                             read: false
                         });
                         localStorage.setItem(`notifications_${referrerName}`, JSON.stringify(refNotifications));
+
+                        // Bonus for New User
+                        startBalance = 100;
+                        let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+                        trans.push({
+                            id: Date.now(), user: u, type: 'deposit', amount: 100,
+                            status: 'approved', timestamp: Date.now(), processed: true,
+                            method: 'referral_bonus', fee: 0, net: 100
+                        });
+                        localStorage.setItem('mining_transactions', JSON.stringify(trans));
                     }
                 }
                 localStorage.removeItem('pending_ref');
             }
 
             // Init Profile
-            const pf = { username: u, balance: 0, hashrate: 0.0, avatar: null };
+            const pf = { username: u, balance: startBalance, hashrate: 0.0, avatar: null };
             localStorage.setItem(`pf_${u}`, JSON.stringify(pf));
             
-            alert('สมัครเสร็จสิ้น'); toLogin();
+            if(startBalance > 0) alert(`สมัครเสร็จสิ้น! คุณได้รับโบนัสเริ่มต้น ฿${startBalance}`);
+            else alert('สมัครเสร็จสิ้น');
+            
+            toLogin();
         }
 
         function login() {
@@ -1296,7 +1330,11 @@
                 alert('กำลังโหลดข้อมูล กรุณารอสักครู่...');
                 return;
             }
-            const link = `https://supachai2001774.github.io/my-crypto-app/indexApp.html?ref=${code}`;
+            
+            // Dynamic Link
+            const baseUrl = window.location.href.split('?')[0];
+            const link = `${baseUrl}?ref=${code}`;
+            
             navigator.clipboard.writeText(link);
             
             // Toast Notification
@@ -1319,6 +1357,15 @@
             let refs = JSON.parse(localStorage.getItem(`mining_referrals_${currentUser.username}`)) || [];
             refs.forEach(r => { if(r.status === 'completed') r.claimed = true; });
             localStorage.setItem(`mining_referrals_${currentUser.username}`, JSON.stringify(refs));
+            
+            // Record Transaction
+            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+            trans.push({
+                id: Date.now(), user: currentUser.username, type: 'deposit', amount: amount,
+                status: 'approved', timestamp: Date.now(), processed: true,
+                method: 'referral_commission', fee: 0, net: amount
+            });
+            localStorage.setItem('mining_transactions', JSON.stringify(trans));
             
             saveData();
             updateUI();
