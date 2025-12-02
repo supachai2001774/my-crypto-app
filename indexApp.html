@@ -19,6 +19,13 @@
         <p id="maintMessage" style="color: #aaa; text-align: center; max-width: 80%;">กำลังอัปเกรดเซิร์ฟเวอร์...</p>
     </div>
 
+    <div id="connectionOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #090b1e; z-index: 9998; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div style="width: 80px; height: 80px; border: 4px solid rgba(108, 92, 231, 0.2); border-top: 4px solid #6c5ce7; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+        <h3 style="color: white; margin: 0;">Connecting to VPS...</h3>
+        <div style="color: #aaa; font-size: 0.8rem; margin-top: 5px;">Establishing secure connection</div>
+        <div id="connectionLog" style="margin-top: 20px; color: #00cec9; font-family: monospace; font-size: 0.7rem; height: 20px;">Initializing...</div>
+    </div>
+
     <div class="app-container">
         
         <div class="top-header">
@@ -40,8 +47,8 @@
                     <div class="core-circle"><i class="fas fa-microchip" style="font-size: 1.5rem;"></i></div>
                 </div>
                 <div>
-                    <div style="color: var(--accent); font-weight: bold; font-size: 1.2rem;">AI Mining Core</div>
-                    <div style="font-size: 0.8rem; color: #aaa;">สถานะ: <span id="miningStatus" style="color:#00b894;">ทำงานปกติ</span></div>
+                    <div style="color: var(--accent); font-weight: bold; font-size: 1.2rem;">VPS Cloud Mining</div>
+                    <div style="font-size: 0.8rem; color: #aaa;">สถานะ: <span id="miningStatus" style="color:#00b894;">Online (VPS)</span></div>
                     <div style="font-size: 0.9rem; margin-top: 5px;">กำลังขุด: <span id="hashrateDisplay">0.0</span> MH/s</div>
                 </div>
             </div>
@@ -345,9 +352,35 @@
         };
 
         function initApp() {
-            // Default Announcement for Demo
+            // VPS Connection Simulation
+            const overlay = document.getElementById('connectionOverlay');
+            const log = document.getElementById('connectionLog');
+            const logs = [
+                "Resolving host address...",
+                "Connecting to secure server (VPS)...",
+                "Authenticating user...",
+                "Syncing data with cloud database...",
+                "Connection established."
+            ];
+
+            let delay = 0;
+            logs.forEach((msg, i) => {
+                setTimeout(() => {
+                    if(log) log.innerText = "> " + msg;
+                }, delay);
+                delay += (Math.random() * 800) + 400;
+            });
+
+            setTimeout(() => {
+                if(overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.style.display = 'none', 500);
+                }
+            }, delay + 500);
+
+            // Default Announcement
             if(!localStorage.getItem('mining_announcement')) {
-                const defaultAnn = { msg: 'แอดมินแจ้งประกาศหน้าหลัก', date: new Date().toISOString() };
+                const defaultAnn = { msg: 'ยินดีต้อนรับสู่ Crypto Miner Tycoon!', date: new Date().toISOString() };
                 localStorage.setItem('mining_announcement', JSON.stringify(defaultAnn));
             }
 
@@ -759,6 +792,42 @@
                         document.getElementById('annLabel').style.color = '#aaa';
                     }
                 }
+                
+                // Check for Referrer Notifications
+                if(currentUser) {
+                    let notifs = JSON.parse(localStorage.getItem(`notifications_${currentUser.username}`)) || [];
+                    const unread = notifs.filter(n => !n.read);
+                    if(unread.length > 0) {
+                         // Show Toast or Alert
+                         const lastNotif = unread[unread.length-1];
+                         
+                         // Prevent duplicate toast for same session if needed, or just show last
+                         // Simple Implementation: Show Toast
+                         const toastId = 'notifToast';
+                         if(!document.getElementById(toastId)) {
+                             const toast = document.createElement('div');
+                             toast.id = toastId;
+                             toast.innerHTML = `<i class="fas fa-user-plus"></i> ${lastNotif.msg}`;
+                             toast.style.cssText = `
+                                position: fixed; top: 80px; right: 20px;
+                                background: linear-gradient(135deg, #00b894, #00cec9); color: white; padding: 15px 20px;
+                                border-radius: 10px; font-weight: bold; z-index: 10000;
+                                box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: slideInRight 0.5s;
+                                max-width: 80%;
+                             `;
+                             document.body.appendChild(toast);
+                             setTimeout(() => { 
+                                 toast.style.animation = 'slideOutRight 0.5s';
+                                 setTimeout(() => toast.remove(), 450); 
+                             }, 5000);
+                             
+                             // Mark all as read
+                             notifs.forEach(n => n.read = true);
+                             localStorage.setItem(`notifications_${currentUser.username}`, JSON.stringify(notifs));
+                         }
+                    }
+                }
+
             } catch (e) { console.error(e); }
         }
 
@@ -831,6 +900,15 @@
                             claimed: false
                         });
                         localStorage.setItem(`mining_referrals_${referrerName}`, JSON.stringify(refs));
+                        
+                        // Notify Referrer (Mock Notification Logic)
+                        let refNotifications = JSON.parse(localStorage.getItem(`notifications_${referrerName}`)) || [];
+                        refNotifications.push({
+                            msg: `เพื่อนใหม่! ${u} สมัครผ่านลิงก์แนะนำของคุณ`,
+                            date: new Date().toISOString(),
+                            read: false
+                        });
+                        localStorage.setItem(`notifications_${referrerName}`, JSON.stringify(refNotifications));
                     }
                 }
                 localStorage.removeItem('pending_ref');
