@@ -455,15 +455,15 @@
                 setTimeout(() => {
                     if(log) log.innerText = "> " + msg;
                 }, delay);
-                delay += (Math.random() * 200) + 100; // Reduced from 800+400 to 200+100
+                delay += 50; // Very fast: 50ms per log
             });
 
             setTimeout(() => {
                 if(overlay) {
                     overlay.style.opacity = '0';
-                    setTimeout(() => overlay.style.display = 'none', 500);
+                    setTimeout(() => overlay.style.display = 'none', 200); // Faster fade out
                 }
-            }, delay + 500);
+            }, delay + 200);
 
             // Default Announcement
             if(!localStorage.getItem('mining_announcement')) {
