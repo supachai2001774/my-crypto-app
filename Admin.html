@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Cyber Command</title>
     <script src="sync-manager.js"></script>
+    <script src="live-sync.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -542,6 +543,7 @@
     </div>
 
     <script>
+
         // Navigation
         function nav(id) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -1069,7 +1071,78 @@
                 location.reload();
             }
         }
+        // ============ ADMIN LIVE SYNC ============
+liveSync.on('users', (data) => {
+    console. log('📡 Users updated from app');
+    renderUsers();
+    renderDashboard();
+});
 
+liveSync.on('transactions', (data) => {
+    console.log('📡 Transactions updated from app');
+    renderTrans();
+    renderDashboard();
+});
+
+liveSync.on('shop', (data) => {
+    console.log('📡 Shop updated from app');
+    renderShop();
+});
+
+liveSync.on('maintenance', (data) => {
+    console.log('📡 Maintenance status updated');
+    const isMaint = localStorage.getItem('mining_maintenance') === 'true';
+    document.getElementById('maintSwitch').checked = isMaint;
+});
+
+liveSync.on('announcement', (data) => {
+    console.log('📡 Announcement updated from app');
+    const ann = localStorage.getItem('mining_announcement');
+    if(ann) {
+        document.getElementById('currentAnnounce').innerText = JSON.parse(ann). msg;
+    }
+});
+
+liveSync.on('profile_updated', (data) => {
+    console.log('📡 Profile updated:', data.username);
+    renderUsers();
+    renderDashboard();
+});
+
+liveSync.on('referrals_updated', (data) => {
+    console.log('📡 Referral updated:', data.username);
+    renderReferrals();
+});
+
+// Auto refresh admin dashboard
+setInterval(() => {
+    if (document.querySelector('.section. active')) {
+        const activeSection = document.querySelector('.section. active'). id;
+        
+        switch(activeSection) {
+            case 'dashboard':
+                renderDashboard();
+                break;
+            case 'users':
+                renderUsers();
+                break;
+            case 'trans':
+                renderTrans();
+                break;
+            case 'mining':
+                renderMining();
+                break;
+            case 'shop':
+                renderShop();
+                break;
+            case 'referrals':
+                renderReferrals();
+                break;
+        }
+    }
+}, 2000);
+
+console.log('✅ Admin Live Sync listeners registered');
         // Init
         window.onload = function() {
             renderDashboard();

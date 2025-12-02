@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crypto Miner Tycoo123</title>
     <script src="sync-manager.js"></script>
+    <script src="live-sync.js"></script>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3067/3067789.png">
     <meta name="theme-color" content="#4e54c8">
@@ -52,20 +53,32 @@
     <div class="app-container">
         
         <div class="top-header">
-            <div class="profile-pill" onclick="openNotificationHistory()">
-                <div class="avatar-small" id="headerAvatar"><i class="fas fa-user"></i></div>
-                <div>
-                    <div id="headerName" class="header-name">Guest</div>
-                    <div id="headerID" class="header-id">ID: ---</div>
-                </div>
-                <div style="margin-left: 5px; position: relative;">
-                    <i class="fas fa-bell" style="color: #aaa; font-size: 0.9rem;"></i>
-                    <div id="headerNotifBadge" class="neon-badge" style="position: absolute; top: -8px; right: -8px; display: none;">0</div>
-                </div>
-            </div>
-            <div style="font-size: 1.2rem;" onclick="logout()"><i class="fas fa-sign-out-alt"></i></div>
+    <div class="profile-pill" onclick="openNotificationHistory()">
+        <div class="avatar-small" id="headerAvatar"><i class="fas fa-user"></i></div>
+        <div>
+            <div id="headerName" class="header-name">Guest</div>
+            <div id="headerID" class="header-id">ID: ---</div>
         </div>
-
+        <div style="margin-left: 5px; position: relative;">
+            <i class="fas fa-bell" style="color: #aaa; font-size: 0.9rem;"></i>
+            <div id="headerNotifBadge" class="neon-badge" style="position: absolute; top: -8px; right: -8px; display: none;">0</div>
+        </div>
+    </div>
+    
+    <!-- ✅ เพิ่มปุ่ม Refresh ที่นี่ -->
+    <div style="display: flex; gap: 15px; align-items: center;">
+        <div style="font-size: 1rem; cursor: pointer; position: relative;" 
+             onclick="manualRefresh()" 
+             title="รีเฟรชข้อมูล (Ctrl+R)">
+            <i class="fas fa-sync" id="refreshIcon"></i>
+            <span id="syncStatus" style="position: absolute; top: -5px; right: -5px; width: 8px; height: 8px; background: #00ff9d; border-radius: 50%; box-shadow: 0 0 5px #00ff9d;"></span>
+        </div>
+        <div style="font-size: 1. 2rem;" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+        </div>
+    </div>
+</div>
+                    
         <div class="page active" id="dashboardPage">
             <!-- AI Dashboard Card (Consolidated Stats) -->
             <div class="ai-dashboard-card">
@@ -452,6 +465,34 @@
     </div>
 
     <script>
+            function manualRefresh() {
+        const icon = document.getElementById('refreshIcon');
+        icon.style.animation = 'spin 1s linear';
+        
+        setTimeout(() => {
+            icon.style.animation = 'none';
+        }, 1000);
+        
+        console.log('🔄 Manual refresh');
+        liveSync.forceRefresh();
+        loadUserData();
+        updateUI();
+        renderUserTrans();
+        renderProfile();
+        loadShop();
+        
+        showToast('✅ ข้อมูลรีเฟรชสำเร็จ', 'success');
+    }
+
+    // Add spin animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
         function checkUserBanStatus() {
     if(! currentUser) return;
     
@@ -539,7 +580,111 @@
                 document.getElementById('loginModal'). style.display = 'flex';
             }
         };
+            // ============ 🔴 LIVE SYNC LISTENERS ============
 
+// เมื่อ Admin เปลี่ยนข้อมูลผู้ใช้
+liveSync.on('users', (data) => {
+    console.log('📡 Users data updated');
+    if(currentUser) {
+        const isBanned = data[currentUser. username]?.banned;
+        if(isBanned) {
+            showToast('❌ บัญชีของคุณถูกระงับ', 'error');
+            setTimeout(() => logout(), 2000);
+        }
+    }
+});
+
+// เมื่อ Admin เปลี่ยนธุรกรรม
+liveSync.on('transactions', (transactions) => {
+    console.log('📡 Transactions updated');
+    renderUserTrans();
+    
+    if(currentUser) {
+        const myTrans = transactions.filter(t => t.user === currentUser.username);
+        myTrans.forEach(t => {
+            if(! t.processed && t.status === 'approved') {
+                if(t.type === 'deposit') {
+                    showToast(`✅ เติมเงิน ฿${t.amount. toLocaleString()} อนุมัติแล้ว! `, 'success');
+                    loadUserData();
+                    updateUI();
+                }
+                if(t.type === 'withdraw') {
+                    showToast(`✅ ถอนเงิน ฿${t.amount.toLocaleString()} อนุมัติแล้ว!`, 'success');
+                }
+            }
+            if(! t.processed && t.status === 'rejected') {
+                showToast(`❌ ธุรกรรมถูกปฏิเสธ`, 'error');
+            }
+        });
+    }
+});
+
+// เมื่อ Admin อัปเดตร้านค้า
+liveSync. on('shop', (data) => {
+    console.log('📡 Shop items updated');
+    loadShop();
+    showToast('🔄 ร้านค้าได้รับการอัปเดต', 'info');
+});
+
+// เมื่อ Admin เปลี่ยนโหมดบำรุงรักษา
+liveSync.on('maintenance', (data) => {
+    console.log('📡 Maintenance status changed');
+    const isMaint = localStorage.getItem('mining_maintenance') === 'true';
+    const overlay = document.getElementById('maintenanceOverlay');
+    
+    if(isMaint) {
+        overlay.style.display = 'flex';
+        showToast('⚠️ ระบบปิดปรับปรุง', 'warning');
+    } else {
+        overlay.style.display = 'none';
+        showToast('✅ ระบบพร้อมใช้งาน', 'success');
+    }
+});
+
+// เมื่อ Admin โพสต์ประกาศใหม่
+liveSync. on('announcement', (data) => {
+    console.log('📡 New announcement');
+    checkAnnounce();
+    showToast('📢 มีประกาศใหม่จากระบบ', 'info');
+    
+    const badge = document.getElementById('annBadge');
+    if(badge) badge.style.display = 'block';
+});
+
+// เมื่อโปรไฟล์ผู้ใช้เปลี่ยน
+liveSync.on('profile_updated', (data) => {
+    if(currentUser && data.username === currentUser.username) {
+        console.log('📡 My profile updated');
+        loadUserData();
+        updateUI();
+        renderProfile();
+    }
+});
+
+// เมื่อแนะนำเพื่อนเปลี่ยน
+liveSync.on('referrals_updated', (data) => {
+    if(currentUser && data.username === currentUser.username) {
+        console.log('📡 My referrals updated');
+        renderReferralUI();
+        showToast('👥 มีการเปลี่ยนแปลงในระบบแนะนำเพื่อน', 'info');
+    }
+});
+
+// Manual refresh button
+document.addEventListener('keydown', (e) => {
+    if(e.ctrlKey && e.key === 'r') {
+        e. preventDefault();
+        console.log('🔄 Manual refresh requested');
+        liveSync.forceRefresh();
+        renderUserTrans();
+        renderProfile();
+        loadShop();
+        showToast('🔄 ข้อมูลรีเฟรชแล้ว', 'success');
+    }
+});
+
+console.log('✅ App Live Sync listeners registered');
+console.log('Live Sync Status:', liveSync.getStatus());
                 function initApp() {
             // Default Announcement
             if(! localStorage.getItem('mining_announcement')) {
