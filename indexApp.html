@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crypto Miner</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3067/3067789.png">
+    <meta name="theme-color" content="#4e54c8">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="maintenanceOverlay">
+        <i class="fas fa-tools" style="font-size: 4rem; color: #ff7675; margin-bottom: 20px;"></i>
+        <h2>ปิดปรับปรุงระบบ</h2>
+        <p id="maintMessage" style="color: #aaa; text-align: center; max-width: 80%;">กำลังอัปเกรดเซิร์ฟเวอร์...</p>
+    </div>
+
+    <div class="app-container">
+        
+        <div class="top-header">
+            <div class="profile-pill" onclick="switchPage('settingsPage', document.getElementById('navSettings'))">
+                <div class="avatar-small" id="headerAvatar"><i class="fas fa-user"></i></div>
+                <div>
+                    <div id="headerName" style="font-weight: bold; font-size: 0.9rem;">Guest</div>
+                    <div id="headerID" style="font-size: 0.7rem; color: var(--accent);">ID: ---</div>
+                </div>
+            </div>
+            <div style="font-size: 1.2rem;" onclick="logout()"><i class="fas fa-sign-out-alt"></i></div>
+        </div>
+
+        <div class="page active" id="dashboardPage">
+            <div class="ai-card">
+                <div class="ai-visual">
+                    <div class="orbit orbit-1"></div>
+                    <div class="orbit orbit-2"></div>
+                    <div class="core-circle"><i class="fas fa-microchip" style="font-size: 1.5rem;"></i></div>
+                </div>
+                <div>
+                    <div style="color: var(--accent); font-weight: bold; font-size: 1.2rem;">AI Mining Core</div>
+                    <div style="font-size: 0.8rem; color: #aaa;">สถานะ: <span id="miningStatus" style="color:#00b894;">ทำงานปกติ</span></div>
+                    <div style="font-size: 0.9rem; margin-top: 5px;">กำลังขุด: <span id="hashrateDisplay">0.0</span> MH/s</div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <i class="fas fa-wallet" style="color: var(--secondary);"></i>
+                    <div class="stat-val" id="balanceDisplay">฿0.00</div>
+                    <div class="stat-label">ยอดเงิน</div>
+                </div>
+                <div class="stat-box">
+                    <i class="fas fa-bolt" style="color: var(--accent);"></i>
+                    <div class="stat-val" id="incomeDisplay">+฿0.00</div>
+                    <div class="stat-label">ต่อวินาที</div>
+                </div>
+                <div class="stat-box" onclick="openAnnounceModal()" style="position: relative;">
+                    <div id="annBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; border: 2px solid #1e2746; animation: bounce 1s infinite;">NEW</div>
+                    <i class="fas fa-bell" style="color: #ff7675;"></i>
+                    <div class="stat-val">ประกาศ</div>
+                    <div class="stat-label" id="annLabel">ตรวจสอบ</div>
+                </div>
+            </div>
+
+            <!-- Announcement Board -->
+            <div class="news-card" style="margin: 15px 0; padding: 15px; background: linear-gradient(90deg, #2d3436, #000); border-left: 4px solid #f59e0b; border-radius: 10px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                <div style="background: rgba(245, 158, 11, 0.2); padding: 10px; border-radius: 50%;">
+                    <i class="fas fa-bullhorn" style="color: #f59e0b; font-size: 1.2rem; animation: swing 2s infinite;"></i>
+                </div>
+                <div style="flex: 1; overflow: hidden;">
+                    <div style="font-size: 0.7rem; color: #aaa; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px;">NEWS UPDATE</div>
+                    <div id="dashboardAnnounce" style="font-size: 0.95rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">รอโหลดข้อมูล...</div>
+                </div>
+            </div>
+
+            <div class="menu-grid">
+                <div class="menu-card" onclick="openShopPage()" style="position: relative;">
+                    <div id="shopBadge" style="display: none; position: absolute; top: -8px; right: -8px; background: linear-gradient(135deg, #00cec9, #6c5ce7); color: white; font-weight: bold; font-size: 0.6rem; padding: 3px 8px; border-radius: 10px; border: 2px solid #1e2746; box-shadow: 0 0 10px #00cec9; animation: bounce 1s infinite; z-index: 10;">NEW ITEM</div>
+                    <i class="fas fa-shopping-cart"></i>
+                    <div>ร้านค้า</div>
+                </div>
+                <div class="menu-card" onclick="openWalletModal('deposit')" style="position: relative;">
+                    <div id="depositBadge" style="display: none; position: absolute; top: -8px; right: -8px; background: #10b981; color: white; font-weight: bold; font-size: 0.6rem; padding: 3px 8px; border-radius: 10px; border: 2px solid #1e2746; box-shadow: 0 0 10px #10b981; animation: bounce 1s infinite;">SUCCESS</div>
+                    <i class="fas fa-arrow-circle-down"></i>
+                    <div>ฝากเงิน</div>
+                </div>
+                <div class="menu-card" onclick="openWalletModal('withdraw')" style="position: relative;">
+                    <div id="withdrawBadge" style="display: none; position: absolute; top: -8px; right: -8px; background: #f59e0b; color: white; font-weight: bold; font-size: 0.6rem; padding: 3px 8px; border-radius: 10px; border: 2px solid #1e2746; box-shadow: 0 0 10px #f59e0b; animation: bounce 1s infinite;">UPDATE</div>
+                    <i class="fas fa-arrow-circle-up"></i>
+                    <div>ถอนเงิน</div>
+                </div>
+                <div class="menu-card" onclick="showBankModal()">
+                    <i class="fas fa-university"></i>
+                    <div>บัญชีธนาคาร</div>
+                </div>
+                <div class="menu-card" onclick="showReferralModal()" style="position: relative;">
+                    <div style="position: absolute; top: -5px; right: -5px; background: #e17055; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 5px; transform: rotate(10deg); border: 1px solid #1e2746;">HOT</div>
+                    <i class="fas fa-users"></i>
+                    <div>แนะนำเพื่อน</div>
+                </div>
+                <div class="menu-card" onclick="switchPage('settingsPage', document.getElementById('navSettings'))">
+                    <i class="fas fa-cog"></i>
+                    <div>ตั้งค่า</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page" id="shopPage">
+            <h2>ร้านค้าอุปกรณ์</h2>
+            <div id="shopList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+        </div>
+
+        <div class="page" id="walletPage">
+            <h2>ประวัติธุรกรรม</h2>
+            <div id="transList" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="page" id="settingsPage">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div style="width: 100px; height: 100px; margin: 0 auto; position: relative;">
+                    <div class="avatar-small" style="width: 100%; height: 100%; border: 4px solid rgba(255,255,255,0.1);" id="settingAvatar">
+                        <i class="fas fa-user" style="font-size: 3rem;"></i>
+                    </div>
+                    <div onclick="document.getElementById('uploadProfile').click()" style="position: absolute; bottom: 0; right: 0; background: var(--accent); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+                        <i class="fas fa-camera" style="font-size: 0.8rem; color: #000;"></i>
+                    </div>
+                </div>
+                <input type="file" id="uploadProfile" hidden accept="image/*" onchange="changeProfilePic()">
+                <h2 id="settingName" style="margin: 10px 0 5px;">Username</h2>
+                <div id="settingID" style="color: #aaa;">ID: ---</div>
+                <div style="margin-top: 5px; color: #00b894; font-size: 0.8rem;"><i class="fas fa-circle" style="font-size: 6px;"></i> ออนไลน์</div>
+            </div>
+
+            <div class="menu-card" style="display: flex; align-items: center; text-align: left; margin-bottom: 10px;" onclick="showBankModal()">
+                <i class="fas fa-university" style="font-size: 1.2rem; margin: 0 15px 0 0;"></i>
+                <div style="flex: 1;">บัญชีธนาคารของฉัน</div>
+                <i class="fas fa-chevron-right" style="font-size: 1rem; margin: 0;"></i>
+            </div>
+
+            <div id="installAppBtn" class="menu-card" style="display: none; align-items: center; text-align: left; margin-bottom: 10px; background: linear-gradient(90deg, #6c5ce7, #a29bfe);" onclick="installPWA()">
+                <i class="fas fa-download" style="font-size: 1.2rem; margin: 0 15px 0 0;"></i>
+                <div style="flex: 1;">ติดตั้งแอปพลิเคชัน</div>
+                <i class="fas fa-chevron-right" style="font-size: 1rem; margin: 0;"></i>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-btn active" id="navHome" onclick="switchPage('dashboardPage', this)">
+            <i class="fas fa-home"></i> หน้าหลัก
+        </div>
+        <div class="nav-btn" id="navShop" onclick="openShopPage()">
+            <i class="fas fa-shopping-cart"></i> ร้านค้า
+        </div>
+        <div class="nav-btn" id="navWallet" onclick="openWalletPage()">
+            <div id="navWalletBadge" style="display: none; position: absolute; top: 5px; right: 25%; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; border: 2px solid #1e2746; box-shadow: 0 0 5px #ef4444;"></div>
+            <i class="fas fa-wallet"></i> กระเป๋า
+        </div>
+        <div class="nav-btn" id="navSettings" onclick="switchPage('settingsPage', this)">
+            <i class="fas fa-user"></i> โปรไฟล์
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal" style="display: flex;">
+        <div class="modal-content">
+            <h2 style="color: var(--accent);">MINING PRO</h2>
+            <input type="text" id="loginUser" class="input-dark" placeholder="ชื่อผู้ใช้">
+            <input type="password" id="loginPass" class="input-dark" placeholder="รหัสผ่าน">
+            <button class="btn-action" onclick="login()">เข้าสู่ระบบ</button>
+            <div style="margin-top: 15px; font-size: 0.9rem;">
+                ยังไม่มีบัญชี? <span style="color: var(--accent); cursor: pointer;" onclick="toSignup()">สมัครสมาชิก</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="signupModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: var(--accent);">สมัครสมาชิก</h2>
+            <input type="text" id="regUser" class="input-dark" placeholder="ตั้งชื่อผู้ใช้">
+            <input type="password" id="regPass" class="input-dark" placeholder="ตั้งรหัสผ่าน">
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0;"></div>
+            <input type="text" id="regName" class="input-dark" placeholder="ชื่อ-นามสกุลจริง">
+            <select id="regBank" class="input-dark">
+                <option value="kbank">กสิกรไทย</option>
+                <option value="scb">ไทยพาณิชย์</option>
+                <option value="ktb">กรุงไทย</option>
+                <option value="bbl">กรุงเทพ</option>
+                <option value="gsb">ออมสิน</option>
+            </select>
+            <input type="tel" id="regAcc" class="input-dark" placeholder="เลขที่บัญชี">
+            <button class="btn-action" onclick="signup()">ยืนยันการสมัคร</button>
+            <div style="margin-top: 10px; font-size: 0.8rem; cursor: pointer;" onclick="toLogin()">กลับไปเข้าสู่ระบบ</div>
+        </div>
+    </div>
+
+    <div id="walletModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer;" onclick="document.getElementById('walletModal').style.display='none'"></i>
+            <h3 id="walletTitle">ทำรายการ</h3>
+            <input type="number" id="walletAmount" class="input-dark" placeholder="ระบุจำนวนเงิน">
+            <button class="btn-action" onclick="submitTransaction()">ยืนยัน</button>
+        </div>
+    </div>
+
+    <div id="bankModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer;" onclick="document.getElementById('bankModal').style.display='none'"></i>
+            <h3>บัญชีธนาคารของฉัน</h3>
+            <div id="myBankInfo"></div>
+        </div>
+    </div>
+
+    <div id="refModal" class="modal">
+        <div class="modal-content" style="padding: 0; overflow: hidden; background: #1a1a2e; width: 90%; max-width: 400px; border-radius: 20px;">
+            <div style="padding: 20px; max-height: 85vh; overflow-y: auto;">
+                <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer; z-index: 10; color: #fff; background: rgba(0,0,0,0.3); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('refModal').style.display='none'"></i>
+                
+                <!-- Header Banner -->
+                <div class="ref-banner" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%); border-radius: 15px; padding: 20px; color: #333; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(255, 154, 158, 0.3); margin-bottom: 20px;">
+                    <div style="position: relative; z-index: 2;">
+                        <h2 style="margin: 0; font-size: 1.8rem; color: #d63031; font-weight: 800;">Invite & Earn</h2>
+                        <p style="margin: 5px 0 10px; font-size: 0.9rem; color: #636e72; font-weight: 500;">ชวนเพื่อนรับโบนัสทันที</p>
+                        <div style="display: inline-block; background: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: #d63031; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            <i class="fas fa-gift"></i> โปรโมชั่นประจำเดือน
+                        </div>
+                    </div>
+                    <i class="fas fa-gift" style="position: absolute; right: -15px; bottom: -20px; font-size: 6rem; color: rgba(255,255,255,0.6); transform: rotate(-20deg);"></i>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="ref-stats-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div class="ref-stat-box" style="background: #252a40; border-radius: 15px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="color: #f59e0b; font-size: 0.8rem; margin-bottom: 5px;">อยู่ระหว่างดำเนินการ</div>
+                        <div class="ref-stat-num" id="refPendingCount" style="color: #f59e0b; font-size: 1.8rem; font-weight: bold;">0</div>
+                        <div style="font-size: 0.7rem; color: #666;">คน</div>
+                    </div>
+                    <div class="ref-stat-box" style="background: #252a40; border-radius: 15px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="color: #00b894; font-size: 0.8rem; margin-bottom: 5px;">สำเร็จแล้ว</div>
+                        <div class="ref-stat-num" id="refCompletedCount" style="color: #00b894; font-size: 1.8rem; font-weight: bold;">0</div>
+                        <div style="font-size: 0.7rem; color: #666;">คน</div>
+                    </div>
+                </div>
+
+                <!-- Referral Code Box -->
+                <div style="background: #252a40; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px; text-align: center;">รหัสแนะนำของคุณ</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px 15px; border-radius: 10px; border: 1px dashed #555; position: relative;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #00d2d3; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0, 210, 211, 0.3);" id="myRefCode">---</div>
+                        <i class="fas fa-copy" style="cursor: pointer; color: #fff; background: #00d2d3; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" onclick="copyRef()"></i>
+                    </div>
+                    <div style="text-align: center; margin-top: 10px; font-size: 0.75rem; color: #666;">
+                        แตะที่ไอคอนเพื่อคัดลอกลิงก์แนะนำ
+                    </div>
+                </div>
+
+                <!-- Friend List -->
+                <div style="text-align: left; margin-bottom: 10px; font-weight: bold; font-size: 1rem; color: #fff; padding-left: 5px;">รายชื่อเพื่อน</div>
+                <div id="refList" style="min-height: 100px; margin-bottom: 60px;">
+                    <!-- Content -->
+                </div>
+            </div>
+            
+            <!-- Bottom Floating Button -->
+            <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: linear-gradient(to top, #1a1a2e, transparent); pointer-events: none;">
+                <button class="btn-action" onclick="claimBonus()" id="btnClaimBonus" style="pointer-events: auto; width: 100%; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: all 0.3s;">
+                    <i class="fas fa-gift"></i> รับโบนัส (0.00)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="announceModal" class="modal">
+        <div class="modal-content" style="background: linear-gradient(145deg, #d63031, #b71540); border: 2px solid #ff7675;">
+            <div style="text-align: center; font-size: 1.5rem; color: white; margin-bottom: 10px;"><i class="fas fa-bullhorn"></i> ประกาศจากทีมงาน</div>
+            <div id="announceBody" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; color: white; margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
+            <button class="btn-action" style="background: #ff7675;" onclick="closeAnnounce()">รับทราบ</button>
+        </div>
+    </div>
+
+    <script>
+        // --- PWA Logic ---
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('installAppBtn');
+            if(btn) btn.style.display = 'flex';
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                    document.getElementById('installAppBtn').style.display = 'none';
+                });
+            }
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registered:', reg))
+                    .catch(err => console.log('SW failed:', err));
+            });
+        }
+
+        // Core Logic
+        let currentUser = null;
+        let balance = 0.00;
+        let hashrate = 0.00;
+        let currentAction = '';
+        let isMining = true;
+
+        window.onload = function() {
+            // Check for Referral Code
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            if(refCode) {
+                localStorage.setItem('pending_ref', refCode);
+            }
+
+            const saved = localStorage.getItem('current_user');
+            if(saved) {
+                const u = JSON.parse(saved);
+                // Check Ban
+                const allUsers = JSON.parse(localStorage.getItem('mining_users')) || {};
+                if(allUsers[u.username] && allUsers[u.username].banned) {
+                    alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน'); localStorage.removeItem('current_user');
+                } else {
+                    currentUser = u;
+                    document.getElementById('loginModal').style.display = 'none';
+                    initApp();
+                }
+            }
+        };
+
+        function initApp() {
+            // Default Announcement for Demo
+            if(!localStorage.getItem('mining_announcement')) {
+                const defaultAnn = { msg: 'แอดมินแจ้งประกาศหน้าหลัก', date: new Date().toISOString() };
+                localStorage.setItem('mining_announcement', JSON.stringify(defaultAnn));
+            }
+
+            loadUserData();
+            checkExpiration(); // Clean up expired items on load
+            loadShop();
+            setInterval(miningLoop, 1000);
+            setInterval(syncAdmin, 2000); // Admin Sync + Heartbeat
+            renderProfile();
+            checkAnnounce();
+        }
+
+        function syncAdmin() {
+            if(!currentUser) return;
+            
+            // Check Ban Status Real-time
+            const allUsers = JSON.parse(localStorage.getItem('mining_users')) || {};
+            if(allUsers[currentUser.username] && allUsers[currentUser.username].banned) {
+                alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน');
+                logout();
+                return;
+            }
+
+            // Heartbeat
+            localStorage.setItem(`last_active_${currentUser.username}`, Date.now());
+            
+            // Check Announcement
+            checkAnnounce();
+            
+            // Check Shop Update
+            checkShopUpdate();
+
+            // Check Maintenance
+            const maint = localStorage.getItem('mining_maintenance') === 'true';
+            const maintMsg = localStorage.getItem('mining_maintenance_msg') || 'กำลังอัปเกรดเซิร์ฟเวอร์...';
+            const overlay = document.getElementById('maintenanceOverlay');
+            
+            if(maint) {
+                overlay.style.display = 'flex';
+                document.getElementById('maintMessage').innerText = maintMsg;
+            } else {
+                overlay.style.display = 'none';
+            }
+
+            // Sync Transactions
+            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+            let updated = false;
+            trans.forEach(t => {
+                if(t.user === currentUser.username && !t.processed) {
+                    if(t.status === 'approved' && t.type === 'deposit') { 
+                        balance += t.amount; updated=true; t.processed=true; 
+                        // alert('เงินเข้าแล้ว: '+t.amount); // Replace alert with badge
+                        localStorage.setItem('wallet_badge_deposit', 'true');
+                    }
+                    else if(t.status === 'rejected' && t.type === 'withdraw') { 
+                        balance += t.amount; updated=true; t.processed=true; 
+                        // alert('ถอนไม่ผ่าน เงินคืนแล้ว');
+                        localStorage.setItem('wallet_badge_withdraw', 'true');
+                    }
+                    else if(t.status === 'approved' && t.type === 'withdraw') { 
+                        t.processed=true; updated=true; 
+                        localStorage.setItem('wallet_badge_withdraw', 'true');
+                    } 
+                }
+            });
+            if(updated) {
+                localStorage.setItem('mining_transactions', JSON.stringify(trans));
+                saveData(); updateUI();
+                renderUserTrans();
+            }
+            checkWalletBadges();
+        }
+
+        function checkWalletBadges() {
+            // Deposit Badge
+            const dBadge = document.getElementById('depositBadge');
+            if(localStorage.getItem('wallet_badge_deposit') === 'true') {
+                if(dBadge) dBadge.style.display = 'block';
+                document.getElementById('navWalletBadge').style.display = 'block';
+            } else {
+                if(dBadge) dBadge.style.display = 'none';
+            }
+
+            // Withdraw Badge
+            const wBadge = document.getElementById('withdrawBadge');
+            if(localStorage.getItem('wallet_badge_withdraw') === 'true') {
+                if(wBadge) wBadge.style.display = 'block';
+                document.getElementById('navWalletBadge').style.display = 'block';
+            } else {
+                if(wBadge) wBadge.style.display = 'none';
+            }
+
+            // If no sub-badges, hide nav badge
+            if(localStorage.getItem('wallet_badge_deposit') !== 'true' && localStorage.getItem('wallet_badge_withdraw') !== 'true') {
+                document.getElementById('navWalletBadge').style.display = 'none';
+            }
+        }
+
+        function openWalletModal(type) {
+            currentAction = type || 'deposit'; // Default to deposit if not specified
+            
+            // Clear badges
+            if(type === 'deposit') localStorage.removeItem('wallet_badge_deposit');
+            if(type === 'withdraw') localStorage.removeItem('wallet_badge_withdraw');
+            checkWalletBadges();
+
+            const modal = document.getElementById('walletModal');
+            const content = modal.querySelector('.modal-content');
+            
+            // Base structure with Tabs
+            content.innerHTML = `
+                <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer; color: #ccc;" onclick="document.getElementById('walletModal').style.display='none'"></i>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; padding: 5px; background: #0f172a; border-radius: 12px;">
+                    <button onclick="switchWalletTab('deposit')" id="tabDeposit" class="btn-tab" style="flex:1; padding: 10px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; cursor: pointer; transition: 0.2s;">ฝากเงิน</button>
+                    <button onclick="switchWalletTab('withdraw')" id="tabWithdraw" class="btn-tab" style="flex:1; padding: 10px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; cursor: pointer; transition: 0.2s;">ถอนเงิน</button>
+                </div>
+
+                <div id="walletBody"></div>
+            `;
+            
+            modal.style.display='flex';
+            switchWalletTab(currentAction);
+        }
+
+        function switchWalletTab(type) {
+            currentAction = type;
+            const body = document.getElementById('walletBody');
+            const tabDep = document.getElementById('tabDeposit');
+            const tabWit = document.getElementById('tabWithdraw');
+            
+            // Update Tabs Style
+            if(type === 'deposit') {
+                tabDep.style.background = '#334155';
+                tabDep.style.color = 'white';
+                tabDep.style.fontWeight = 'bold';
+                tabWit.style.background = 'transparent';
+                tabWit.style.color = '#94a3b8';
+                tabWit.style.fontWeight = 'normal';
+            } else {
+                tabWit.style.background = '#334155';
+                tabWit.style.color = 'white';
+                tabWit.style.fontWeight = 'bold';
+                tabDep.style.background = 'transparent';
+                tabDep.style.color = '#94a3b8';
+                tabDep.style.fontWeight = 'normal';
+            }
+
+            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            let u = users[currentUser.username] || {bank: 'N/A', acc: 'N/A', name: 'Guest'};
+
+            if(type === 'deposit') {
+                body.innerHTML = `
+                    <div style="margin-bottom: 10px;">
+                        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 10px; text-align: center; display:flex; align-items:center; justify-content:space-between;">
+                            <div style="text-align:left;">
+                                <div style="color: #94a3b8; font-size: 0.75rem;">ระบุจำนวน (THB)</div>
+                                <div style="font-size: 0.7rem; color: #f59e0b;">ขั้นต่ำ 40 บาท</div>
+                            </div>
+                            <input type="number" id="walletAmount" class="input-dark" placeholder="0.00" 
+                                   style="font-size: 1.5rem; text-align: right; color: #10b981; font-weight: bold; border: none; background: transparent; width: 120px; outline: none; margin:0; padding:0;" 
+                                   oninput="updateDepositUI(this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Auto QR Section -->
+                    <div id="qrSection" style="display:none; margin-bottom: 10px; animation: fadeUp 0.3s;">
+                         <div style="background: linear-gradient(135deg, #000428, #004e92); padding: 1px; border-radius: 12px;">
+                            <div style="background: #0f172a; border-radius: 12px; padding: 10px; text-align: center;">
+                                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:8px;">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay-logo.png" style="height:20px; background:white; padding:2px; border-radius:4px;">
+                                    <span style="color:white; font-weight:bold; font-size:0.9rem;">สแกนจ่าย</span>
+                                </div>
+                                <div style="background: white; padding: 5px; display: inline-block; border-radius: 8px; margin-bottom: 5px;">
+                                    <img id="qrImage" src="" style="width: 120px; height: 120px; display: block;">
+                                </div>
+                                <div style="color: #94a3b8; font-size: 0.75rem;">ยอดโอน: <span id="qrAmount" style="color: #10b981; font-weight: bold; font-size: 0.9rem;">0.00</span> THB</div>
+                                <div style="font-size: 0.65rem; color: #64748b;">ชื่อบัญชี: บจก. คริปโต ไมน์เนอร์</div>
+                            </div>
+                         </div>
+                    </div>
+
+                    <div style="margin-bottom: 10px;">
+                        <input type="file" id="slipUpload" accept="image/*" style="display:none" onchange="previewSlip()">
+                        <div onclick="document.getElementById('slipUpload').click()" 
+                             style="border: 2px dashed #334155; border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.02);">
+                            <div style="width: 35px; height: 35px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-cloud-upload-alt" style="color: #64748b;"></i>
+                            </div>
+                            <div style="flex: 1; text-align: left;">
+                                <div style="color: #cbd5e1; font-size: 0.85rem;">อัปโหลดสลิป</div>
+                                <div style="color: #64748b; font-size: 0.7rem;">Max 5MB</div>
+                            </div>
+                            <div id="slipStatus" style="font-size: 0.75rem; color: #64748b;">เลือกไฟล์</div>
+                        </div>
+                        <div id="slipPreview" style="display:none; margin-top:10px; text-align:center;">
+                            <img id="slipImg" src="" style="max-width:100%; max-height:120px; border-radius:8px; border:1px solid #334155;">
+                        </div>
+                    </div>
+
+                    <button id="btnDeposit" class="btn-action" onclick="submitDeposit()" style="width: 100%; padding: 10px;">ยืนยันการฝากเงิน</button>
+                `;
+            } else {
+                // Withdrawal Tab
+                let users = JSON.parse(localStorage.getItem('mining_users'));
+                let u = users[currentUser.username];
+                let bankHtml = '';
+                
+                if(!u.bank || !u.acc) {
+                    bankHtml = `<div style="color: #ef4444; font-size: 0.8rem; margin-bottom: 10px; text-align:center; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px;">
+                        <i class="fas fa-exclamation-circle"></i> กรุณาเพิ่มบัญชีธนาคารก่อนถอนเงิน
+                        <div style="margin-top: 5px; text-decoration: underline; cursor: pointer;" onclick="document.getElementById('walletModal').style.display='none'; showBankModal();">ไปที่หน้าบัญชีธนาคาร</div>
+                    </div>`;
+                } else {
+                    bankHtml = `
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">โอนเงินเข้าบัญชี</div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid rgba(255,255,255,0.1);">
+                                    <i class="fas fa-university" style="font-size: 1.2rem; color: white;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1rem; font-weight: bold; color: var(--accent); letter-spacing: 1px;">${formatBankAcc(u.acc)}</div>
+                                    <div style="font-size: 0.75rem; color: #aaa;">${u.bank.toUpperCase()} - ${u.name}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                body.innerHTML = `
+                    ${bankHtml}
+                    <div style="background: #1e293b; padding: 15px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 20px; text-align: center;">
+                        <div style="color:#94a3b8; font-size: 0.9rem;">ยอดเงินที่ถอนได้</div>
+                        <div style="color:white; font-size: 1.5rem; font-weight:bold; margin: 5px 0;">${balance.toLocaleString('en-US', {minimumFractionDigits: 2})} <span style="font-size: 1rem;">THB</span></div>
+                        <div style="font-size: 0.75rem; color: #f59e0b;">ถอนขั้นต่ำ 200 บาท</div>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">จำนวนเงินที่ต้องการถอน</div>
+                        <div style="position: relative;">
+                            <input type="number" id="walletAmount" class="input-dark" placeholder="0.00" 
+                                   style="padding-right: 70px; font-size: 1.2rem; font-weight:bold;"
+                                   oninput="updateWithdrawUI(this.value)">
+                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #3b82f6; font-weight: bold; cursor: pointer; font-size: 0.8rem;" onclick="fillMaxWithdraw()">ทั้งหมด</span>
+                        </div>
+                    </div>
+
+                    <div style="background: #0f172a; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
+                            <span style="color:#94a3b8;">ยอดถอน</span>
+                            <span style="color:white;" id="withdrawBaseAmount">0.00 THB</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
+                            <span style="color:#94a3b8;">ค่าธรรมเนียม (3%)</span>
+                            <span style="color:#ef4444;" id="withdrawFee">0.00 THB</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: bold; border-top: 1px solid #334155; padding-top: 10px; margin-top: 5px;">
+                            <span style="color:#94a3b8;">จะได้รับสุทธิ</span>
+                            <span style="color:#10b981;" id="netWithdrawAmount">0.00 THB</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-action" onclick="submitTransaction()" style="width: 100%;">แจ้งถอนเงิน</button>
+                `;
+            }
+        }
+
+        function updateWithdrawUI(val) {
+            const base = document.getElementById('withdrawBaseAmount');
+            const fee = document.getElementById('withdrawFee');
+            const net = document.getElementById('netWithdrawAmount');
+            
+            const amt = parseFloat(val);
+            
+            if(amt && amt > 0) {
+                const feeVal = amt * 0.03; // 3% Fee
+                const netVal = amt - feeVal;
+                
+                base.innerText = amt.toLocaleString('en-US', {minimumFractionDigits: 2}) + " THB";
+                fee.innerText = feeVal.toLocaleString('en-US', {minimumFractionDigits: 2}) + " THB";
+                net.innerText = netVal.toLocaleString('en-US', {minimumFractionDigits: 2}) + " THB";
+            } else {
+                base.innerText = "0.00 THB";
+                fee.innerText = "0.00 THB";
+                net.innerText = "0.00 THB";
+            }
+        }
+
+        function fillMaxWithdraw() {
+            const input = document.getElementById('walletAmount');
+            input.value = balance;
+            updateWithdrawUI(balance);
+        }
+
+        function updateDepositUI(val) {
+            const info = document.getElementById('depositInfo');
+            const disp = document.getElementById('displayAmount');
+            const qrSec = document.getElementById('qrSection');
+            const qrImg = document.getElementById('qrImage');
+            const qrAmt = document.getElementById('qrAmount');
+            
+            if(val && parseFloat(val) >= 40) {
+                if(qrSec) {
+                    qrSec.style.display = 'block';
+                    qrAmt.innerText = parseFloat(val).toFixed(2);
+                    // Using PromptPay.io API with a test number (081-234-5678)
+                    qrImg.src = `https://promptpay.io/0812345678/${val}`;
+                }
+                if(info) {
+                    info.style.display = 'block';
+                    if(disp) disp.innerText = parseFloat(val).toFixed(2);
+                }
+            } else {
+                if(qrSec) qrSec.style.display = 'none';
+                if(info) info.style.display = 'none';
+            }
+        }
+
+        function openWalletPage() {
+            // Clear all wallet badges when viewing history
+            localStorage.removeItem('wallet_badge_deposit');
+            localStorage.removeItem('wallet_badge_withdraw');
+            checkWalletBadges();
+            switchPage('walletPage', document.getElementById('navWallet'));
+            renderUserTrans();
+        }
+
+        function renderUserTrans() {
+            const list = document.getElementById('transList');
+            if(!list) return;
+            
+            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+            // Filter my transactions
+            trans = trans.filter(t => t.user === currentUser.username);
+            // Sort Newest First
+            trans.sort((a,b) => b.timestamp - a.timestamp);
+            
+            if(trans.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#64748b; margin-top:50px;"><i class="fas fa-history" style="font-size:3rem; margin-bottom:10px; opacity:0.5;"></i><br>ไม่มีรายการธุรกรรม</div>';
+                return;
+            }
+            
+            list.innerHTML = '';
+            trans.forEach(t => {
+                let statusBadge = '';
+                if(t.status === 'pending') statusBadge = '<span style="color:#f59e0b; background:rgba(245, 158, 11, 0.1); padding:2px 8px; border-radius:4px; font-size:0.7rem; border:1px solid rgba(245, 158, 11, 0.2);"><i class="fas fa-clock"></i> รอตรวจสอบ</span>';
+                else if(t.status === 'approved') statusBadge = '<span style="color:#10b981; background:rgba(16, 185, 129, 0.1); padding:2px 8px; border-radius:4px; font-size:0.7rem; border:1px solid rgba(16, 185, 129, 0.2);"><i class="fas fa-check-circle"></i> สำเร็จ</span>';
+                else statusBadge = '<span style="color:#ef4444; background:rgba(239, 68, 68, 0.1); padding:2px 8px; border-radius:4px; font-size:0.7rem; border:1px solid rgba(239, 68, 68, 0.2);"><i class="fas fa-times-circle"></i> ปฏิเสธ</span>';
+                
+                let icon = t.type === 'deposit' ? '<i class="fas fa-arrow-down" style="color:#10b981;"></i>' : '<i class="fas fa-arrow-up" style="color:#f59e0b;"></i>';
+                let title = t.type === 'deposit' ? 'ฝากเงิน' : 'ถอนเงิน';
+                let amountColor = t.type === 'deposit' ? '#10b981' : '#f59e0b';
+                let sign = t.type === 'deposit' ? '+' : '-';
+                
+                // Fee detail text
+                let feeDetail = '';
+                if(t.type === 'withdraw' && t.fee) {
+                    feeDetail = `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">ค่าธรรมเนียม: ${t.fee.toLocaleString()}</div>`;
+                }
+
+                list.innerHTML += `
+                    <div style="background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; animation: fadeUp 0.3s;">
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                                ${icon}
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: white; font-size:0.95rem;">${title}</div>
+                                <div style="font-size: 0.75rem; color: #64748b;">${new Date(t.timestamp).toLocaleString('th-TH')}</div>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-weight: bold; color: ${amountColor}; font-size:1rem;">${sign}${t.amount.toLocaleString()}</div>
+                            ${feeDetail}
+                            <div style="margin-top: 4px;">${statusBadge}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function miningLoop() {
+            checkExpiration(); // Check for expired items
+            if(isMining) {
+                balance += hashrate;
+                updateUI();
+                saveData();
+            }
+        }
+
+        function checkAnnounce() {
+            try {
+                const ann = JSON.parse(localStorage.getItem('mining_announcement'));
+                if(ann && ann.msg) {
+                    // Update Dashboard Board
+                    const db = document.getElementById('dashboardAnnounce');
+                    if(db) db.innerText = ann.msg;
+
+                    // Check for Badge
+                    const lastAnn = localStorage.getItem('last_ann_seen');
+                    if(lastAnn !== ann.date) {
+                        document.getElementById('annBadge').style.display = 'block';
+                        document.getElementById('annLabel').innerText = 'มีประกาศใหม่';
+                        document.getElementById('annLabel').style.color = '#ef4444';
+                    } else {
+                        document.getElementById('annBadge').style.display = 'none';
+                        document.getElementById('annLabel').innerText = 'ตรวจสอบ';
+                        document.getElementById('annLabel').style.color = '#aaa';
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function openAnnounceModal() {
+            try {
+                const ann = JSON.parse(localStorage.getItem('mining_announcement'));
+                if(ann && ann.msg) {
+                    document.getElementById('announceBody').innerText = ann.msg;
+                    document.getElementById('announceModal').style.display = 'flex';
+                    // Mark as seen
+                    localStorage.setItem('last_ann_seen', ann.date);
+                    checkAnnounce(); // Update UI immediately
+                } else {
+                    alert('ยังไม่มีประกาศ');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function closeAnnounce() {
+            document.getElementById('announceModal').style.display = 'none';
+        }
+
+        function updateUI() {
+            document.getElementById('balanceDisplay').innerText = `฿${balance.toFixed(2)}`;
+            document.getElementById('incomeDisplay').innerText = `+฿${hashrate.toFixed(2)}`;
+            document.getElementById('hashrateDisplay').innerText = hashrate.toFixed(1);
+        }
+
+        function switchPage(pid, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pid).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+        }
+
+        // --- Auth ---
+        function toSignup() { document.getElementById('loginModal').style.display='none'; document.getElementById('signupModal').style.display='flex'; }
+        function toLogin() { document.getElementById('signupModal').style.display='none'; document.getElementById('loginModal').style.display='flex'; }
+        
+        function signup() {
+            const u = document.getElementById('regUser').value;
+            const p = document.getElementById('regPass').value;
+            const name = document.getElementById('regName').value;
+            const bank = document.getElementById('regBank').value;
+            const acc = document.getElementById('regAcc').value;
+            
+            if(!u || !p || !name || !acc) return alert('กรอกให้ครบ');
+            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            if(users[u]) return alert('ชื่อซ้ำ');
+
+            users[u] = {
+                pass: p, id: Math.floor(100000+Math.random()*900000),
+                name: name, bank: bank, acc: acc,
+                regDate: new Date().toISOString(), banned: false
+            };
+            localStorage.setItem('mining_users', JSON.stringify(users));
+            
+            // Process Referral
+            const pendingRef = localStorage.getItem('pending_ref');
+            if(pendingRef) {
+                const refId = pendingRef.replace('X','');
+                const referrerName = Object.keys(users).find(k => users[k].id == refId);
+                if(referrerName) {
+                    let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrerName}`)) || [];
+                    if(!refs.find(r => r.name === u)) {
+                        refs.push({
+                            name: u,
+                            date: new Date().toISOString(),
+                            status: 'completed',
+                            claimed: false
+                        });
+                        localStorage.setItem(`mining_referrals_${referrerName}`, JSON.stringify(refs));
+                    }
+                }
+                localStorage.removeItem('pending_ref');
+            }
+
+            // Init Profile
+            const pf = { username: u, balance: 0, hashrate: 0.0, avatar: null };
+            localStorage.setItem(`pf_${u}`, JSON.stringify(pf));
+            
+            alert('สมัครเสร็จสิ้น'); toLogin();
+        }
+
+        function login() {
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
+            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            if(users[u] && users[u].pass === p) {
+                if(users[u].banned) return alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน');
+                currentUser = { username: u };
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+                document.getElementById('loginModal').style.display='none';
+                initApp();
+            } else { alert('ผิดพลาด'); }
+        }
+
+        function logout() { localStorage.removeItem('current_user'); location.reload(); }
+
+        // --- Data ---
+        function saveData() { if(currentUser) { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); pf.balance = balance; pf.hashrate = hashrate; localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf)); } }
+        function loadUserData() { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); if(pf) { balance = pf.balance; hashrate = pf.hashrate; updateUI(); } }
+
+        function renderProfile() {
+            let users = JSON.parse(localStorage.getItem('mining_users'));
+            let uData = users[currentUser.username];
+            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`));
+            
+            document.getElementById('headerName').innerText = currentUser.username;
+            document.getElementById('headerID').innerText = `ID: ${uData.id}`;
+            document.getElementById('settingName').innerText = currentUser.username;
+            document.getElementById('settingID').innerText = `ID: ${uData.id}`;
+            document.getElementById('myRefCode').innerText = uData.id + "X";
+            
+            if(pf.avatar) {
+                document.getElementById('headerAvatar').innerHTML = `<img src="${pf.avatar}">`;
+                document.getElementById('settingAvatar').innerHTML = `<img src="${pf.avatar}">`;
+            }
+        }
+
+        function changeProfilePic() {
+            const file = document.getElementById('uploadProfile').files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`));
+                    pf.avatar = e.target.result;
+                    localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+                    renderProfile();
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Removed duplicate openWalletModal
+        function previewSlip() {
+            const file = document.getElementById('slipUpload').files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('slipImg').src = e.target.result;
+                    document.getElementById('slipPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function submitDeposit() {
+            const amt = parseFloat(document.getElementById('walletAmount').value);
+            if(!amt || amt < 40) return alert('กรุณาระบุยอดเงินขั้นต่ำ 40 บาท');
+            
+            const file = document.getElementById('slipUpload').files[0];
+            if(!file) return alert('กรุณาอัปโหลดสลิปการโอนเงิน');
+
+            if(file.size > 5 * 1024 * 1024) return alert('ไฟล์ขนาดเกิน 5 MB');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const slipBase64 = e.target.result;
+                
+                let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+                trans.push({
+                    id: Date.now(), 
+                    user: currentUser.username, 
+                    type: 'deposit', 
+                    amount: amt,
+                    status: 'pending', 
+                    timestamp: Date.now(), 
+                    processed: false,
+                    slip: slipBase64
+                });
+                localStorage.setItem('mining_transactions', JSON.stringify(trans));
+                saveData(); 
+                updateUI();
+                
+                alert('แจ้งเตือน: ทำรายการฝากสำเร็จ กรุณารอการตรวจสอบ');
+                document.getElementById('walletModal').style.display='none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function submitTransaction() {
+            const amt = parseFloat(document.getElementById('walletAmount').value);
+            if(!amt) return alert('ระบุจำนวนเงิน');
+            
+            // Deposit is handled by submitDeposit() now
+            
+            if(currentAction === 'withdraw') {
+                let users = JSON.parse(localStorage.getItem('mining_users'));
+                let u = users[currentUser.username];
+                if(!u.bank || !u.acc) return alert('กรุณาเพิ่มบัญชีธนาคารก่อนถอนเงิน');
+                                //แก้ไขจำนวนเงิน//
+                if(amt < 200) return alert('ถอนขั้นต่ำ 200 บาท');
+                if(amt > 200000) return alert('ถอนได้ไม่เกิน 200,000 บาทต่อครั้ง');
+                if(balance < amt) return alert('ยอดเงินไม่พอ');
+                
+                const fee = amt * 0.03;
+                const net = amt - fee;
+                
+                if(!confirm(`ยืนยันการถอนเงิน?\n\nยอดถอน: ฿${amt.toLocaleString()}\nค่าธรรมเนียม (3%): ฿${fee.toLocaleString()}\nได้รับสุทธิ: ฿${net.toLocaleString()}`)) return;
+                
+                balance -= amt;
+                
+                let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+                trans.push({
+                    id: Date.now(), user: currentUser.username, type: currentAction, amount: amt,
+                    fee: fee, net: net, // Store fee details
+                    status: 'pending', timestamp: Date.now(), processed: false
+                });
+                localStorage.setItem('mining_transactions', JSON.stringify(trans));
+                saveData(); updateUI();
+                alert('ทำรายการสำเร็จ รอแอดมินอนุมัติ');
+                document.getElementById('walletModal').style.display='none';
+            }
+        }
+
+        function formatBankAcc(acc) {
+            if(!acc) return '---';
+            const cleaned = ('' + acc).replace(/\D/g, '');
+            if(cleaned.length === 10) {
+                return `${cleaned.substring(0,3)}-${cleaned.substring(3,4)}-${cleaned.substring(4,9)}-${cleaned.substring(9)}`;
+            }
+            return acc;
+        }
+
+        function showBankModal() {
+            let users = JSON.parse(localStorage.getItem('mining_users'));
+            let u = users[currentUser.username];
+            document.getElementById('myBankInfo').innerHTML = `
+                <div class="bank-card ${u.bank}">
+                    <i class="fas fa-university bank-logo-watermark"></i>
+                    <div class="bank-chip"></div>
+                    <div style="z-index: 2;">
+                        <div class="bank-number">${formatBankAcc(u.acc)}</div>
+                        <div class="bank-holder">
+                            <span>${u.name}</span>
+                            <span style="font-size:0.75rem; opacity:0.8; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">${u.bank.toUpperCase()}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-action" onclick="showBankEdit()">แก้ไขข้อมูล</button>
+            `;
+            document.getElementById('bankModal').style.display='flex';
+        }
+
+        function showBankEdit() {
+            let users = JSON.parse(localStorage.getItem('mining_users'));
+            let u = users[currentUser.username];
+            
+            document.getElementById('myBankInfo').innerHTML = `
+                <div style="text-align:left; margin-bottom:15px;">
+                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">เลือกธนาคาร</label>
+                    <select id="editBank" class="input-dark">
+                        <option value="kbank" ${u.bank==='kbank'?'selected':''}>กสิกรไทย (KBANK)</option>
+                        <option value="scb" ${u.bank==='scb'?'selected':''}>ไทยพาณิชย์ (SCB)</option>
+                        <option value="ktb" ${u.bank==='ktb'?'selected':''}>กรุงไทย (KTB)</option>
+                        <option value="bbl" ${u.bank==='bbl'?'selected':''}>กรุงเทพ (BBL)</option>
+                        <option value="gsb" ${u.bank==='gsb'?'selected':''}>ออมสิน (GSB)</option>
+                    </select>
+                    
+                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">เลขที่บัญชี</label>
+                    <input type="tel" id="editAcc" class="input-dark" value="${u.acc}" placeholder="0123456789" maxlength="10">
+                    
+                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">ชื่อบัญชี</label>
+                    <input type="text" id="editName" class="input-dark" value="${u.name}">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-action" style="background:#444; flex:1;" onclick="showBankModal()">ยกเลิก</button>
+                    <button class="btn-action" style="flex:1;" onclick="saveBankInfo()">บันทึก</button>
+                </div>
+            `;
+        }
+
+        function saveBankInfo() {
+            const bank = document.getElementById('editBank').value;
+            const acc = document.getElementById('editAcc').value;
+            const name = document.getElementById('editName').value;
+            
+            if(!acc || !name) return alert('กรุณากรอกข้อมูลให้ครบ');
+            
+            let users = JSON.parse(localStorage.getItem('mining_users'));
+            users[currentUser.username].bank = bank;
+            users[currentUser.username].acc = acc;
+            users[currentUser.username].name = name;
+            
+            localStorage.setItem('mining_users', JSON.stringify(users));
+            alert('บันทึกข้อมูลเรียบร้อย');
+            showBankModal();
+        }
+        function showReferralModal() { 
+            document.getElementById('refModal').style.display='flex'; 
+            renderReferralUI();
+        }
+
+        function renderReferralUI() {
+            // Load User Specific Referrals
+            let refs = JSON.parse(localStorage.getItem(`mining_referrals_${currentUser.username}`));
+            if(!refs) {
+                refs = [];
+                localStorage.setItem(`mining_referrals_${currentUser.username}`, JSON.stringify(refs));
+            }
+            
+            const list = document.getElementById('refList');
+            const pCount = document.getElementById('refPendingCount');
+            const cCount = document.getElementById('refCompletedCount');
+            
+            let pending = 0;
+            let completed = 0;
+            let bonus = 0;
+
+            list.innerHTML = '';
+
+            if(refs.length === 0) {
+                list.innerHTML = `
+                    <div class="ref-list-empty" style="text-align: center; padding: 40px 0; color: rgba(255,255,255,0.3);">
+                        <i class="fas fa-user-plus" style="font-size: 4rem; margin-bottom: 15px; display: block;"></i>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">ยังไม่มีเพื่อนที่เชิญ</div>
+                        <div style="font-size: 0.85rem;">แชร์รหัสของคุณให้เพื่อนเพื่อเริ่มรับรายได้</div>
+                    </div>
+                `;
+            } else {
+                refs.forEach(r => {
+                    if(r.status === 'pending') pending++;
+                    else if(r.status === 'completed') {
+                        completed++;
+                        if(!r.claimed) bonus += 50; // 50 THB Bonus
+                    }
+                    
+                    let statusColor = r.status === 'completed' ? '#00b894' : '#f59e0b';
+                    let statusText = r.status === 'completed' ? 'สำเร็จ' : 'รออนุมัติ';
+                    let icon = r.status === 'completed' ? 'fa-check' : 'fa-clock';
+                    
+                    list.innerHTML += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #252a40; margin-bottom: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #3b82f6, #2d3436); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 10px rgba(0,0,0,0.2);">
+                                    <i class="fas fa-user" style="color: white;"></i>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1rem; font-weight: bold; color: white;">${r.name}</div>
+                                    <div style="font-size: 0.75rem; color: #aaa;">${new Date(r.date).toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="color: ${statusColor}; font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 6px; display: inline-block;">
+                                    <i class="fas ${icon}"></i> ${statusText}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            pCount.innerText = pending;
+            cCount.innerText = completed;
+            
+            const btn = document.getElementById('btnClaimBonus');
+            if(bonus > 0) {
+                btn.innerHTML = `<i class="fas fa-gift" style="margin-right:5px;"></i> รับโบนัส (฿${bonus.toFixed(2)})`;
+                btn.style.background = 'linear-gradient(135deg, #00b894, #00cec9)';
+                btn.style.color = 'white';
+                btn.style.cursor = 'pointer';
+                btn.style.boxShadow = '0 5px 15px rgba(0, 184, 148, 0.4)';
+                btn.onclick = function() { claimBonus(bonus); };
+            } else {
+                btn.innerHTML = `<i class="fas fa-gift" style="margin-right:5px;"></i> รับโบนัส (0.00)`;
+                btn.style.background = '#333';
+                btn.style.color = '#777';
+                btn.style.cursor = 'not-allowed';
+                btn.style.boxShadow = 'none';
+                btn.onclick = null;
+            }
+        }
+
+        function copyRef() {
+            const code = document.getElementById('myRefCode').innerText;
+            const link = `https://my-ruede-app.netlify.app/indexApp.html?ref=${code}`;
+            navigator.clipboard.writeText(link);
+            
+            // Toast Notification
+            const toast = document.createElement('div');
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> คัดลอกลิงก์แนะนำแล้ว!`;
+            toast.style.cssText = `
+                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+                background: rgba(0, 184, 148, 0.9); color: white; padding: 12px 25px;
+                border-radius: 30px; font-weight: bold; z-index: 10000;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeUp 0.5s;
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function claimBonus(amount) {
+            if(!amount || amount <= 0) return;
+            balance += amount;
+            
+            let refs = JSON.parse(localStorage.getItem(`mining_referrals_${currentUser.username}`)) || [];
+            refs.forEach(r => { if(r.status === 'completed') r.claimed = true; });
+            localStorage.setItem(`mining_referrals_${currentUser.username}`, JSON.stringify(refs));
+            
+            saveData();
+            updateUI();
+            renderReferralUI();
+            
+            // Custom Success Modal
+            const modalId = 'claimSuccessModal';
+            if(document.getElementById(modalId)) document.getElementById(modalId).remove();
+            
+            const div = document.createElement('div');
+            div.id = modalId;
+            div.className = 'modal';
+            div.style.display = 'flex';
+            div.style.zIndex = '10001';
+            div.innerHTML = `
+                <div class="modal-content" style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); border: 2px solid white; text-align:center; border-radius: 20px; width: 85%; max-width: 350px;">
+                    <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+                        <i class="fas fa-gift" style="font-size: 3rem; color: #6c5ce7; animation: bounce 2s infinite;"></i>
+                    </div>
+                    <h2 style="color: white; margin:0 0 5px;">ยินดีด้วย!</h2>
+                    <p style="color: #eee; margin-bottom: 20px;">คุณได้รับโบนัสแนะนำเพื่อน</p>
+                    <div style="font-size: 2.5rem; font-weight: bold; color: #fff; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+                        ฿${amount.toFixed(2)}
+                    </div>
+                    <button class="btn-action" style="background: white; color: #6c5ce7; font-weight: bold; border-radius: 30px;" onclick="document.getElementById('${modalId}').remove()">ตกลง</button>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        // --- Shop ---
+        function loadShop() {
+            // Try to load from LocalStorage first
+            let items = JSON.parse(localStorage.getItem('mining_shop_items'));
+            
+            // Initial Seed if empty
+            if(!items || items.length === 0) {
+                const catalog = [
+                    {id: 6, name: "Bitcoin Starter 24h", speed: 0.05, price: 0, tier: 'limited', tag: 'free', icon: 'fa-bitcoin'},
+                    {id: 1, name: "GTX 1060 Starter", speed: 0.5, price: 500, tier: 'basic', icon: 'fa-fan'},
+                    {id: 2, name: "RTX 3060 Ti", speed: 2.5, price: 2500, tier: 'mid', icon: 'fa-memory'},
+                    {id: 3, name: "RTX 4090 Ultimate", speed: 8.0, price: 9500, tier: 'pro', tag: 'hot', icon: 'fa-microchip'},
+                    {id: 4, name: "ASIC S19 Pro", speed: 25.0, price: 28000, tier: 'pro', icon: 'fa-server'},
+                    {id: 5, name: "Quantum Rig V1", speed: 80.0, price: 85000, tier: 'legendary', tag: 'new', icon: 'fa-atom'},
+                ];
+                localStorage.setItem('mining_shop_items', JSON.stringify(catalog));
+                items = catalog;
+            }
+
+            const g = document.getElementById('shopList'); 
+            if(!g) return;
+            g.innerHTML = '';
+            
+            // Check active items for UI state
+            let activeItems = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
+
+            items.forEach(i => {
+                const tagClass = i.tag ? i.tag : '';
+                
+                let btnText = 'ซื้อสินค้า <i class="fas fa-shopping-cart"></i>';
+                let btnState = '';
+                let btnStyle = 'margin-top:5px; padding:8px 0; font-size:0.9rem;';
+                
+                if(i.id === 6) {
+                    const existing = activeItems.find(x => x.id === 6);
+                    if(existing) {
+                        const timeLeft = Math.max(0, Math.floor((existing.expiresAt - Date.now()) / 1000));
+                        const h = Math.floor(timeLeft / 3600);
+                        const m = Math.floor((timeLeft % 3600) / 60);
+                        btnText = `เหลือเวลา ${h}ชม. ${m}น.`;
+                        btnState = 'disabled';
+                        btnStyle += 'background: #555; cursor: not-allowed;';
+                    } else {
+                        btnText = 'รับฟรีทันที <i class="fas fa-gift"></i>';
+                        btnStyle += 'background: linear-gradient(135deg, #ffd700, #f1c40f); color: #000; font-weight: 800;';
+                    }
+                }
+
+                // Fallback for icon and tier if missing (from basic admin add)
+                const icon = i.icon || 'fa-microchip';
+                const tier = i.tier || 'basic';
+
+                g.innerHTML += `
+                <div class="shop-card ${tier} ${tagClass}">
+                    <div class="shop-icon"><i class="fas ${icon}"></i></div>
+                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${i.name}</div>
+                    <div style="font-size:0.85rem; color:#aaa; display:flex; justify-content:center; gap:5px; align-items:center;">
+                        <i class="fas fa-bolt" style="font-size:0.7rem; color:${tier==='legendary'?'#f59e0b':'var(--accent)'}"></i> 
+                        แรงขุด +${i.speed}
+                    </div>
+                    <div style="margin:10px 0; font-weight:bold; font-size:1.3rem; text-shadow:0 0 10px rgba(255,255,255,0.1);">${i.price === 0 ? 'ฟรี!' : '฿'+i.price.toLocaleString()}</div>
+                    <button class="btn-action" style="${btnStyle}" onclick="buyItem(${i.price}, ${i.speed}, ${i.id})" ${btnState}>
+                        ${btnText}
+                    </button>
+                </div>`;
+            });
+        }
+
+        let lastKnownShopUpdate = localStorage.getItem('shop_last_update');
+        
+        function checkShopUpdate() {
+            const currentUpdate = localStorage.getItem('shop_last_update');
+            const myLastSeen = localStorage.getItem('shop_seen_update');
+            
+            // Live Update Logic
+            if(currentUpdate && currentUpdate !== lastKnownShopUpdate) {
+                lastKnownShopUpdate = currentUpdate;
+                loadShop(); // Live Reload
+                
+                // Create Modal Alert for New Item
+                const modalId = 'newItemModal';
+                if(!document.getElementById(modalId)) {
+                    const div = document.createElement('div');
+                    div.id = modalId;
+                    div.className = 'modal';
+                    div.style.display = 'flex';
+                    div.style.zIndex = '9999';
+                    div.innerHTML = `
+                        <div class="modal-content" style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); border: 2px solid white; text-align:center;">
+                            <i class="fas fa-rocket" style="font-size: 3rem; color: white; margin-bottom: 15px; animation: bounce 2s infinite;"></i>
+                            <h2 style="color: white; margin:0;">สินค้าใหม่มาแล้ว!</h2>
+                            <p style="color: #eee;">มีอุปกรณ์ขุดใหม่วางจำหน่ายในร้านค้า</p>
+                            <button class="btn-action" style="background: white; color: #6c5ce7; font-weight: bold;" onclick="document.getElementById('${modalId}').remove(); openShopPage()">ไปดูเลย</button>
+                            <div style="margin-top:10px; font-size:0.8rem; color:rgba(255,255,255,0.7); cursor:pointer;" onclick="document.getElementById('${modalId}').remove()">ปิดหน้าต่าง</div>
+                        </div>
+                    `;
+                    document.body.appendChild(div);
+                }
+            }
+
+            if(currentUpdate && currentUpdate !== myLastSeen) {
+                // Show Badge
+                const badge = document.getElementById('shopBadge');
+                if(badge) badge.style.display = 'block';
+            } else {
+                const badge = document.getElementById('shopBadge');
+                if(badge) badge.style.display = 'none';
+            }
+        }
+        
+        function buyItem(p, s, id) {
+            if(id === 6) {
+                let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
+                const existing = active.find(x => x.id === 6);
+                if(existing) {
+                    alert('คุณมีสินค้านี้ใช้งานอยู่แล้ว');
+                    return;
+                }
+                // 24 Hours Expiration
+                active.push({id: 6, speed: s, expiresAt: Date.now() + (24 * 60 * 60 * 1000)});
+                localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(active));
+                
+                hashrate += s;
+                saveData(); 
+                updateUI(); 
+                loadShop(); // Refresh button state
+                alert('รับ Bitcoin Starter 24h สำเร็จ! เริ่มขุดทันที');
+                return;
+            }
+
+            if(balance >= p) {
+                balance -= p; hashrate += s; saveData(); updateUI(); alert('ซื้อสำเร็จ');
+            } else { alert('เงินไม่พอ'); }
+        }
+
+        function checkExpiration() {
+            if(!currentUser) return;
+            let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
+            if(active.length === 0) return;
+
+            let now = Date.now();
+            let updatedActive = [];
+            let expiredSpeed = 0;
+            let hasExpired = false;
+
+            active.forEach(item => {
+                if(item.expiresAt > now) {
+                    updatedActive.push(item);
+                } else {
+                    expiredSpeed += item.speed;
+                    hasExpired = true;
+                }
+            });
+
+            if(hasExpired) {
+                hashrate = Math.max(0, hashrate - expiredSpeed);
+                localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(updatedActive));
+                saveData();
+                updateUI();
+                loadShop(); // Update button if on shop page
+                // alert('ไอเทมหมดอายุ: แรงขุดลดลง ' + expiredSpeed.toFixed(2) + ' MH/s');
+            }
+        }
+
+        function openShopPage() {
+            // Mark as seen
+            const lastUpdate = localStorage.getItem('shop_last_update');
+            if(lastUpdate) {
+                localStorage.setItem('shop_seen_update', lastUpdate);
+            }
+            checkShopUpdate(); // Update UI to hide badge
+            switchPage('shopPage', document.getElementById('navShop'));
+        }
+    </script>
+</body>
+</html>

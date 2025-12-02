@@ -1,0 +1,15 @@
+{
+  "name": "Crypto Miner Tycoon",
+  "short_name": "MinerApp",
+  "start_url": "./indexApp.html",
+  "display": "standalone",
+  "background_color": "#0f0c29",
+  "theme_color": "#4e54c8",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3067/3067789.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

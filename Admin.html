@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; font-family: 'Kanit'; background: #0f172a; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 250px; background: #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 5px; }
+        .brand { font-size: 1.5rem; color: #6c5ce7; font-weight: bold; margin-bottom: 20px; text-align: center; }
+        .menu-item { padding: 12px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+        .menu-item:hover, .menu-item.active { background: #6c5ce7; color: white; }
+        
+        .content { flex: 1; padding: 30px; overflow-y: auto; }
+        .card { background: #1e293b; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s, box-shadow 0.2s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; padding: 12px; color: #94a3b8; border-bottom: 1px solid #334155; }
+        td { padding: 12px; border-bottom: 1px solid #334155; }
+        
+        .search-bar { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: white; margin-bottom: 15px; box-sizing: border-box; }
+        
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .online { background: #10b981; box-shadow: 0 0 5px #10b981; }
+        .offline { background: #64748b; }
+        
+        .btn-sm { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; color: white; font-size: 0.8rem; margin-right: 5px; }
+        .btn-green { background: #10b981; }
+        .btn-red { background: #ef4444; }
+        .btn-gray { background: #64748b; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Badges & Alerts */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; border: 1px solid transparent; }
+        .badge-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+        .badge-info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
+        .badge-gray { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border-color: rgba(148, 163, 184, 0.3); }
+
+        .nav-badge { background: #ef4444; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: auto; animation: bounce 1s infinite; }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand"><i class="fas fa-user-astronaut"></i> ADMIN GOD</div>
+        <div class="menu-item active" onclick="nav('dashboard')"><i class="fas fa-chart-line"></i> แดชบอร์ด</div>
+        <div class="menu-item" onclick="nav('users')"><i class="fas fa-users"></i> ผู้ใช้งาน</div>
+        <div class="menu-item" onclick="nav('mining')"><i class="fas fa-server"></i> เครื่องขุด</div>
+        <div class="menu-item" onclick="nav('shop')"><i class="fas fa-store"></i> ร้านค้า</div>
+        <div class="menu-item" onclick="nav('referrals')">
+            <i class="fas fa-user-friends"></i> แนะนำเพื่อน 
+            <span id="navReferralBadge" class="nav-badge" style="display:none;">0</span>
+        </div>
+        <div class="menu-item" onclick="nav('trans')" id="menuTrans">
+            <i class="fas fa-exchange-alt"></i> ฝาก-ถอน 
+            <span id="navTransBadge" class="nav-badge" style="display:none;">0</span>
+        </div>
+
+        <div class="connection-status" style="background: #0f172a; padding: 15px; margin-top: auto; border-radius: 10px; border: 1px solid #334155; text-align: center;">
+            <div style="font-size: 0.8rem; color: #94a3b8;">System Status</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 5px;">
+                <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981; animation: pulse 2s infinite;"></div>
+                <span style="color: #10b981; font-weight: bold;">ONLINE</span>
+            </div>
+            <div style="font-size: 0.7rem; color: #64748b; margin-top: 5px;">Latency: <span id="sysLatency" style="color:#f59e0b">12</span>ms</div>
+        </div>
+    </div>
+
+    <div class="content">
+        
+        <div id="dashboard" class="section active">
+            <h2>ภาพรวมระบบ</h2>
+            
+            <!-- Stats Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                
+                <!-- Total Deposit -->
+                <div class="card" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white; margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">รายได้ฝาก (Deposit)</div>
+                            <div style="font-size: 1.8rem; font-weight: bold; margin-top: 5px;" id="dashDeposit">฿0.00</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-arrow-circle-down" style="font-size: 1.2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Withdraw -->
+                <div class="card" style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: none; color: white; margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">รายจ่ายถอน (Withdraw)</div>
+                            <div style="font-size: 1.8rem; font-weight: bold; margin-top: 5px;" id="dashWithdraw">฿0.00</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-arrow-circle-up" style="font-size: 1.2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Profit -->
+                <div class="card" style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; color: white; margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">กำไรสุทธิ (Net Profit)</div>
+                            <div style="font-size: 1.8rem; font-weight: bold; margin-top: 5px;" id="dashNet">฿0.00</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-wallet" style="font-size: 1.2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Users -->
+                <div class="card" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: white; margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">ผู้สมัครทั้งหมด (Users)</div>
+                            <div style="font-size: 1.8rem; font-weight: bold; margin-top: 5px;" id="dashUsers">0</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-users" style="font-size: 1.2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #f59e0b;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; background: rgba(245, 158, 11, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 1.5rem;">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">Maintenance Mode</h3>
+                            <p style="color: #94a3b8; margin: 5px 0 0; font-size: 0.9rem;">เปิดโหมดปิดปรับปรุงระบบ</p>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="maintSwitch" onchange="toggleMaint()" style="transform: scale(1.5); cursor: pointer;">
+                    </div>
+                </div>
+                
+                <div style="background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155;">
+                    <label style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px; display: block;">ข้อความแจ้งเตือน (Notification Message)</label>
+                    <textarea id="maintMsg" class="search-bar" style="height: 80px; margin-bottom: 10px;" placeholder="เช่น: ปิดปรับปรุงระบบชั่วคราว 15 นาที..."></textarea>
+                    <button onclick="saveMaintMsg()" class="btn-sm btn-green" style="width: 100%; padding: 10px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fas fa-save"></i> บันทึกข้อความ
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="border-left: 4px solid #ef4444; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; background: rgba(239, 68, 68, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 1.5rem;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">System Reset</h3>
+                            <p style="color: #94a3b8; margin: 5px 0 0; font-size: 0.9rem;">ล้างข้อมูลระบบทั้งหมด (Factory Reset)</p>
+                        </div>
+                    </div>
+                    <button onclick="resetSystem()" class="btn-sm btn-red" style="padding: 10px 20px; font-size: 1rem; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-trash-alt"></i> ล้างข้อมูลรีเซ็ต
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="users" class="section">
+            <h2>จัดการผู้ใช้งาน</h2>
+            <div class="card">
+                <input type="text" class="search-bar" id="searchUser" placeholder="ค้นหา: ID หรือ ชื่อผู้ใช้..." onkeyup="renderUsers()">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ชื่อผู้ใช้</th>
+                            <th>ยอดเงิน (THB)</th>
+                            <th>บัญชีธนาคาร</th>
+                            <th>พลังขุด</th>
+                            <th>สถานะ</th>
+                            <th>การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Edit User Modal -->
+        <div id="editUserModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+            <div style="background-color: #1e293b; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #334155;">
+                <h3 style="color: white; margin-top: 0; margin-bottom: 15px;">แก้ไขข้อมูลผู้ใช้</h3>
+                <input type="hidden" id="editUsername">
+                
+                <div style="margin-bottom: 10px;">
+                    <label style="color: #94a3b8; font-size: 0.8rem;">ชื่อ-นามสกุล</label>
+                    <input type="text" id="editName" class="search-bar" style="margin-bottom: 0;">
+                </div>
+                
+                <div style="margin-bottom: 10px;">
+                    <label style="color: #94a3b8; font-size: 0.8rem;">ธนาคาร</label>
+                    <select id="editBank" class="search-bar" style="margin-bottom: 0;">
+                        <option value="kbank">กสิกรไทย</option>
+                        <option value="scb">ไทยพาณิชย์</option>
+                        <option value="ktb">กรุงไทย</option>
+                        <option value="bbl">กรุงเทพ</option>
+                        <option value="gsb">ออมสิน</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="color: #94a3b8; font-size: 0.8rem;">เลขบัญชี</label>
+                    <input type="text" id="editAcc" class="search-bar" style="margin-bottom: 0;">
+                </div>
+
+                <div style="margin-bottom: 10px;">
+                    <label style="color: #94a3b8; font-size: 0.8rem;">รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)</label>
+                    <input type="text" id="editPass" class="search-bar" style="margin-bottom: 0;" placeholder="New Password">
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="saveEditUser()" class="btn-sm btn-green" style="flex: 1; padding: 10px; font-size: 1rem;">บันทึก</button>
+                    <button onclick="document.getElementById('editUserModal').style.display='none'" class="btn-sm btn-red" style="flex: 1; padding: 10px; font-size: 1rem;">ยกเลิก</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mining" class="section">
+            <h2>Monitor เครื่องขุด (Live)</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr><th>User</th><th>Hashrate</th><th>Balance</th><th>Status</th></tr>
+                    </thead>
+                    <tbody id="miningTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="shop" class="section">
+            <h2>จัดการร้านค้า</h2>
+            <div class="card">
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <input type="text" id="shopName" placeholder="ชื่อสินค้า" class="search-bar" style="margin:0; flex:2;">
+                    <input type="number" id="shopSpeed" placeholder="แรงขุด" class="search-bar" style="margin:0; flex:1;">
+                    <input type="number" id="shopPrice" placeholder="ราคา" class="search-bar" style="margin:0; flex:1;">
+                    <button onclick="addShopItem()" class="btn-sm btn-green" style="font-size:1rem; width:100px;">เพิ่ม</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>ชื่อสินค้า</th><th>แรงขุด</th><th>ราคา</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="shopTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="referrals" class="section">
+            <h2>จัดการแนะนำเพื่อน</h2>
+            <div class="card">
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <div style="flex: 1; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.5rem;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9rem; color: #94a3b8;">จ่ายโบนัสแล้ว</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: white;" id="totalBonusPaid">฿0</div>
+                        </div>
+                    </div>
+                    <div style="flex: 1; background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; background: rgba(245, 158, 11, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 1.5rem;">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9rem; color: #94a3b8;">เพื่อนทั้งหมด</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; color: white;" id="totalRefs">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <input type="text" class="search-bar" id="searchRef" placeholder="ค้นหา: ชื่อผู้ใช้, ชื่อเพื่อน..." onkeyup="renderReferrals()">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ผู้แนะนำ (User)</th>
+                            <th>เพื่อนที่สมัคร (Friend)</th>
+                            <th>วันที่</th>
+                            <th>สถานะ</th>
+                            <th>โบนัส</th>
+                        </tr>
+                    </thead>
+                    <tbody id="referralTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="trans" class="section">
+            <h2>รายการฝาก-ถอน</h2>
+            <div class="card">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" class="search-bar" id="searchTrans" placeholder="ค้นหา..." onkeyup="renderTrans()" style="margin-bottom: 0;">
+                    <button class="btn-sm btn-red" onclick="clearAllTrans()" style="white-space: nowrap; padding: 0 20px; font-size: 1rem;">
+                        <i class="fas fa-trash-alt"></i> ล้างข้อมูลหมด
+                    </button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>เวลา</th>
+                            <th>User</th>
+                            <th>ประเภท</th>
+                            <th>ยอดเงิน</th>
+                            <th>ค่าธรรมเนียม</th>
+                            <th>รับสุทธิ</th>
+                            <th>รายละเอียด</th>
+                            <th>สถานะ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Slip Modal -->
+        <div id="slipModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+            <div style="background-color: #1e293b; padding: 20px; border-radius: 15px; width: 90%; max-width: 400px; position: relative; text-align: center; border: 1px solid #334155;">
+                <i class="fas fa-times" onclick="document.getElementById('slipModal').style.display='none'" style="position: absolute; right: 15px; top: 15px; color: #94a3b8; cursor: pointer; font-size: 1.2rem;"></i>
+                <h3 style="color: white; margin-top: 0;">หลักฐานการโอน</h3>
+                <div style="background: #0f172a; padding: 10px; border-radius: 10px; margin-bottom: 15px;">
+                    <img id="slipImgDisplay" src="" style="width: 100%; border-radius: 5px; display: block;">
+                    <div id="noSlipText" style="display: none; padding: 20px; color: #64748b;">ไม่พบรูปภาพสลิป</div>
+                </div>
+                <div id="slipMeta" style="text-align: left; font-size: 0.9rem; color: #cbd5e1; background: #334155; padding: 10px; border-radius: 8px;"></div>
+            </div>
+        </div>
+
+        <div id="announce" class="section">
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                    <i class="fas fa-bell" style="color: #f59e0b; font-size: 1.8rem;"></i>
+                    <h2 style="margin: 0; font-size: 1.5rem;">ส่งประกาศให้ผู้ใช้</h2>
+                </div>
+
+                <button id="btnNewAnnounce" onclick="document.getElementById('announceForm').style.display='block'; this.style.display='none'" style="background: #3b82f6; color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; margin-bottom: 20px; transition: 0.2s;">
+                    <i class="fas fa-inbox"></i> ส่งประกาศใหม่
+                </button>
+
+                <div id="announceForm" style="display: none; margin-bottom: 20px; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid #334155;">
+                    <textarea id="announceMsg" style="width: 100%; height: 120px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: white; padding: 15px; box-sizing: border-box; margin-bottom: 15px; font-family: 'Kanit'; font-size: 1rem;" placeholder="พิมพ์ข้อความประกาศที่นี่..."></textarea>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="sendAnnounce()" style="padding: 10px 25px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">ยืนยัน</button>
+                        <button onclick="cancelAnnounce()" style="padding: 10px 25px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">ยกเลิก</button>
+                    </div>
+                </div>
+
+                <div style="background: #0f172a; padding: 40px; border-radius: 12px; text-align: center; border: 1px solid #334155; min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div id="currentAnnounce" style="color: #94a3b8; font-size: 1.1rem; font-weight: 300;">ยังไม่มีประกาศ</div>
+                    <div id="currentAnnounceTime" style="font-size: 0.85rem; color: #64748b; margin-top: 10px;"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+
+
+        function resetSystem() {
+            if(confirm('⚠️ คำเตือน: คุณกำลังจะ "ล้างข้อมูลระบบทั้งหมด" รวมถึง:\n- ผู้ใช้งานทั้งหมด\n- ประวัติธุรกรรม\n- ร้านค้า\n- การตั้งค่าต่างๆ\n\nการกระทำนี้ไม่สามารถกู้คืนได้! ยืนยันหรือไม่?')) {
+                if(confirm('ยืนยันครั้งสุดท้าย: ลบข้อมูลทั้งหมดจริงๆ ใช่หรือไม่?')) {
+                    localStorage.clear();
+                    alert('ระบบถูกรีเซ็ตเรียบร้อยแล้ว');
+                    location.reload();
+                }
+            }
+        }
+
+        function nav(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        window.onload = function() {
+            renderDashboard(); // Init Dashboard
+            renderUsers();
+            renderTrans();
+            renderCurrentAnnounce(); // Show current announce
+            renderShop();
+            renderReferrals(); // Load Referrals
+            document.getElementById('maintSwitch').checked = localStorage.getItem('mining_maintenance') === 'true';
+            document.getElementById('maintMsg').value = localStorage.getItem('mining_maintenance_msg') || ''; // Load Msg
+            setInterval(renderDashboard, 5000); // Live Dashboard
+            setInterval(renderUsers, 2000); // Live update users
+            setInterval(renderMining, 1000); // Live Mining Monitor
+            setInterval(renderTrans, 3000); // Live update trans
+            setInterval(renderReferrals, 5000); // Live update referrals
+            setInterval(() => {
+                document.getElementById('sysLatency').innerText = Math.floor(Math.random() * 20) + 10;
+            }, 2000);
+        }
+
+        function toggleMaint() {
+            localStorage.setItem('mining_maintenance', document.getElementById('maintSwitch').checked);
+        }
+
+        function saveMaintMsg() {
+            const msg = document.getElementById('maintMsg').value;
+            localStorage.setItem('mining_maintenance_msg', msg);
+            alert('บันทึกข้อความแจ้งเตือนเรียบร้อย');
+        }
+
+        function renderDashboard() {
+            try {
+                // 1. Get Data
+                const trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+                const users = JSON.parse(localStorage.getItem('mining_users')) || {};
+                
+                // 2. Calculate Stats
+                let totalDeposit = 0;
+                let totalWithdraw = 0;
+                
+                trans.forEach(t => {
+                    if (t.status === 'approved') {
+                        if (t.type === 'deposit') {
+                            totalDeposit += parseFloat(t.amount) || 0;
+                        } else if (t.type === 'withdraw') {
+                            totalWithdraw += parseFloat(t.amount) || 0;
+                        }
+                    }
+                });
+                
+                const netProfit = totalDeposit - totalWithdraw;
+                const totalUsers = Object.keys(users).length;
+                
+                // 3. Update DOM
+                const elDeposit = document.getElementById('dashDeposit');
+                const elWithdraw = document.getElementById('dashWithdraw');
+                const elNet = document.getElementById('dashNet');
+                const elUsers = document.getElementById('dashUsers');
+
+                if(elDeposit) elDeposit.innerText = '฿' + totalDeposit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if(elWithdraw) elWithdraw.innerText = '฿' + totalWithdraw.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if(elNet) elNet.innerText = '฿' + netProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                if(elUsers) elUsers.innerText = totalUsers.toLocaleString();
+
+            } catch (e) {
+                console.error('Dashboard Render Error:', e);
+            }
+        }
+
+        function renderCurrentAnnounce() {
+            try {
+                const ann = JSON.parse(localStorage.getItem('mining_announcement'));
+                if(ann && ann.msg) {
+                    document.getElementById('currentAnnounce').innerText = ann.msg;
+                    document.getElementById('currentAnnounceTime').innerText = 'อัปเดตเมื่อ: ' + new Date(ann.date).toLocaleString();
+                } else {
+                    document.getElementById('currentAnnounce').innerText = 'ยังไม่มีประกาศ';
+                    document.getElementById('currentAnnounceTime').innerText = '';
+                }
+            } catch (e) {
+                console.error('Error rendering announce:', e);
+                document.getElementById('currentAnnounce').innerText = 'Error loading announcement';
+            }
+        }
+
+        // --- Users ---
+        function renderUsers() {
+            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            const filter = document.getElementById('searchUser').value.toLowerCase();
+            const tbody = document.getElementById('userTable');
+            tbody.innerHTML = '';
+
+            Object.keys(users).forEach(u => {
+                const data = users[u];
+                const pf = JSON.parse(localStorage.getItem(`pf_${u}`)) || {hashrate:0, balance:0, avatar: null};
+                
+                // Filter
+                if(filter && !u.toLowerCase().includes(filter) && !data.id.toString().includes(filter)) return;
+
+                // Online Check (Active within 5s)
+                const lastActive = localStorage.getItem(`last_active_${u}`);
+                const isOnline = lastActive && (Date.now() - parseInt(lastActive) < 5000);
+                const status = isOnline ? 
+                    `<span class="badge badge-success"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Online</span>` : 
+                    `<span class="badge badge-gray"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Offline</span>`;
+
+                const banBtn = data.banned ? 
+                    `<button class="btn-sm btn-green" onclick="banUser('${u}', false)"><i class="fas fa-unlock"></i> ปลดแบน</button>` : 
+                    `<button class="btn-sm btn-red" onclick="banUser('${u}', true)"><i class="fas fa-ban"></i> ระงับ</button>`;
+                
+                const bannedLabel = data.banned ? '<span class="badge badge-danger" style="margin-left:5px;">ถูกแบน</span>' : '';
+                
+                // Avatar Logic
+                const avatar = pf.avatar ? 
+                    `<img src="${pf.avatar}" style="width:35px; height:35px; border-radius:50%; object-fit:cover; border:2px solid #334155;">` : 
+                    `<div style="width:35px; height:35px; border-radius:50%; background:#1e293b; border:1px solid #334155; display:flex; align-items:center; justify-content:center;"><i class="fas fa-user" style="font-size:0.9rem; color:#64748b;"></i></div>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-family:monospace; color:#f1c40f;">#${data.id}</td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                ${avatar}
+                                <div>
+                                    <div style="font-weight:bold;">${u} ${bannedLabel}</div>
+                                    <div style="font-size:0.8rem; color:#64748b;">${data.name}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color:#10b981;">฿${pf.balance.toLocaleString()}</td>
+                        <td>
+                            <div style="font-size:0.9rem;">${data.bank.toUpperCase()}</div>
+                            <div style="font-size:0.8rem; color:#64748b;">${data.acc}</div>
+                        </td>
+                        <td style="color:#f59e0b;">${pf.hashrate.toFixed(1)} MH/s</td>
+                        <td>${status}</td>
+                        <td>
+                            <button class="btn-sm" style="background:#3b82f6;" onclick="openEditUser('${u}')"><i class="fas fa-edit"></i> แก้ไข</button>
+                            ${banBtn}
+                            <button class="btn-sm btn-gray" onclick="delUser('${u}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openEditUser(u) {
+            const users = JSON.parse(localStorage.getItem('mining_users'));
+            const data = users[u];
+            document.getElementById('editUsername').value = u;
+            document.getElementById('editName').value = data.name;
+            document.getElementById('editBank').value = data.bank;
+            document.getElementById('editAcc').value = data.acc;
+            document.getElementById('editPass').value = '';
+            document.getElementById('editUserModal').style.display = 'flex';
+        }
+
+        function saveEditUser() {
+            const u = document.getElementById('editUsername').value;
+            const name = document.getElementById('editName').value;
+            const bank = document.getElementById('editBank').value;
+            const acc = document.getElementById('editAcc').value;
+            const pass = document.getElementById('editPass').value;
+
+            let users = JSON.parse(localStorage.getItem('mining_users'));
+            if(users[u]) {
+                users[u].name = name;
+                users[u].bank = bank;
+                users[u].acc = acc;
+                if(pass) users[u].pass = pass;
+                
+                localStorage.setItem('mining_users', JSON.stringify(users));
+                alert('บันทึกเรียบร้อย');
+                document.getElementById('editUserModal').style.display = 'none';
+                renderUsers();
+            }
+        }
+
+        function banUser(u, state) {
+            let users = JSON.parse(localStorage.getItem('mining_users'));
+            users[u].banned = state;
+            localStorage.setItem('mining_users', JSON.stringify(users));
+            renderUsers();
+            if(state) {
+                alert(`ระงับผู้ใช้งาน ${u} เรียบร้อยแล้ว\nผู้ใช้จะเห็นข้อความ: "ขออภัย บัญชีถูกระงับชั่วคราว..."`);
+            } else {
+                alert(`ปลดระงับผู้ใช้งาน ${u} เรียบร้อยแล้ว`);
+            }
+        }
+
+        function delUser(u) {
+            if(confirm(`⚠️ คำเตือน: คุณต้องการลบผู้ใช้ "${u}" ถาวรใช่หรือไม่?\n\n- ข้อมูลการขุดและเงินจะหายไปทั้งหมด\n- ไม่สามารถกู้คืนได้\n\nกด "ตกลง" เพื่อยืนยันการลบ`)) {
+                let users = JSON.parse(localStorage.getItem('mining_users'));
+                delete users[u];
+                localStorage.setItem('mining_users', JSON.stringify(users));
+                renderUsers();
+            }
+        }
+
+        // --- Mining Monitor ---
+        function renderMining() {
+            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            const tbody = document.getElementById('miningTable');
+            // Only update if section is active to save performance
+            if(!document.getElementById('mining').classList.contains('active')) return;
+            
+            tbody.innerHTML = '';
+            Object.keys(users).forEach(u => {
+                const pf = JSON.parse(localStorage.getItem(`pf_${u}`)) || {hashrate:0, balance:0};
+                const lastActive = localStorage.getItem(`last_active_${u}`);
+                const isOnline = lastActive && (Date.now() - parseInt(lastActive) < 5000);
+                
+                const status = isOnline ? 
+                    `<span class="badge badge-success">Running</span> <i class="fas fa-bolt" style="color:#f1c40f; animation: pulse 1s infinite;"></i>` : 
+                    `<span class="badge badge-danger">Stopped</span>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:bold;">${u}</td>
+                        <td style="color:#f1c40f; font-family:monospace;">${pf.hashrate.toFixed(1)} MH/s</td>
+                        <td style="color:#10b981;">฿${pf.balance.toFixed(2)}</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- Shop ---
+        function renderShop() {
+            let items = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
+            const tbody = document.getElementById('shopTable');
+            tbody.innerHTML = '';
+            items.forEach((i, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${i.name}</td>
+                        <td style="color:#f1c40f;">+${i.speed}</td>
+                        <td>฿${i.price}</td>
+                        <td><button class="btn-sm btn-red" onclick="delShopItem(${idx})">ลบ</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function addShopItem() {
+            const name = document.getElementById('shopName').value;
+            const speed = parseFloat(document.getElementById('shopSpeed').value);
+            const price = parseFloat(document.getElementById('shopPrice').value);
+            
+            if(!name || !speed || isNaN(price)) return alert('กรอกให้ครบ');
+            
+            let items = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
+            
+            // Auto-generate rich data for IndexApp
+            const id = Date.now();
+            const tiers = ['basic', 'mid', 'pro', 'legendary'];
+            const icons = ['fa-fan', 'fa-microchip', 'fa-server', 'fa-memory', 'fa-hdd'];
+            
+            // Simple logic to guess tier/icon
+            let tier = 'basic';
+            if(price > 5000) tier = 'mid';
+            if(price > 20000) tier = 'pro';
+            if(price > 50000) tier = 'legendary';
+            
+            const icon = icons[Math.floor(Math.random() * icons.length)];
+            
+            items.push({ 
+                id: id,
+                name: name, 
+                speed: speed, 
+                price: price,
+                tier: tier,
+                icon: icon,
+                tag: 'new' // Tag as new
+            });
+            
+            localStorage.setItem('mining_shop_items', JSON.stringify(items));
+            
+            // Trigger Alert
+            localStorage.setItem('shop_last_update', Date.now());
+            
+            alert('เพิ่มสินค้าแล้ว ระบบจะแจ้งเตือนผู้ใช้ทันที');
+            document.getElementById('shopName').value = '';
+            document.getElementById('shopSpeed').value = '';
+            document.getElementById('shopPrice').value = '';
+            renderShop();
+        }
+
+        function delShopItem(idx) {
+            if(confirm('ลบสินค้านี้?')) {
+                let items = JSON.parse(localStorage.getItem('mining_shop_items'));
+                items.splice(idx, 1);
+                localStorage.setItem('mining_shop_items', JSON.stringify(items));
+                localStorage.setItem('shop_last_update', Date.now()); // Update timestamp to refresh user side
+                renderShop();
+            }
+        }
+
+        function sendAnnounce() {
+            try {
+                const msg = document.getElementById('announceMsg').value;
+                if(!msg) return alert('ใส่ข้อความด้วย');
+                localStorage.setItem('mining_announcement', JSON.stringify({ msg: msg, date: new Date().toISOString() }));
+                alert('ส่งประกาศแล้ว');
+                document.getElementById('announceMsg').value = '';
+                renderCurrentAnnounce();
+                cancelAnnounce();
+            } catch (e) {
+                alert('เกิดข้อผิดพลาด: ' + e.message);
+            }
+        }
+
+        function cancelAnnounce() {
+            document.getElementById('announceForm').style.display = 'none';
+            document.getElementById('btnNewAnnounce').style.display = 'flex';
+        }
+
+        // --- Trans ---
+        function renderTrans() {
+            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+            const filter = document.getElementById('searchTrans').value.toLowerCase();
+            const tbody = document.getElementById('transTable');
+            
+            // Update Sidebar Badge
+            const pendingCount = trans.filter(t => t.status === 'pending').length;
+            const navBadge = document.getElementById('navTransBadge');
+            if(pendingCount > 0) {
+                navBadge.style.display = 'inline-block';
+                navBadge.innerText = pendingCount;
+            } else {
+                navBadge.style.display = 'none';
+            }
+
+            tbody.innerHTML = '';
+            
+            // Sort Newest
+            trans.sort((a,b) => b.timestamp - a.timestamp);
+
+            trans.forEach(t => {
+                if(filter && !t.user.toLowerCase().includes(filter) && !t.amount.toString().includes(filter)) return;
+
+                let statusBadge = t.status === 'pending' ? '<span class="badge badge-warning"><i class="fas fa-clock"></i> รอตรวจสอบ</span>' : 
+                                  t.status === 'approved' ? '<span class="badge badge-success"><i class="fas fa-check-circle"></i> อนุมัติ</span>' : 
+                                  '<span class="badge badge-danger"><i class="fas fa-times-circle"></i> ปฏิเสธ</span>';
+                
+                let actions = t.status === 'pending' ? 
+                    `<button class="btn-sm btn-green" onclick="approveTrans(${t.id}, 'approved')">✓ อนุมัติ</button>
+                     <button class="btn-sm btn-red" onclick="approveTrans(${t.id}, 'rejected')">✗ ปฏิเสธ</button>` : 
+                     '<span class="badge badge-gray">ดำเนินการแล้ว</span>';
+
+                let typeBadge = t.type === 'deposit' 
+                    ? '<span class="badge badge-success"><i class="fas fa-arrow-down"></i> ฝากเงิน</span>'
+                    : '<span class="badge badge-warning"><i class="fas fa-arrow-up"></i> ถอนเงิน</span>';
+
+                // Fee Logic
+                const fee = t.fee ? parseFloat(t.fee) : 0;
+                const net = t.netAmount ? parseFloat(t.netAmount) : parseFloat(t.amount);
+                
+                const feeDisplay = fee > 0 
+                    ? `<span style="color:#ef4444; font-size:0.9rem;">-฿${fee.toLocaleString(undefined, {minimumFractionDigits:2})}</span>` 
+                    : '<span style="color:#64748b; font-size:0.9rem;">-</span>';
+                
+                const netDisplay = `<span style="color:${t.type==='deposit'?'#10b981':'#f59e0b'}; font-weight:bold;">฿${net.toLocaleString(undefined, {minimumFractionDigits:2})}</span>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-size:0.8rem; color:#94a3b8;">${new Date(t.timestamp).toLocaleString('th-TH')}</td>
+                        <td><div style="font-weight:bold;">${t.user}</div></td>
+                        <td>${typeBadge}</td>
+                        <td style="font-weight:bold; color:#cbd5e1;">฿${parseFloat(t.amount).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                        <td>${feeDisplay}</td>
+                        <td>${netDisplay}</td>
+                        <td>
+                            <button class="btn-sm" style="background:#3b82f6;" onclick="viewSlip(${t.id})">
+                                <i class="fas fa-file-image"></i> ดูสลิป
+                            </button>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function viewSlip(id) {
+            let trans = JSON.parse(localStorage.getItem('mining_transactions'));
+            let t = trans.find(x => x.id === id);
+            if(t) {
+                const modal = document.getElementById('slipModal');
+                const img = document.getElementById('slipImgDisplay');
+                const txt = document.getElementById('noSlipText');
+                const meta = document.getElementById('slipMeta');
+                
+                // For demo purposes, we don't have real image uploads yet.
+                // We will show a placeholder or the 'No Slip' message.
+                if(t.slip) {
+                    img.src = t.slip;
+                    img.style.display = 'block';
+                    txt.style.display = 'none';
+                } else {
+                    img.style.display = 'none';
+                    txt.style.display = 'block';
+                    txt.innerHTML = '<i class="fas fa-image" style="font-size:2rem; margin-bottom:10px;"></i><br>ไม่มีรูปภาพสลิป<br><span style="font-size:0.8rem; color:#475569;">(ผู้ใช้ไม่ได้แนบหลักฐาน)</span>';
+                }
+                
+                // Fee & Net for Modal
+                const fee = t.fee ? parseFloat(t.fee) : 0;
+                const net = t.netAmount ? parseFloat(t.netAmount) : parseFloat(t.amount);
+
+                meta.innerHTML = `
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div><span style="color:#94a3b8;">User:</span> <span style="color:white;">${t.user}</span></div>
+                        <div><span style="color:#94a3b8;">Type:</span> <span style="color:${t.type==='deposit'?'#10b981':'#f59e0b'}">${t.type.toUpperCase()}</span></div>
+                        <div><span style="color:#94a3b8;">Amount:</span> <span style="color:white;">฿${parseFloat(t.amount).toLocaleString(undefined, {minimumFractionDigits:2})}</span></div>
+                        <div><span style="color:#94a3b8;">Status:</span> <span>${t.status}</span></div>
+                        ${fee > 0 ? `<div><span style="color:#94a3b8;">Fee (3%):</span> <span style="color:#ef4444;">-฿${fee.toLocaleString(undefined, {minimumFractionDigits:2})}</span></div>` : ''}
+                        ${fee > 0 ? `<div><span style="color:#94a3b8;">Net Receive:</span> <span style="color:#f59e0b; font-weight:bold;">฿${net.toLocaleString(undefined, {minimumFractionDigits:2})}</span></div>` : ''}
+                    </div>
+                    <div style="margin-top:10px; border-top:1px solid #475569; padding-top:5px; font-size:0.75rem; color:#64748b;">
+                        Transaction ID: ${t.id}<br>
+                        Time: ${new Date(t.timestamp).toLocaleString('th-TH')}
+                    </div>
+                `;
+                
+                modal.style.display = 'flex';
+            }
+        }
+
+        function approveTrans(id, status) {
+            let trans = JSON.parse(localStorage.getItem('mining_transactions'));
+            let idx = trans.findIndex(t => t.id === id);
+            if(idx !== -1) {
+                trans[idx].status = status;
+                localStorage.setItem('mining_transactions', JSON.stringify(trans));
+                renderTrans();
+            }
+        }
+
+        function clearAllTrans() {
+            if(confirm('คุณแน่ใจหรือไม่ที่จะลบประวัติการฝาก-ถอน "ทั้งหมด"?\nการกระทำนี้ไม่สามารถกู้คืนได้!')) {
+                localStorage.removeItem('mining_transactions');
+                renderTrans();
+                alert('ล้างข้อมูลรายการฝาก-ถอนเรียบร้อยแล้ว');
+            }
+        }
+
+        // --- Referrals ---
+        function renderReferrals() {
+            const refs = JSON.parse(localStorage.getItem('mining_referrals')) || [];
+            const filter = document.getElementById('searchRef').value.toLowerCase();
+            const tbody = document.getElementById('referralTable');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalBonus = 0;
+            let totalCount = refs.length;
+
+            refs.forEach(r => {
+                if(r.claimed) totalBonus += 50; // Assuming 50 is the bonus
+                
+                // Filter
+                const refName = r.referrer || 'System';
+                if(filter && !r.name.toLowerCase().includes(filter) && !refName.toLowerCase().includes(filter)) return;
+
+                const status = r.status === 'completed' ? 
+                    `<span class="badge badge-success">สำเร็จ</span>` : 
+                    `<span class="badge badge-warning">รออนุมัติ</span>`;
+                
+                const bonusStatus = r.claimed ? 
+                    `<span class="badge badge-success"><i class="fas fa-check"></i> จ่ายแล้ว</span>` : 
+                    (r.status === 'completed' ? `<span class="badge badge-warning">รอรับ</span>` : `<span class="badge badge-gray">-</span>`);
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <div style="font-weight:bold;">${refName}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight:bold;">${r.name}</div>
+                        </td>
+                        <td style="color:#94a3b8;">${new Date(r.date).toLocaleString()}</td>
+                        <td>${status}</td>
+                        <td>${bonusStatus}</td>
+                    </tr>
+                `;
+            });
+
+            if(document.getElementById('totalRefs')) document.getElementById('totalRefs').innerText = totalCount;
+            if(document.getElementById('totalBonusPaid')) document.getElementById('totalBonusPaid').innerText = '฿' + totalBonus.toLocaleString();
+            
+            // Badge update
+            const badge = document.getElementById('navReferralBadge');
+            if(badge) {
+                const pending = refs.filter(r => r.status === 'pending').length;
+                if(pending > 0) {
+                    badge.style.display = 'inline-block';
+                    badge.innerText = pending;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
