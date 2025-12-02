@@ -1,4 +1,4 @@
-const CACHE_NAME = 'miner-app-v1';
+const CACHE_NAME = 'miner-app-v2';
 const ASSETS = [
   './indexApp.html',
   './style.css',
