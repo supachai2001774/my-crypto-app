@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "DeepView": {
+      "command": "deepview-mcp",
+      "args": [],
+      "env": {
+        "GEMINI_API_KEY": ""
+      }
+    }
+  }
+}

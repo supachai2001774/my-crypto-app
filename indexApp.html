@@ -10,107 +10,158 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css?v=1.2">
+    <style>
+        /* AI Toast System */
+        #toastContainer { position: fixed; top: 20px; right: 20px; z-index: 11000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .ai-toast { pointer-events: auto; background: rgba(10, 14, 30, 0.95); backdrop-filter: blur(10px); border-left: 4px solid #00f2ff; border-radius: 4px; padding: 15px 20px; color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 15px; min-width: 300px; transform: translateX(100%); animation: slideIn 0.3s ease-out forwards; overflow: hidden; position: relative; }
+        .ai-toast::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, #00f2ff, transparent); animation: scan 2s linear infinite; }
+        .ai-toast.success { border-color: #00b894; }
+        .ai-toast.error { border-color: #ff7675; }
+        .ai-toast.warning { border-color: #fdcb6e; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { transform: translateX(100%); opacity: 0; } }
+        @keyframes scan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        /* AI Maintenance Overlay */
+        .maint-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 20, 0.98); z-index: 20000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #00f2ff; font-family: 'Kanit', sans-serif; backdrop-filter: blur(15px); overflow: hidden; }
+        .maint-content { text-align: center; position: relative; z-index: 2; padding: 40px; border: 1px solid rgba(0, 242, 255, 0.3); border-radius: 20px; background: rgba(0,0,0,0.6); box-shadow: 0 0 30px rgba(0, 242, 255, 0.1); max-width: 90%; width: 400px; }
+        .maint-icon { font-size: 4rem; margin-bottom: 20px; animation: pulse 2s infinite; text-shadow: 0 0 20px rgba(0, 242, 255, 0.5); }
+        .maint-title { font-size: 2rem; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; text-transform: uppercase; background: linear-gradient(90deg, #fff, #00f2ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .maint-desc { color: #aaa; font-size: 1rem; line-height: 1.6; }
+        .maint-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px); background-size: 30px 30px; pointer-events: none; z-index: 1; }
+        .maint-scanline { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: rgba(0, 242, 255, 0.3); opacity: 0.5; animation: scanline 3s linear infinite; pointer-events: none; z-index: 1; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
+    </style>
 </head>
 <body>
 
-    <div id="maintenanceOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #090b1e; z-index: 10000; flex-direction: column; align-items: center; justify-content: center; color: white;">
-        <i class="fas fa-tools" style="font-size: 4rem; color: #ff7675; margin-bottom: 20px; cursor: pointer;" onclick="emergencyExit()"></i>
-        <h2>ปิดปรับปรุงระบบ</h2>
-        <p id="maintMessage" style="color: #aaa; text-align: center; max-width: 80%;">กำลังอัปเกรดเซิร์ฟเวอร์...</p>
+    <div id="maintenanceOverlay" class="maint-overlay" style="display: none;">
+        <div class="maint-grid"></div>
+        <div class="maint-scanline"></div>
+        <div class="maint-content">
+            <i class="fas fa-microchip maint-icon" onclick="emergencyExit()"></i>
+            <div class="maint-title">SYSTEM OFFLINE</div>
+            <div style="color: #00f2ff; font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;">ปิดปรับปรุงระบบชั่วคราว</div>
+            <p id="maintMessage" class="maint-desc">กำลังอัปเกรดระบบเพื่อประสิทธิภาพที่ดียิ่งขึ้น<br>กรุณารอสักครู่...</p>
+            <div style="margin-top: 20px; font-size: 0.8rem; color: rgba(0, 242, 255, 0.5);">AI SECURITY PROTOCOL: ACTIVE</div>
+        </div>
     </div>
 
     <div class="app-container">
         
         <div class="top-header">
-            <div class="profile-pill" onclick="switchPage('settingsPage', document.getElementById('navSettings'))">
+            <div class="profile-pill" onclick="openNotificationHistory()">
                 <div class="avatar-small" id="headerAvatar"><i class="fas fa-user"></i></div>
                 <div>
-                    <div id="headerName" style="font-weight: bold; font-size: 0.9rem;">Guest</div>
-                    <div id="headerID" style="font-size: 0.7rem; color: var(--accent);">ID: ---</div>
+                    <div id="headerName" class="header-name">Guest</div>
+                    <div id="headerID" class="header-id">ID: ---</div>
+                </div>
+                <div style="margin-left: 5px; position: relative;">
+                    <i class="fas fa-bell" style="color: #aaa; font-size: 0.9rem;"></i>
+                    <div id="headerNotifBadge" class="neon-badge" style="position: absolute; top: -8px; right: -8px; display: none;">0</div>
                 </div>
             </div>
             <div style="font-size: 1.2rem;" onclick="logout()"><i class="fas fa-sign-out-alt"></i></div>
         </div>
 
         <div class="page active" id="dashboardPage">
-            <div class="ai-card">
-                <div class="ai-visual">
-                    <div class="orbit orbit-1"></div>
-                    <div class="orbit orbit-2"></div>
-                    <div class="core-circle"><i class="fas fa-microchip" style="font-size: 1.5rem;"></i></div>
+            <!-- AI Dashboard Card (Consolidated Stats) -->
+            <div class="ai-dashboard-card">
+                <div class="ai-core-visual">
+                    <div class="ai-core-inner"></div>
+                    <i class="fas fa-microchip" style="font-size: 2rem; color: var(--primary); position: absolute; z-index: 2; filter: drop-shadow(0 0 10px var(--primary));"></i>
                 </div>
-                <div>
-                    <div style="color: var(--accent); font-weight: bold; font-size: 1.2rem;">AI Mining Core</div>
-                    <div style="font-size: 0.8rem; color: #aaa;">สถานะ: <span id="miningStatus" style="color:#00b894;">Online</span></div>
-                    <div style="font-size: 0.9rem; margin-top: 5px;">กำลังขุด: <span id="hashrateDisplay">0.0</span> MH/s</div>
+                <h2 style="margin: 0 0 5px; color: #fff; font-size: 1.5rem; letter-spacing: 1px;">AI Mining Core</h2>
+                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
+                    <div style="font-size: 0.8rem; color: #94a3b8;">STATUS: <span id="miningStatus" style="color: var(--success); text-shadow: 0 0 10px var(--success);">ONLINE</span></div>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">โหมด: <span id="miningMode" style="color: #94a3b8;">พัก</span></div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="cyber-btn" onclick="startMining()" style="padding:4px 10px; font-size:0.75rem;">เริ่ม</button>
+                        <button class="cyber-btn" onclick="stopMining()" style="padding:4px 10px; font-size:0.75rem; background: transparent; border-color: var(--danger); color: var(--danger); box-shadow:none;">หยุด</button>
+                    </div>
+                </div>
+                
+                <div class="stat-row">
+                    <div class="stat-item">
+                        <div class="label">Hashrate</div>
+                        <div class="value" id="hashrateDisplay">0.0</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">MH/s</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Balance</div>
+                        <div class="value" id="balanceDisplay">฿0.00</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">THB</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">Income</div>
+                        <div class="value" id="incomeDisplay">+฿0.00</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">/sec</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <i class="fas fa-wallet" style="color: var(--secondary);"></i>
-                    <div class="stat-val" id="balanceDisplay">฿0.00</div>
-                    <div class="stat-label">ยอดเงิน</div>
-                </div>
-                <div class="stat-box">
-                    <i class="fas fa-bolt" style="color: var(--accent);"></i>
-                    <div class="stat-val" id="incomeDisplay">+฿0.00</div>
-                    <div class="stat-label">ต่อวินาที</div>
-                </div>
-                <div class="stat-box" onclick="openAnnounceModal()" style="position: relative;">
-                    <div id="annBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; border: 2px solid #1e2746; animation: bounce 1s infinite;">NEW</div>
-                    <i class="fas fa-bell" style="color: #ff7675;"></i>
-                    <div class="stat-val">ประกาศ</div>
-                    <div class="stat-label" id="annLabel">ตรวจสอบ</div>
-                </div>
-            </div>
-
-            <!-- Announcement Board -->
-            <div class="news-card" style="margin: 15px 0; padding: 15px; background: linear-gradient(90deg, #2d3436, #000); border-left: 4px solid #f59e0b; border-radius: 10px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                <div style="background: rgba(245, 158, 11, 0.2); padding: 10px; border-radius: 50%;">
-                    <i class="fas fa-bullhorn" style="color: #f59e0b; font-size: 1.2rem; animation: swing 2s infinite;"></i>
-                </div>
-                <div style="flex: 1; overflow: hidden;">
-                    <div style="font-size: 0.7rem; color: #aaa; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px;">NEWS UPDATE</div>
-                    <div id="dashboardAnnounce" style="font-size: 0.95rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">รอโหลดข้อมูล...</div>
+            <!-- AI Announcement Board -->
+            <div class="ai-announce-card" onclick="openAnnounceModal()" style="cursor: pointer; margin: 20px 0; position: relative; overflow: hidden; border-radius: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 255, 0.2); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);">
+                <!-- Scanline effect -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(transparent 50%, rgba(0, 242, 255, 0.02) 50%); background-size: 100% 4px; pointer-events: none;"></div>
+                
+                <div style="padding: 15px; display: flex; gap: 15px; align-items: center; position: relative; z-index: 2;">
+                    <!-- Animated Icon -->
+                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(0, 242, 255, 0.1); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0, 242, 255, 0.3); position: relative;">
+                        <i class="fas fa-rss" style="color: #00f2ff; font-size: 1.5rem; animation: pulse 2s infinite;"></i>
+                        <div style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 10px #00f2ff; animation: blink 1s infinite;"></div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="flex: 1; overflow: hidden;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            <span style="color: #00f2ff; font-size: 0.7rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 5px rgba(0, 242, 255, 0.5);">ประกาศระบบ</span>
+                        <span id="annBadge" style="display:none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #f59e0b; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem;">NEW</span>
+                            <span id="annLabel" style="font-size: 0.7rem; color: #aaa; margin-left: auto;">ตรวจสอบ</span>
+                        </div>
+                        <div id="dashboardAnnounce" style="color: #fff; font-family: 'Courier New', monospace; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);">
+                            รอโหลดข้อมูล...
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="menu-grid">
-                <div class="menu-card" onclick="openShopPage()" style="position: relative;">
-                    <div id="shopBadge" style="display: none; position: absolute; top: -8px; right: -8px; background: linear-gradient(135deg, #00cec9, #6c5ce7); color: white; font-weight: bold; font-size: 0.6rem; padding: 3px 8px; border-radius: 10px; border: 2px solid #1e2746; box-shadow: 0 0 10px #00cec9; animation: bounce 1s infinite; z-index: 10;">NEW ITEM</div>
-                    <i class="fas fa-shopping-cart"></i>
-                    <div>ร้านค้า</div>
+                    <div class="menu-item" onclick="openShopPage()">
+                    <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem;"><i class="fas fa-shopping-cart"></i></div>
+                    <div class="menu-label">ร้านค้า</div>
+                    <div id="shopBadgeFloat" class="badge-float" style="display: none;">ใหม่</div>
                 </div>
-                <div class="menu-card" onclick="openWalletModal('deposit')" style="position: relative;">
-                    <div id="depositBadge" style="display: none; position: absolute; top: -8px; right: -8px; background: #10b981; color: white; font-weight: bold; font-size: 0.6rem; padding: 3px 8px; border-radius: 10px; border: 2px solid #1e2746; box-shadow: 0 0 10px #10b981; animation: bounce 1s infinite;">SUCCESS</div>
-                    <i class="fas fa-arrow-circle-down"></i>
-                    <div>ฝากเงิน</div>
+                <div class="menu-item" onclick="openWalletModal('deposit')">
+                    <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: var(--success); box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);"><i class="fas fa-arrow-circle-down" style="color: var(--success);"></i></div>
+                    <div class="menu-label">ฝากเงิน</div>
+                    <div id="depositBadge" class="badge-float" style="background: var(--success); display: none;">SUCCESS</div>
                 </div>
-                <div class="menu-card" onclick="openWalletModal('withdraw')" style="position: relative;">
-                    <div id="withdrawBadge" style="display: none; position: absolute; top: -8px; right: -8px; background: #f59e0b; color: white; font-weight: bold; font-size: 0.6rem; padding: 3px 8px; border-radius: 10px; border: 2px solid #1e2746; box-shadow: 0 0 10px #f59e0b; animation: bounce 1s infinite;">UPDATE</div>
-                    <i class="fas fa-arrow-circle-up"></i>
-                    <div>ถอนเงิน</div>
+                <div class="menu-item" onclick="openWalletModal('withdraw')">
+                    <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: var(--warning); box-shadow: 0 0 10px rgba(255, 184, 0, 0.2);"><i class="fas fa-arrow-circle-up" style="color: var(--warning);"></i></div>
+                    <div class="menu-label">ถอนเงิน</div>
+                    <div id="withdrawBadge" class="badge-float" style="background: var(--warning); display: none;">UPDATE</div>
                 </div>
-                <div class="menu-card" onclick="showBankModal()">
-                    <i class="fas fa-university"></i>
-                    <div>บัญชีธนาคาร</div>
+                <div class="menu-item" onclick="showBankModal()">
+                    <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem;"><i class="fas fa-university"></i></div>
+                    <div class="menu-label">บัญชีธนาคาร</div>
                 </div>
-                <div class="menu-card" onclick="showReferralModal()" style="position: relative;">
-                    <div style="position: absolute; top: -5px; right: -5px; background: #e17055; color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 5px; transform: rotate(10deg); border: 1px solid #1e2746;">HOT</div>
-                    <i class="fas fa-users"></i>
-                    <div>แนะนำเพื่อน</div>
+                <div class="menu-item" onclick="showReferralModal()">
+                    <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: var(--danger); box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);"><i class="fas fa-users" style="color: var(--danger);"></i></div>
+                    <div class="menu-label">แนะนำเพื่อน</div>
+                    <div class="badge-float" style="background: var(--danger); animation: none; top: -5px; right: -5px;">HOT</div>
                 </div>
-                <div class="menu-card" onclick="switchPage('settingsPage', document.getElementById('navSettings'))">
-                    <i class="fas fa-cog"></i>
-                    <div>ตั้งค่า</div>
+                <div class="menu-item" onclick="switchPage('settingsPage', document.getElementById('navSettings'))">
+                    <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: #a0aec0;"><i class="fas fa-cog" style="color: #a0aec0;"></i></div>
+                    <div class="menu-label">ตั้งค่า</div>
                 </div>
             </div>
         </div>
 
         <div class="page" id="shopPage">
-            <h2>ร้านค้าอุปกรณ์</h2>
-            <div id="shopList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+            <h2 style="margin-left: 10px; margin-bottom: 20px; border-left: 4px solid var(--primary); padding-left: 10px; letter-spacing: 1px;">ร้านค้าอุปกรณ์</h2>
+            <div id="shopList" class="shop-grid-new"></div>
         </div>
 
         <div class="page" id="walletPage">
@@ -134,29 +185,29 @@
                 <div style="margin-top: 5px; color: #00b894; font-size: 0.8rem;"><i class="fas fa-circle" style="font-size: 6px;"></i> ออนไลน์</div>
             </div>
 
-            <div class="menu-card" style="display: flex; align-items: center; text-align: left; margin-bottom: 10px;" onclick="showBankModal()">
-                <i class="fas fa-university" style="font-size: 1.2rem; margin: 0 15px 0 0;"></i>
+            <div class="menu-list-item" onclick="showBankModal()">
+                <i class="fas fa-university" style="font-size: 1.2rem;"></i>
                 <div style="flex: 1;">บัญชีธนาคารของฉัน</div>
-                <i class="fas fa-chevron-right" style="font-size: 1rem; margin: 0;"></i>
+                <i class="fas fa-chevron-right" style="font-size: 1rem; color: var(--text-muted);"></i>
             </div>
 
-            <div id="installAppBtn" class="menu-card" style="display: none; align-items: center; text-align: left; margin-bottom: 10px; background: linear-gradient(90deg, #6c5ce7, #a29bfe);" onclick="installPWA()">
-                <i class="fas fa-download" style="font-size: 1.2rem; margin: 0 15px 0 0;"></i>
+            <div id="installAppBtn" class="menu-list-item" style="display: none; background: linear-gradient(90deg, rgba(112, 0, 255, 0.2), rgba(0, 242, 255, 0.2)); border: 1px solid var(--primary);" onclick="installPWA()">
+                <i class="fas fa-download" style="font-size: 1.2rem;"></i>
                 <div style="flex: 1;">ติดตั้งแอปพลิเคชัน</div>
-                <i class="fas fa-chevron-right" style="font-size: 1rem; margin: 0;"></i>
+                <i class="fas fa-chevron-right" style="font-size: 1rem; color: var(--text-muted);"></i>
             </div>
 
             <!-- Referral Card -->
-            <div class="menu-card" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); border: none; margin-bottom: 20px;" onclick="showReferralModal()">
-                <div style="display: flex; align-items: center;">
-                    <div style="background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
-                        <i class="fas fa-user-plus" style="color: #d63031;"></i>
+            <div class="menu-list-item" style="background: linear-gradient(135deg, rgba(255, 0, 85, 0.1), rgba(0, 0, 0, 0)); border: 1px solid var(--danger);" onclick="showReferralModal()">
+                <div style="display: flex; align-items: center; width: 100%;">
+                    <div style="background: rgba(255, 0, 85, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; box-shadow: 0 0 10px var(--danger);">
+                        <i class="fas fa-user-plus" style="color: var(--danger); margin: 0;"></i>
                     </div>
-                    <div style="flex: 1; color: #d63031;">
+                    <div style="flex: 1; color: var(--danger);">
                         <div style="font-weight: bold;">ชวนเพื่อนรับรางวัล</div>
                         <div style="font-size: 0.8rem; opacity: 0.9;">คุณรับ ฿50 + เพื่อนรับ ฿100</div>
                     </div>
-                    <i class="fas fa-chevron-right" style="color: #d63031;"></i>
+                    <i class="fas fa-chevron-right" style="color: var(--danger);"></i>
                 </div>
             </div>
 
@@ -214,51 +265,89 @@
 
     </div>
 
-    <div class="bottom-nav">
+    <div class="bottom-nav-glass">
         <div class="nav-btn active" id="navHome" onclick="switchPage('dashboardPage', this)">
-            <i class="fas fa-home"></i> หน้าหลัก
+            <i class="fas fa-home"></i>
+            <div class="nav-label">หน้าแรก</div>
         </div>
         <div class="nav-btn" id="navShop" onclick="openShopPage()">
-            <i class="fas fa-shopping-cart"></i> ร้านค้า
+            <div style="position: relative;">
+                <i class="fas fa-shopping-cart"></i>
+                <div id="shopBadgeNav" class="nav-badge" style="display: none;"></div>
+            </div>
+            <div class="nav-label">ร้านค้า</div>
         </div>
         <div class="nav-btn" id="navWallet" onclick="openWalletPage()">
-            <div id="navWalletBadge" style="display: none; position: absolute; top: 5px; right: 25%; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; border: 2px solid #1e2746; box-shadow: 0 0 5px #ef4444;"></div>
-            <i class="fas fa-wallet"></i> กระเป๋า
+            <div style="position: relative;">
+                <i class="fas fa-wallet"></i>
+                <div id="navWalletBadge" class="nav-badge" style="display: none;"></div>
+            </div>
+            <div class="nav-label">ธุรกรรม</div>
         </div>
         <div class="nav-btn" id="navSettings" onclick="switchPage('settingsPage', this)">
-            <i class="fas fa-user"></i> โปรไฟล์
+            <i class="fas fa-cog"></i>
+            <div class="nav-label">ตั้งค่า</div>
         </div>
     </div>
 
     <div id="loginModal" class="modal" style="display: flex;">
-        <div class="modal-content">
-            <h2 style="color: var(--accent);">MINING PRO</h2>
-            <input type="text" id="loginUser" class="input-dark" placeholder="ชื่อผู้ใช้">
-            <input type="password" id="loginPass" class="input-dark" placeholder="รหัสผ่าน">
-            <button class="btn-action" onclick="login()">เข้าสู่ระบบ</button>
-            <div style="margin-top: 15px; font-size: 0.9rem;">
-                ยังไม่มีบัญชี? <span style="color: var(--accent); cursor: pointer;" onclick="toSignup()">สมัครสมาชิก</span>
+        <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div style="width: 80px; height: 80px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid rgba(0, 242, 255, 0.3); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);">
+                    <i class="fas fa-user-astronaut" style="font-size: 2.5rem; color: #00f2ff;"></i>
+                </div>
+                <h2 style="color: #00f2ff; margin: 0; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">MINING PRO</h2>
+                <div style="font-size: 0.8rem; color: #94a3b8; letter-spacing: 1px;">SECURE ACCESS PORTAL</div>
+            </div>
+            
+            <div class="input-group" style="margin-bottom: 15px;">
+                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px;">USERNAME</div>
+                <input type="text" id="loginUser" class="cyber-input" placeholder="Enter your ID">
+            </div>
+            <div class="input-group" style="margin-bottom: 25px;">
+                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px;">PASSWORD</div>
+                <input type="password" id="loginPass" class="cyber-input" placeholder="Enter password">
+            </div>
+            
+            <button class="cyber-btn" onclick="login()" style="width: 100%; margin-bottom: 15px;">
+                <i class="fas fa-sign-in-alt"></i> ACCESS SYSTEM
+            </button>
+            
+            <div style="text-align: center; font-size: 0.9rem; color: #94a3b8;">
+                No account? <span style="color: #00f2ff; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;" onclick="toSignup()">Register Now</span>
             </div>
         </div>
     </div>
 
     <div id="signupModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color: var(--accent);">สมัครสมาชิก</h2>
-            <input type="text" id="regUser" class="input-dark" placeholder="ตั้งชื่อผู้ใช้">
-            <input type="password" id="regPass" class="input-dark" placeholder="ตั้งรหัสผ่าน">
-            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0;"></div>
-            <input type="text" id="regName" class="input-dark" placeholder="ชื่อ-นามสกุลจริง">
-            <select id="regBank" class="input-dark">
-                <option value="kbank">กสิกรไทย</option>
-                <option value="scb">ไทยพาณิชย์</option>
-                <option value="ktb">กรุงไทย</option>
-                <option value="bbl">กรุงเทพ</option>
-                <option value="gsb">ออมสิน</option>
+        <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #00f2ff; margin: 0; letter-spacing: 1px;">NEW USER REGISTRATION</h2>
+                <div style="font-size: 0.8rem; color: #94a3b8;">Create your mining identity</div>
+            </div>
+            
+            <input type="text" id="regUser" class="cyber-input" placeholder="Username" style="margin-bottom: 10px;">
+            <input type="password" id="regPass" class="cyber-input" placeholder="Password" style="margin-bottom: 10px;">
+            
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;"></div>
+            
+            <input type="text" id="regName" class="cyber-input" placeholder="Full Name (Real Name)" style="margin-bottom: 10px;">
+            <select id="regBank" class="cyber-input" style="margin-bottom: 10px;">
+                <option value="kbank">KBANK - Kasikorn</option>
+                <option value="scb">SCB - Siam Commercial</option>
+                <option value="ktb">KTB - Krungthai</option>
+                <option value="bbl">BBL - Bangkok Bank</option>
+                <option value="gsb">GSB - Government Savings</option>
             </select>
-            <input type="tel" id="regAcc" class="input-dark" placeholder="เลขที่บัญชี">
-            <button class="btn-action" onclick="signup()">ยืนยันการสมัคร</button>
-            <div style="margin-top: 10px; font-size: 0.8rem; cursor: pointer;" onclick="toLogin()">กลับไปเข้าสู่ระบบ</div>
+            <input type="tel" id="regAcc" class="cyber-input" placeholder="Bank Account Number" style="margin-bottom: 20px;">
+            
+            <button class="cyber-btn" onclick="signup()" style="width: 100%; margin-bottom: 15px;">
+                <i class="fas fa-user-plus"></i> CONFIRM REGISTRATION
+            </button>
+            
+            <div style="text-align: center; font-size: 0.8rem; cursor: pointer; color: #94a3b8;" onclick="toLogin()">
+                <i class="fas fa-arrow-left"></i> Back to Login
+            </div>
         </div>
     </div>
 
@@ -280,69 +369,84 @@
     </div>
 
     <div id="refModal" class="modal">
-        <div class="modal-content" style="padding: 0; overflow: hidden; background: #1a1a2e; width: 90%; max-width: 400px; border-radius: 20px;">
+        <div class="modal-content" style="padding: 0; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; width: 90%; max-width: 400px; border-radius: 16px; box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);">
             <div style="padding: 20px; max-height: 85vh; overflow-y: auto;">
-                <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer; z-index: 10; color: #fff; background: rgba(0,0,0,0.3); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('refModal').style.display='none'"></i>
+                <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer; z-index: 10; color: #94a3b8; background: rgba(255,255,255,0.05); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('refModal').style.display='none'"></i>
                 
                 <!-- Header Banner -->
-                <div class="ref-banner" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%); border-radius: 15px; padding: 20px; color: #333; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(255, 154, 158, 0.3); margin-bottom: 20px;">
+                <div class="ref-banner" style="background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, rgba(0, 242, 255, 0.05) 100%); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 15px; padding: 20px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); margin-bottom: 20px;">
                     <div style="position: relative; z-index: 2;">
-                        <h2 style="margin: 0; font-size: 1.8rem; color: #d63031; font-weight: 800;">Invite & Earn</h2>
-                        <p style="margin: 5px 0 10px; font-size: 0.9rem; color: #636e72; font-weight: 500;">ชวนเพื่อนรับโบนัสทันที</p>
-                        <div style="display: inline-block; background: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; color: #d63031; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <i class="fas fa-gift"></i> โปรโมชั่นประจำเดือน
+                        <h2 style="margin: 0; font-size: 1.5rem; color: #00f2ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">NETWORK NODE</h2>
+                        <p style="margin: 5px 0 10px; font-size: 0.8rem; color: #94a3b8;">Expand your mining network</p>
+                        <div style="display: inline-block; background: rgba(0, 242, 255, 0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; color: #00f2ff; border: 1px solid rgba(0, 242, 255, 0.3);">
+                            <i class="fas fa-users"></i> REFERRAL PROGRAM
                         </div>
                     </div>
-                    <i class="fas fa-gift" style="position: absolute; right: -15px; bottom: -20px; font-size: 6rem; color: rgba(255,255,255,0.6); transform: rotate(-20deg);"></i>
+                    <i class="fas fa-network-wired" style="position: absolute; right: -15px; bottom: -20px; font-size: 6rem; color: rgba(0, 242, 255, 0.05); transform: rotate(-20deg);"></i>
                 </div>
 
                 <!-- Stats Row -->
                 <div class="ref-stats-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                    <div class="ref-stat-box" style="background: #252a40; border-radius: 15px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                        <div style="color: #f59e0b; font-size: 0.8rem; margin-bottom: 5px;">อยู่ระหว่างดำเนินการ</div>
-                        <div class="ref-stat-num" id="refPendingCount" style="color: #f59e0b; font-size: 1.8rem; font-weight: bold;">0</div>
-                        <div style="font-size: 0.7rem; color: #666;">คน</div>
+                    <div class="ref-stat-box" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="color: var(--warning); font-size: 0.7rem; margin-bottom: 5px; text-transform: uppercase;">Pending</div>
+                        <div class="ref-stat-num" id="refPendingCount" style="color: var(--warning); font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">0</div>
+                        <div style="font-size: 0.6rem; color: #64748b;">NODES</div>
                     </div>
-                    <div class="ref-stat-box" style="background: #252a40; border-radius: 15px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                        <div style="color: #00b894; font-size: 0.8rem; margin-bottom: 5px;">สำเร็จแล้ว</div>
-                        <div class="ref-stat-num" id="refCompletedCount" style="color: #00b894; font-size: 1.8rem; font-weight: bold;">0</div>
-                        <div style="font-size: 0.7rem; color: #666;">คน</div>
+                    <div class="ref-stat-box" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="color: var(--success); font-size: 0.7rem; margin-bottom: 5px; text-transform: uppercase;">Active</div>
+                        <div class="ref-stat-num" id="refCompletedCount" style="color: var(--success); font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);">0</div>
+                        <div style="font-size: 0.6rem; color: #64748b;">NODES</div>
                     </div>
                 </div>
 
                 <!-- Referral Code Box -->
-                <div style="background: #252a40; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size: 0.85rem; color: #aaa; margin-bottom: 10px; text-align: center;">รหัสแนะนำของคุณ</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 12px 15px; border-radius: 10px; border: 1px dashed #555; position: relative;">
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #00d2d3; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0, 210, 211, 0.3);" id="myRefCode">---</div>
-                        <i class="fas fa-copy" style="cursor: pointer; color: #fff; background: #00d2d3; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);" onclick="copyRef()"></i>
+                <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; text-align: center; text-transform: uppercase;">Your Access Code</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 242, 255, 0.05); padding: 12px 15px; border-radius: 8px; border: 1px dashed rgba(0, 242, 255, 0.3); position: relative;">
+                        <div style="font-size: 1.5rem; font-weight: bold; color: #00f2ff; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.3); font-family: monospace;" id="myRefCode">---</div>
+                        <i class="fas fa-copy" style="cursor: pointer; color: #00f2ff; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); transition: 0.3s;" onclick="copyRef()" onmouseover="this.style.background='rgba(0,242,255,0.2)'" onmouseout="this.style.background='rgba(0,242,255,0.1)'"></i>
                     </div>
-                    <div style="text-align: center; margin-top: 10px; font-size: 0.75rem; color: #666;">
-                        แตะที่ไอคอนเพื่อคัดลอกลิงก์แนะนำ
+                    <div style="text-align: center; margin-top: 10px; font-size: 0.7rem; color: #64748b;">
+                        Tap icon to copy invitation link
                     </div>
                 </div>
 
                 <!-- Friend List -->
-                <div style="text-align: left; margin-bottom: 10px; font-weight: bold; font-size: 1rem; color: #fff; padding-left: 5px;">รายชื่อเพื่อน</div>
+                <div style="text-align: left; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #fff; padding-left: 5px; border-left: 3px solid #00f2ff; padding-left: 10px;">CONNECTED NODES</div>
                 <div id="refList" style="min-height: 100px; margin-bottom: 60px;">
                     <!-- Content -->
                 </div>
             </div>
             
             <!-- Bottom Floating Button -->
-            <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: linear-gradient(to top, #1a1a2e, transparent); pointer-events: none;">
-                <button class="btn-action" onclick="claimBonus()" id="btnClaimBonus" style="pointer-events: auto; width: 100%; padding: 15px; border-radius: 12px; font-size: 1.1rem; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: all 0.3s;">
-                    <i class="fas fa-gift"></i> รับโบนัส (0.00)
+            <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.8)); border-top: 1px solid rgba(255,255,255,0.05);">
+                <button class="cyber-btn" onclick="claimBonus()" id="btnClaimBonus" style="width: 100%;">
+                    <i class="fas fa-gift"></i> CLAIM REWARD (0.00)
                 </button>
             </div>
         </div>
     </div>
 
     <div id="announceModal" class="modal">
-        <div class="modal-content" style="background: linear-gradient(145deg, #d63031, #b71540); border: 2px solid #ff7675;">
-            <div style="text-align: center; font-size: 1.5rem; color: white; margin-bottom: 10px;"><i class="fas fa-bullhorn"></i> ประกาศจากทีมงาน</div>
-            <div id="announceBody" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; color: white; margin-bottom: 15px; max-height: 200px; overflow-y: auto;"></div>
-            <button class="btn-action" style="background: #ff7675;" onclick="closeAnnounce()">รับทราบ</button>
+        <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; box-shadow: 0 0 30px rgba(0, 242, 255, 0.2); max-width: 400px; width: 90%; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #00f2ff; box-shadow: 0 0 10px #00f2ff;"></div>
+            <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(transparent 90%, rgba(0, 242, 255, 0.05) 100%); pointer-events: none;"></div>
+            
+            <div style="text-align: center; margin-bottom: 20px; position: relative; z-index: 2;">
+                <div style="width: 70px; height: 70px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid rgba(0, 242, 255, 0.3);">
+                    <i class="fas fa-bullhorn" style="font-size: 2.5rem; color: #00f2ff; animation: swing 3s infinite ease-in-out;"></i>
+                </div>
+                <h2 style="color: white; margin: 0; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">System Broadcast</h2>
+                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 5px;">ประกาศจากระบบ</div>
+            </div>
+            
+            <div class="glass-panel" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                <div id="announceBody" style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;"></div>
+            </div>
+            
+            <button class="cyber-btn" style="width: 100%;" onclick="closeAnnounce()">
+                <i class="fas fa-check"></i> รับทราบ
+            </button>
         </div>
     </div>
 
@@ -432,6 +536,9 @@
 
             loadUserData();
             loadSystemSettings();
+            const paused = localStorage.getItem('mining_paused') === 'true';
+            isMining = !paused;
+            updateMiningMode();
             checkExpiration(); // Clean up expired items on load
             loadShop();
             setInterval(miningLoop, 1000);
@@ -539,11 +646,18 @@
             
             // Base structure with Tabs
             content.innerHTML = `
-                <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer; color: #ccc;" onclick="document.getElementById('walletModal').style.display='none'"></i>
+                <div style="position: absolute; right: 15px; top: 15px; cursor: pointer; color: var(--text-muted); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.05);" onclick="document.getElementById('walletModal').style.display='none'">
+                    <i class="fas fa-times"></i>
+                </div>
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; padding: 5px; background: #0f172a; border-radius: 12px;">
-                    <button onclick="switchWalletTab('deposit')" id="tabDeposit" class="btn-tab" style="flex:1; padding: 10px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; cursor: pointer; transition: 0.2s;">ฝากเงิน</button>
-                    <button onclick="switchWalletTab('withdraw')" id="tabWithdraw" class="btn-tab" style="flex:1; padding: 10px; border-radius: 8px; border: none; background: transparent; color: #94a3b8; cursor: pointer; transition: 0.2s;">ถอนเงิน</button>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">Wallet</h2>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">จัดการธุรกรรมการเงิน</div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 25px; padding: 5px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <button onclick="switchWalletTab('deposit')" id="tabDeposit" class="cyber-btn" style="flex:1; border-radius: 8px; font-size: 0.9rem;">ฝากเงิน</button>
+                    <button onclick="switchWalletTab('withdraw')" id="tabWithdraw" class="cyber-btn" style="flex:1; border-radius: 8px; font-size: 0.9rem;">ถอนเงิน</button>
                 </div>
 
                 <div id="walletBody"></div>
@@ -561,19 +675,25 @@
             
             // Update Tabs Style
             if(type === 'deposit') {
-                tabDep.style.background = '#334155';
-                tabDep.style.color = 'white';
-                tabDep.style.fontWeight = 'bold';
+                tabDep.classList.add('primary');
+                tabDep.style.background = 'var(--primary)';
+                tabDep.style.color = '#000';
+                tabDep.style.boxShadow = '0 0 15px var(--primary-dim)';
+                
+                tabWit.classList.remove('primary');
                 tabWit.style.background = 'transparent';
-                tabWit.style.color = '#94a3b8';
-                tabWit.style.fontWeight = 'normal';
+                tabWit.style.color = 'var(--text-muted)';
+                tabWit.style.boxShadow = 'none';
             } else {
-                tabWit.style.background = '#334155';
-                tabWit.style.color = 'white';
-                tabWit.style.fontWeight = 'bold';
+                tabWit.classList.add('primary');
+                tabWit.style.background = 'var(--warning)';
+                tabWit.style.color = '#000';
+                tabWit.style.boxShadow = '0 0 15px rgba(255, 204, 0, 0.3)';
+                
+                tabDep.classList.remove('primary');
                 tabDep.style.background = 'transparent';
-                tabDep.style.color = '#94a3b8';
-                tabDep.style.fontWeight = 'normal';
+                tabDep.style.color = 'var(--text-muted)';
+                tabDep.style.boxShadow = 'none';
             }
 
             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
@@ -581,40 +701,41 @@
 
             if(type === 'deposit') {
                 body.innerHTML = `
-                    <div style="margin-bottom: 10px;">
-                        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 10px; text-align: center; display:flex; align-items:center; justify-content:space-between;">
-                            <div style="text-align:left;">
-                                <div style="color: #94a3b8; font-size: 0.75rem;">ระบุจำนวน (THB)</div>
-                                <div style="font-size: 0.7rem; color: #f59e0b;">ขั้นต่ำ 40 บาท</div>
-                            </div>
-                            <input type="number" id="walletAmount" class="input-dark" placeholder="0.00" 
-                                   style="font-size: 1.5rem; text-align: right; color: #10b981; font-weight: bold; border: none; background: transparent; width: 120px; outline: none; margin:0; padding:0;" 
+                    <div class="glass-panel" style="margin-bottom: 20px; text-align: center; padding: 25px;">
+                        <div style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px;">ระบุจำนวนเงินที่ต้องการฝาก (THB)</div>
+                        <div style="position: relative; max-width: 200px; margin: 0 auto;">
+                            <input type="number" id="walletAmount" class="cyber-input" placeholder="0.00" 
+                                   style="font-size: 1.8rem; text-align: center; height: 60px; color: var(--success); font-weight: bold; padding: 0;" 
                                    oninput="updateDepositUI(this.value)">
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--warning); margin-top: 10px;">
+                            <i class="fas fa-exclamation-triangle"></i> ขั้นต่ำ 40 บาท
                         </div>
                     </div>
 
                     <!-- Auto QR Section -->
-                    <div id="qrSection" style="display:none; margin-bottom: 10px; animation: fadeUp 0.3s;">
-                         <div style="background: linear-gradient(135deg, #000428, #004e92); padding: 1px; border-radius: 12px;">
-                            <div style="background: #0f172a; border-radius: 12px; padding: 10px; text-align: center;">
-                                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:8px;">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay-logo.png" style="height:20px; background:white; padding:2px; border-radius:4px;">
-                                    <span style="color:white; font-weight:bold; font-size:0.9rem;">สแกนจ่าย</span>
+                    <div id="qrSection" style="display:none; margin-bottom: 20px; animation: slideUp 0.3s ease-out;">
+                         <div class="glass-panel" style="border: 1px solid var(--primary); box-shadow: 0 0 15px var(--primary-dim);">
+                            <div style="text-align: center; padding: 10px;">
+                                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:15px;">
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay-logo.png" style="height:24px; background:white; padding:4px 8px; border-radius:4px;">
+                                    <span style="color:white; font-weight:bold; font-size:1rem;">สแกนจ่ายทันที</span>
                                 </div>
-                                <div style="background: white; padding: 5px; display: inline-block; border-radius: 8px; margin-bottom: 5px;">
-                                    <img id="qrImage" src="" style="width: 120px; height: 120px; display: block;">
+                                <div style="background: white; padding: 10px; display: inline-block; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+                                    <img id="qrImage" src="" style="width: 140px; height: 140px; display: block;">
                                 </div>
-                                <div style="color: #94a3b8; font-size: 0.75rem;">ยอดโอน: <span id="qrAmount" style="color: #10b981; font-weight: bold; font-size: 0.9rem;">0.00</span> THB</div>
-                                <div style="font-size: 0.65rem; color: #64748b;">ชื่อบัญชี: บจก. คริปโต ไมน์เนอร์</div>
+                                <div style="color: var(--text-muted); font-size: 0.8rem;">ยอดชำระ</div>
+                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary); text-shadow: 0 0 10px var(--primary-dim);"><span id="qrAmount">0.00</span> THB</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">บัญชี: บจก. คริปโต ไมน์เนอร์</div>
                             </div>
                          </div>
                     </div>
 
-                    <div style="margin-bottom: 15px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
-                        <i class="fas fa-info-circle"></i> ระบบจะตรวจสอบยอดเงินอัตโนมัติภายใน 30 วินาที
+                    <div style="margin-bottom: 20px; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <i class="fas fa-sync fa-spin" style="font-size: 0.7rem;"></i> ระบบตรวจสอบยอดเงินอัตโนมัติใน 30 วินาที
                     </div>
 
-                    <button id="btnDeposit" class="btn-action" onclick="submitDeposit()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #00b09b, #96c93d); box-shadow: 0 4px 15px rgba(0, 176, 155, 0.4);">
+                    <button id="btnDeposit" class="cyber-btn" onclick="submitDeposit()" style="width: 100%; --btn-bg: var(--success);">
                         <i class="fas fa-qrcode"></i> ยืนยันการโอนเงิน
                     </button>
                 `;
@@ -625,22 +746,22 @@
                 let bankHtml = '';
                 
                 if(!u.bank || !u.acc) {
-                    bankHtml = `<div style="color: #ef4444; font-size: 0.8rem; margin-bottom: 10px; text-align:center; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px;">
-                        <i class="fas fa-exclamation-circle"></i> กรุณาเพิ่มบัญชีธนาคารก่อนถอนเงิน
-                        <div style="margin-top: 5px; text-decoration: underline; cursor: pointer;" onclick="document.getElementById('walletModal').style.display='none'; showBankModal();">ไปที่หน้าบัญชีธนาคาร</div>
+                    bankHtml = `<div class="glass-panel" style="border-color: var(--danger); background: rgba(255, 0, 85, 0.05); text-align: center;">
+                        <i class="fas fa-exclamation-circle" style="font-size: 2rem; color: var(--danger); margin-bottom: 10px;"></i>
+                        <div style="color: var(--danger); font-weight: bold; margin-bottom: 5px;">ยังไม่มีบัญชีธนาคาร</div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">กรุณาเพิ่มบัญชีธนาคารเพื่อรับเงิน</div>
+                        <button class="cyber-btn" style="font-size: 0.8rem; padding: 8px 20px;" onclick="document.getElementById('walletModal').style.display='none'; showBankModal();">เพิ่มบัญชีธนาคาร</button>
                     </div>`;
                 } else {
                     bankHtml = `
-                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
-                            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">โอนเงินเข้าบัญชี</div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid rgba(255,255,255,0.1);">
-                                    <i class="fas fa-university" style="font-size: 1.2rem; color: white;"></i>
-                                </div>
-                                <div>
-                                    <div style="font-size: 1rem; font-weight: bold; color: var(--accent); letter-spacing: 1px;">${formatBankAcc(u.acc)}</div>
-                                    <div style="font-size: 0.75rem; color: #aaa;">${u.bank.toUpperCase()} - ${u.name}</div>
-                                </div>
+                        <div class="glass-panel" style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, var(--bg-dark), #1a1a2e); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-university" style="font-size: 1.5rem; color: var(--secondary);"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">โอนเข้าบัญชี</div>
+                                <div style="font-size: 1.1rem; font-weight: bold; color: white; letter-spacing: 1px;">${formatBankAcc(u.acc)}</div>
+                                <div style="font-size: 0.8rem; color: var(--primary);">${u.bank.toUpperCase()} - ${u.name}</div>
                             </div>
                         </div>
                     `;
@@ -648,38 +769,42 @@
 
                 body.innerHTML = `
                     ${bankHtml}
-                    <div style="background: #1e293b; padding: 15px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 20px; text-align: center;">
-                        <div style="color:#94a3b8; font-size: 0.9rem;">ยอดเงินที่ถอนได้</div>
-                        <div style="color:white; font-size: 1.5rem; font-weight:bold; margin: 5px 0;">${balance.toLocaleString('en-US', {minimumFractionDigits: 2})} <span style="font-size: 1rem;">THB</span></div>
-                        <div style="font-size: 0.75rem; color: #f59e0b;">ถอนขั้นต่ำ 200 บาท</div>
+                    
+                    <div class="glass-panel" style="text-align: center; margin-bottom: 20px; border: 1px solid var(--warning); box-shadow: 0 0 10px rgba(255, 204, 0, 0.1);">
+                        <div style="color: var(--text-muted); font-size: 0.85rem;">ยอดเงินที่ถอนได้</div>
+                        <div style="color: var(--warning); font-size: 2rem; font-weight:bold; margin: 5px 0; text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">${balance.toLocaleString('en-US', {minimumFractionDigits: 2})} <span style="font-size: 1rem; color: white;">THB</span></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">ถอนขั้นต่ำ 200 บาท</div>
                     </div>
 
                     <div style="margin-bottom: 20px;">
-                        <div style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">จำนวนเงินที่ต้องการถอน</div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px;">ระบุจำนวนเงิน</div>
                         <div style="position: relative;">
-                            <input type="number" id="walletAmount" class="input-dark" placeholder="0.00" 
-                                   style="padding-right: 70px; font-size: 1.2rem; font-weight:bold;"
+                            <input type="number" id="walletAmount" class="cyber-input" placeholder="0.00" 
+                                   style="padding-right: 80px; font-size: 1.2rem; font-weight:bold; color: white;"
                                    oninput="updateWithdrawUI(this.value)">
-                            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #3b82f6; font-weight: bold; cursor: pointer; font-size: 0.8rem;" onclick="fillMaxWithdraw()">ทั้งหมด</span>
+                            <span style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--primary); font-weight: bold; cursor: pointer; font-size: 0.85rem; text-transform: uppercase;" onclick="fillMaxWithdraw()">MAX</span>
                         </div>
                     </div>
 
-                    <div style="background: #0f172a; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
-                            <span style="color:#94a3b8;">ยอดถอน</span>
-                            <span style="color:white;" id="withdrawBaseAmount">0.00 THB</span>
+                    <div class="glass-panel" style="padding: 15px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+                            <span style="color: var(--text-muted);">ยอดถอน</span>
+                            <span style="color: white;" id="withdrawBaseAmount">0.00 THB</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
-                            <span style="color:#94a3b8;">ค่าธรรมเนียม (3%)</span>
-                            <span style="color:#ef4444;" id="withdrawFee">0.00 THB</span>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem;">
+                            <span style="color: var(--text-muted);">ค่าธรรมเนียม (3%)</span>
+                            <span style="color: var(--danger);" id="withdrawFee">0.00 THB</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 1rem; font-weight: bold; border-top: 1px solid #334155; padding-top: 10px; margin-top: 5px;">
-                            <span style="color:#94a3b8;">จะได้รับสุทธิ</span>
-                            <span style="color:#10b981;" id="netWithdrawAmount">0.00 THB</span>
+                        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0;"></div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: bold;">
+                            <span style="color: var(--text-muted);">ได้รับสุทธิ</span>
+                            <span style="color: var(--success); text-shadow: 0 0 10px var(--success-dim);" id="netWithdrawAmount">0.00 THB</span>
                         </div>
                     </div>
 
-                    <button class="btn-action" onclick="submitTransaction()" style="width: 100%;">แจ้งถอนเงิน</button>
+                    <button class="cyber-btn" onclick="submitTransaction()" style="width: 100%; --btn-bg: var(--warning); color: #000;">
+                        <i class="fas fa-paper-plane"></i> แจ้งถอนเงิน
+                    </button>
                 `;
             }
         }
@@ -755,43 +880,53 @@
             trans.sort((a,b) => b.timestamp - a.timestamp);
             
             if(trans.length === 0) {
-                list.innerHTML = '<div style="text-align:center; color:#64748b; margin-top:50px;"><i class="fas fa-history" style="font-size:3rem; margin-bottom:10px; opacity:0.5;"></i><br>ไม่มีรายการธุรกรรม</div>';
+                list.innerHTML = `
+                    <div style="text-align:center; color:var(--text-muted); margin-top:50px; padding: 40px;">
+                        <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 1px dashed var(--text-muted);">
+                            <i class="fas fa-history" style="font-size:2.5rem; opacity:0.5;"></i>
+                        </div>
+                        <div>ไม่มีรายการธุรกรรม</div>
+                    </div>
+                `;
                 return;
             }
             
             list.innerHTML = '';
             trans.forEach(t => {
                 let statusBadge = '';
-                if(t.status === 'pending') statusBadge = '<span style="color:#f59e0b; background:rgba(245, 158, 11, 0.1); padding:2px 8px; border-radius:4px; font-size:0.7rem; border:1px solid rgba(245, 158, 11, 0.2);"><i class="fas fa-clock"></i> รอตรวจสอบ</span>';
-                else if(t.status === 'approved') statusBadge = '<span style="color:#10b981; background:rgba(16, 185, 129, 0.1); padding:2px 8px; border-radius:4px; font-size:0.7rem; border:1px solid rgba(16, 185, 129, 0.2);"><i class="fas fa-check-circle"></i> สำเร็จ</span>';
-                else statusBadge = '<span style="color:#ef4444; background:rgba(239, 68, 68, 0.1); padding:2px 8px; border-radius:4px; font-size:0.7rem; border:1px solid rgba(239, 68, 68, 0.2);"><i class="fas fa-times-circle"></i> ปฏิเสธ</span>';
+                if(t.status === 'pending') statusBadge = '<span style="color:var(--warning); background:rgba(255, 204, 0, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(255, 204, 0, 0.2);"><i class="fas fa-clock"></i> รอตรวจสอบ</span>';
+                else if(t.status === 'approved') statusBadge = '<span style="color:var(--success); background:rgba(0, 255, 157, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(0, 255, 157, 0.2); box-shadow: 0 0 5px rgba(0, 255, 157, 0.2);"><i class="fas fa-check-circle"></i> สำเร็จ</span>';
+                else statusBadge = '<span style="color:var(--danger); background:rgba(255, 0, 85, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(255, 0, 85, 0.2);"><i class="fas fa-times-circle"></i> ปฏิเสธ</span>';
                 
-                let icon = t.type === 'deposit' ? '<i class="fas fa-arrow-down" style="color:#10b981;"></i>' : '<i class="fas fa-arrow-up" style="color:#f59e0b;"></i>';
+                let icon = t.type === 'deposit' ? '<i class="fas fa-arrow-down" style="color:var(--success);"></i>' : '<i class="fas fa-arrow-up" style="color:var(--warning);"></i>';
+                let iconBg = t.type === 'deposit' ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 204, 0, 0.1)';
+                let iconBorder = t.type === 'deposit' ? 'var(--success)' : 'var(--warning)';
+                
                 let title = t.type === 'deposit' ? 'ฝากเงิน' : 'ถอนเงิน';
-                let amountColor = t.type === 'deposit' ? '#10b981' : '#f59e0b';
+                let amountColor = t.type === 'deposit' ? 'var(--success)' : 'var(--warning)';
                 let sign = t.type === 'deposit' ? '+' : '-';
                 
                 // Fee detail text
                 let feeDetail = '';
                 if(t.type === 'withdraw' && t.fee) {
-                    feeDetail = `<div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">ค่าธรรมเนียม: ${t.fee.toLocaleString()}</div>`;
+                    feeDetail = `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">ค่าธรรมเนียม: ${t.fee.toLocaleString()}</div>`;
                 }
 
                 list.innerHTML += `
-                    <div style="background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; animation: fadeUp 0.3s;">
-                        <div style="display:flex; gap:12px; align-items:center;">
-                            <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                    <div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; animation: slideUp 0.3s ease-out;">
+                        <div style="display:flex; gap:15px; align-items:center;">
+                            <div style="width:45px; height:45px; border-radius:12px; background:${iconBg}; display:flex; align-items:center; justify-content:center; font-size:1.2rem; border: 1px solid ${iconBorder}; box-shadow: 0 0 10px ${iconBg};">
                                 ${icon}
                             </div>
                             <div>
-                                <div style="font-weight: bold; color: white; font-size:0.95rem;">${title}</div>
-                                <div style="font-size: 0.75rem; color: #64748b;">${new Date(t.timestamp).toLocaleString('th-TH')}</div>
+                                <div style="font-weight: bold; color: white; font-size:1rem;">${title}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">${new Date(t.timestamp).toLocaleString('th-TH')}</div>
                             </div>
                         </div>
                         <div style="text-align: right;">
-                            <div style="font-weight: bold; color: ${amountColor}; font-size:1rem;">${sign}${t.amount.toLocaleString()}</div>
+                            <div style="font-weight: bold; color: ${amountColor}; font-size:1.1rem; text-shadow: 0 0 10px ${amountColor}40;">${sign}${t.amount.toLocaleString()}</div>
                             ${feeDetail}
-                            <div style="margin-top: 4px;">${statusBadge}</div>
+                            <div style="margin-top: 6px;">${statusBadge}</div>
                         </div>
                     </div>
                 `;
@@ -800,31 +935,39 @@
 
         function miningLoop() {
             checkExpiration(); // Check for expired items
+            autoMiningController(); // Ensure mining state is synced with hashrate/pause status
+            
             if(isMining) {
                 balance += hashrate;
                 updateUI();
                 saveData();
+            } else {
+                // Ensure UI reflects stopped state
+                updateMiningMode();
             }
         }
 
         function checkAnnounce() {
             try {
-                const ann = JSON.parse(localStorage.getItem('mining_announcement'));
+                let raw = localStorage.getItem('mining_announcement');
+                let ann = null;
+                try { ann = raw ? JSON.parse(raw) : null; } catch (_) { ann = raw ? { msg: raw, date: new Date().toISOString() } : null; }
                 if(ann && ann.msg) {
                     // Update Dashboard Board
                     const db = document.getElementById('dashboardAnnounce');
                     if(db) db.innerText = ann.msg;
 
-                    // Check for Badge
                     const lastAnn = localStorage.getItem('last_ann_seen');
                     if(lastAnn !== ann.date) {
-                        document.getElementById('annBadge').style.display = 'block';
-                        document.getElementById('annLabel').innerText = 'มีประกาศใหม่';
-                        document.getElementById('annLabel').style.color = '#ef4444';
+                        const b = document.getElementById('annBadge');
+                        if(b) b.style.display = 'block';
+                        const l = document.getElementById('annLabel');
+                        if(l) { l.innerText = 'มีประกาศใหม่'; l.style.color = '#ef4444'; }
                     } else {
-                        document.getElementById('annBadge').style.display = 'none';
-                        document.getElementById('annLabel').innerText = 'ตรวจสอบ';
-                        document.getElementById('annLabel').style.color = '#aaa';
+                        const b = document.getElementById('annBadge');
+                        if(b) b.style.display = 'none';
+                        const l = document.getElementById('annLabel');
+                        if(l) { l.innerText = 'ตรวจสอบ'; l.style.color = '#aaa'; }
                     }
                 }
                 
@@ -838,31 +981,10 @@
                          
                          // Prevent duplicate toast for same session if needed, or just show last
                          // Simple Implementation: Show Toast
-                         soundMgr.play('alert');
-                         vibMgr.trigger('alert');
-                         const toastId = 'notifToast';
-                         if(!document.getElementById(toastId)) {
-                             const toast = document.createElement('div');
-                             toast.id = toastId;
-                             toast.innerHTML = `<i class="fas fa-user-plus"></i> ${lastNotif.msg}`;
-                             toast.style.cssText = `
-                                position: fixed; top: 80px; right: 20px;
-                                background: linear-gradient(135deg, #00b894, #00cec9); color: white; padding: 15px 20px;
-                                border-radius: 10px; font-weight: bold; z-index: 10000;
-                                box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: slideInRight 0.5s;
-                                max-width: 80%;
-                             `;
-                             document.body.appendChild(toast);
-                             setTimeout(() => { 
-                                 toast.style.animation = 'slideOutRight 0.5s';
-                                 setTimeout(() => toast.remove(), 450); 
-                             }, 5000);
-                             
-                             // Mark all as read
-                             notifs.forEach(n => n.read = true);
-                             localStorage.setItem(`notifications_${currentUser.username}`, JSON.stringify(notifs));
+                         showToast(lastNotif.msg, lastNotif.type || 'info');
+                         notifs.forEach(n => n.read = true);
+                         localStorage.setItem(`notifications_${currentUser.username}`, JSON.stringify(notifs));
                          }
-                    }
                 }
 
             } catch (e) { console.error(e); }
@@ -891,6 +1013,8 @@
             document.getElementById('balanceDisplay').innerText = `฿${balance.toFixed(2)}`;
             document.getElementById('incomeDisplay').innerText = `+฿${hashrate.toFixed(2)}`;
             document.getElementById('hashrateDisplay').innerText = hashrate.toFixed(1);
+            autoMiningController();
+            updateMiningMode();
         }
 
         function switchPage(pid, btn) {
@@ -911,9 +1035,9 @@
             const bank = document.getElementById('regBank').value;
             const acc = document.getElementById('regAcc').value;
             
-            if(!u || !p || !name || !acc) return alert('กรอกให้ครบ');
+            if(!u || !p || !name || !acc) return showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            if(users[u]) return alert('ชื่อซ้ำ');
+            if(users[u]) return showToast('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว', 'error');
 
             users[u] = {
                 pass: p, id: Math.floor(100000+Math.random()*900000),
@@ -972,8 +1096,8 @@
             const pf = { username: u, balance: startBalance, hashrate: 0.0, avatar: null };
             localStorage.setItem(`pf_${u}`, JSON.stringify(pf));
             
-            if(startBalance > 0) alert(`สมัครเสร็จสิ้น! คุณได้รับโบนัสเริ่มต้น ฿${startBalance}`);
-            else alert('สมัครเสร็จสิ้น');
+            if(startBalance > 0) showToast(`สมัครเสร็จสิ้น! คุณได้รับโบนัสเริ่มต้น ฿${startBalance}`, 'success');
+            else showToast('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ', 'success');
             
             toLogin();
         }
@@ -983,19 +1107,20 @@
             const p = document.getElementById('loginPass').value;
             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
             if(users[u] && users[u].pass === p) {
-                if(users[u].banned) return alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน');
+                if(users[u].banned) return showToast('ขออภัย บัญชีถูกระงับชั่วคราว', 'error');
                 currentUser = { username: u };
                 localStorage.setItem('current_user', JSON.stringify(currentUser));
                 document.getElementById('loginModal').style.display='none';
                 initApp();
-            } else { alert('ผิดพลาด'); }
+                showToast('เข้าสู่ระบบสำเร็จ', 'success');
+            } else { showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error'); }
         }
 
         function logout() { localStorage.removeItem('current_user'); location.reload(); }
 
         // --- Data ---
         function saveData() { if(currentUser) { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); pf.balance = balance; pf.hashrate = hashrate; localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf)); } }
-        function loadUserData() { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); if(pf) { balance = pf.balance; hashrate = pf.hashrate; updateUI(); } }
+        function loadUserData() { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); if(pf) { balance = pf.balance; hashrate = pf.hashrate; updateUI(); if(hashrate>0){ isMining = true; updateMiningMode(); } } }
 
         function renderProfile() {
             let users = JSON.parse(localStorage.getItem('mining_users'));
@@ -1012,6 +1137,8 @@
                 document.getElementById('headerAvatar').innerHTML = `<img src="${pf.avatar}">`;
                 document.getElementById('settingAvatar').innerHTML = `<img src="${pf.avatar}">`;
             }
+            
+            updateNotifBadge();
         }
 
         function changeProfilePic() {
@@ -1043,7 +1170,7 @@
 
         function submitDeposit() {
             const amt = parseFloat(document.getElementById('walletAmount').value);
-            if(!amt || amt < 40) return alert('กรุณาระบุยอดเงินขั้นต่ำ 40 บาท');
+            if(!amt || amt < 40) return showToast('กรุณาระบุยอดเงินขั้นต่ำ 40 บาท', 'warning');
             
             // Simulate Automatic Payment Check
             const btn = document.getElementById('btnDeposit');
@@ -1073,7 +1200,7 @@
                 updateUI();
                 
                 // Notify User
-                alert(`ทำรายการสำเร็จ! ได้รับเงิน ${amt.toLocaleString()} THB`);
+                showToast(`ทำรายการสำเร็จ! ได้รับเงิน ${amt.toLocaleString()} THB`, 'success');
                 
                 // Reset UI
                 btn.disabled = false;
@@ -1092,18 +1219,18 @@
 
         function submitTransaction() {
             const amt = parseFloat(document.getElementById('walletAmount').value);
-            if(!amt) return alert('ระบุจำนวนเงิน');
+            if(!amt) return showToast('กรุณาระบุจำนวนเงิน', 'warning');
             
             // Deposit is handled by submitDeposit() now
             
             if(currentAction === 'withdraw') {
                 let users = JSON.parse(localStorage.getItem('mining_users'));
                 let u = users[currentUser.username];
-                if(!u.bank || !u.acc) return alert('กรุณาเพิ่มบัญชีธนาคารก่อนถอนเงิน');
+                if(!u.bank || !u.acc) return showToast('กรุณาเพิ่มบัญชีธนาคารก่อนถอนเงิน', 'warning');
                                 //แก้ไขจำนวนเงิน//
-                if(amt < 200) return alert('ถอนขั้นต่ำ 200 บาท');
-                if(amt > 200000) return alert('ถอนได้ไม่เกิน 200,000 บาทต่อครั้ง');
-                if(balance < amt) return alert('ยอดเงินไม่พอ');
+                if(amt < 200) return showToast('ถอนขั้นต่ำ 200 บาท', 'warning');
+                if(amt > 200000) return showToast('ถอนได้ไม่เกิน 200,000 บาทต่อครั้ง', 'warning');
+                if(balance < amt) return showToast('ยอดเงินคงเหลือไม่เพียงพอ', 'error');
                 
                 const fee = amt * 0.03;
                 const net = amt - fee;
@@ -1120,7 +1247,7 @@
                 });
                 localStorage.setItem('mining_transactions', JSON.stringify(trans));
                 saveData(); updateUI();
-                alert('ทำรายการสำเร็จ รอแอดมินอนุมัติ');
+                showToast('ทำรายการสำเร็จ รอแอดมินอนุมัติ', 'success');
                 document.getElementById('walletModal').style.display='none';
             }
         }
@@ -1137,19 +1264,50 @@
         function showBankModal() {
             let users = JSON.parse(localStorage.getItem('mining_users'));
             let u = users[currentUser.username];
+            
+            const modal = document.getElementById('bankModal');
+            const content = modal.querySelector('.modal-content');
+            
+            // Reset modal content structure if needed
+            if(!document.getElementById('myBankInfo')) {
+                 // This handles if we are re-rendering inside an existing structure or setting it up
+                 // But since we are replacing the innerHTML of the modal content mostly or specific part?
+                 // The original code targeted 'myBankInfo' which is inside the modal.
+                 // Let's just update the 'myBankInfo' content as the original did.
+            }
+            
             document.getElementById('myBankInfo').innerHTML = `
-                <div class="bank-card ${u.bank}">
-                    <i class="fas fa-university bank-logo-watermark"></i>
-                    <div class="bank-chip"></div>
-                    <div style="z-index: 2;">
-                        <div class="bank-number">${formatBankAcc(u.acc)}</div>
-                        <div class="bank-holder">
-                            <span>${u.name}</span>
-                            <span style="font-size:0.75rem; opacity:0.8; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">${u.bank.toUpperCase()}</span>
+                <div class="bank-card ${u.bank}" style="margin-bottom: 25px; position: relative; overflow: hidden; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: none;"></div>
+                    <i class="fas fa-university bank-logo-watermark" style="opacity: 0.1; font-size: 8rem; position: absolute; bottom: -20px; right: -20px;"></i>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+                        <div class="bank-chip" style="width: 50px; height: 35px; background: linear-gradient(135deg, #d4af37, #f9e58a); border-radius: 6px; position: relative;">
+                            <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: rgba(0,0,0,0.2);"></div>
+                            <div style="position: absolute; top: 0; left: 50%; width: 1px; height: 100%; background: rgba(0,0,0,0.2);"></div>
+                        </div>
+                        <div style="text-align: right; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                            <div style="font-weight: bold; font-size: 1.1rem;">${u.bank.toUpperCase()}</div>
+                            <div style="font-size: 0.7rem; opacity: 0.8;">DEBIT CARD</div>
+                        </div>
+                    </div>
+                    
+                    <div style="z-index: 2; position: relative; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                        <div class="bank-number" style="font-size: 1.5rem; letter-spacing: 3px; margin-bottom: 15px; font-family: monospace;">${formatBankAcc(u.acc)}</div>
+                        <div class="bank-holder" style="display: flex; justify-content: space-between; align-items: flex-end;">
+                            <div>
+                                <div style="font-size: 0.6rem; opacity: 0.7; margin-bottom: 2px;">CARD HOLDER</div>
+                                <div style="font-size: 1rem; text-transform: uppercase;">${u.name}</div>
+                            </div>
+                            <div style="font-size:1.5rem;">
+                                <i class="fab fa-cc-visa"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <button class="btn-action" onclick="showBankEdit()">แก้ไขข้อมูล</button>
+                <button class="cyber-btn" onclick="showBankEdit()" style="width: 100%;">
+                    <i class="fas fa-edit"></i> แก้ไขข้อมูล
+                </button>
             `;
             document.getElementById('bankModal').style.display='flex';
         }
@@ -1159,25 +1317,37 @@
             let u = users[currentUser.username];
             
             document.getElementById('myBankInfo').innerHTML = `
-                <div style="text-align:left; margin-bottom:15px;">
-                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">เลือกธนาคาร</label>
-                    <select id="editBank" class="input-dark">
-                        <option value="kbank" ${u.bank==='kbank'?'selected':''}>กสิกรไทย (KBANK)</option>
-                        <option value="scb" ${u.bank==='scb'?'selected':''}>ไทยพาณิชย์ (SCB)</option>
-                        <option value="ktb" ${u.bank==='ktb'?'selected':''}>กรุงไทย (KTB)</option>
-                        <option value="bbl" ${u.bank==='bbl'?'selected':''}>กรุงเทพ (BBL)</option>
-                        <option value="gsb" ${u.bank==='gsb'?'selected':''}>ออมสิน (GSB)</option>
-                    </select>
+                <div class="glass-panel" style="text-align:left; margin-bottom:20px; padding: 25px;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:8px;">เลือกธนาคาร</label>
+                        <div class="custom-select-wrapper" style="position: relative;">
+                            <select id="editBank" class="cyber-input" style="width: 100%; appearance: none; cursor: pointer;">
+                                <option value="kbank" ${u.bank==='kbank'?'selected':''}>กสิกรไทย (KBANK)</option>
+                                <option value="scb" ${u.bank==='scb'?'selected':''}>ไทยพาณิชย์ (SCB)</option>
+                                <option value="ktb" ${u.bank==='ktb'?'selected':''}>กรุงไทย (KTB)</option>
+                                <option value="bbl" ${u.bank==='bbl'?'selected':''}>กรุงเทพ (BBL)</option>
+                                <option value="gsb" ${u.bank==='gsb'?'selected':''}>ออมสิน (GSB)</option>
+                            </select>
+                            <i class="fas fa-chevron-down" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--primary); pointer-events: none;"></i>
+                        </div>
+                    </div>
                     
-                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">เลขที่บัญชี</label>
-                    <input type="tel" id="editAcc" class="input-dark" value="${u.acc}" placeholder="0123456789" maxlength="10">
+                    <div style="margin-bottom: 15px;">
+                        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:8px;">เลขที่บัญชี</label>
+                        <input type="tel" id="editAcc" class="cyber-input" value="${u.acc}" placeholder="0123456789" maxlength="10">
+                    </div>
                     
-                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">ชื่อบัญชี</label>
-                    <input type="text" id="editName" class="input-dark" value="${u.name}">
+                    <div>
+                        <label style="font-size:0.85rem; color:var(--text-muted); display:block; margin-bottom:8px;">ชื่อบัญชี</label>
+                        <input type="text" id="editName" class="cyber-input" value="${u.name}">
+                    </div>
                 </div>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-action" style="background:#444; flex:1;" onclick="showBankModal()">ยกเลิก</button>
-                    <button class="btn-action" style="flex:1;" onclick="saveBankInfo()">บันทึก</button>
+                
+                <div style="display:flex; gap:15px;">
+                    <button class="cyber-btn" style="flex:1; background: transparent; border-color: var(--text-muted); color: var(--text-muted); box-shadow: none;" onclick="showBankModal()">ยกเลิก</button>
+                    <button class="cyber-btn" style="flex:1; --btn-bg: var(--success);" onclick="saveBankInfo()">
+                        <i class="fas fa-save"></i> บันทึก
+                    </button>
                 </div>
             `;
         }
@@ -1223,9 +1393,11 @@
 
             if(refs.length === 0) {
                 list.innerHTML = `
-                    <div class="ref-list-empty" style="text-align: center; padding: 40px 0; color: rgba(255,255,255,0.3);">
-                        <i class="fas fa-user-plus" style="font-size: 4rem; margin-bottom: 15px; display: block;"></i>
-                        <div style="font-size: 1.1rem; font-weight: bold; color: #fff;">ยังไม่มีเพื่อนที่เชิญ</div>
+                    <div class="ref-list-empty" style="text-align: center; padding: 40px 0; color: var(--text-muted);">
+                        <div style="width: 80px; height: 80px; margin: 0 auto 15px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; border: 1px dashed var(--text-muted);">
+                            <i class="fas fa-user-plus" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                        </div>
+                        <div style="font-size: 1.1rem; font-weight: bold; color: var(--text-main);">ยังไม่มีเพื่อนที่เชิญ</div>
                         <div style="font-size: 0.85rem;">แชร์รหัสของคุณให้เพื่อนเพื่อเริ่มรับรายได้</div>
                     </div>
                 `;
@@ -1237,23 +1409,23 @@
                         if(!r.claimed) bonus += 50; // 50 THB Bonus
                     }
                     
-                    let statusColor = r.status === 'completed' ? '#00b894' : '#f59e0b';
+                    let statusColor = r.status === 'completed' ? 'var(--success)' : 'var(--warning)';
                     let statusText = r.status === 'completed' ? 'สำเร็จ' : 'รออนุมัติ';
                     let icon = r.status === 'completed' ? 'fa-check' : 'fa-clock';
                     
                     list.innerHTML += `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #252a40; margin-bottom: 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; border-radius: 16px;">
                             <div style="display: flex; align-items: center; gap: 15px;">
-                                <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #3b82f6, #2d3436); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 10px rgba(0,0,0,0.2);">
+                                <div style="width: 45px; height: 45px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px var(--primary-dim);">
                                     <i class="fas fa-user" style="color: white;"></i>
                                 </div>
                                 <div>
                                     <div style="font-size: 1rem; font-weight: bold; color: white;">${r.name}</div>
-                                    <div style="font-size: 0.75rem; color: #aaa;">${new Date(r.date).toLocaleDateString()}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">${new Date(r.date).toLocaleDateString()}</div>
                                 </div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="color: ${statusColor}; font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 6px; display: inline-block;">
+                                <div style="color: ${statusColor}; font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 4px 10px; border-radius: 6px; display: inline-block; border: 1px solid ${statusColor};">
                                     <i class="fas ${icon}"></i> ${statusText}
                                 </div>
                             </div>
@@ -1268,14 +1440,15 @@
             const btn = document.getElementById('btnClaimBonus');
             if(bonus > 0) {
                 btn.innerHTML = `<i class="fas fa-gift" style="margin-right:5px;"></i> รับโบนัส (฿${bonus.toFixed(2)})`;
-                btn.style.background = 'linear-gradient(135deg, #00b894, #00cec9)';
-                btn.style.color = 'white';
+                btn.style.background = 'linear-gradient(135deg, var(--success), #00cec9)';
+                btn.style.color = '#000';
+                btn.style.fontWeight = 'bold';
                 btn.style.cursor = 'pointer';
-                btn.style.boxShadow = '0 5px 15px rgba(0, 184, 148, 0.4)';
+                btn.style.boxShadow = '0 0 15px rgba(0, 255, 157, 0.4)';
                 btn.onclick = function() { claimBonus(bonus); };
             } else {
                 btn.innerHTML = `<i class="fas fa-gift" style="margin-right:5px;"></i> รับโบนัส (0.00)`;
-                btn.style.background = '#333';
+                btn.style.background = 'rgba(255,255,255,0.1)';
                 btn.style.color = '#777';
                 btn.style.cursor = 'not-allowed';
                 btn.style.boxShadow = 'none';
@@ -1295,18 +1468,7 @@
             const link = `${baseUrl}?ref=${code}`;
             
             navigator.clipboard.writeText(link);
-            
-            // Toast Notification
-            const toast = document.createElement('div');
-            toast.innerHTML = `<i class="fas fa-check-circle"></i> คัดลอกลิงก์แนะนำแล้ว!`;
-            toast.style.cssText = `
-                position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-                background: rgba(0, 184, 148, 0.9); color: white; padding: 12px 25px;
-                border-radius: 30px; font-weight: bold; z-index: 10000;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: fadeUp 0.5s;
-            `;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            showToast('คัดลอกลิงก์แนะนำแล้ว!', 'success');
         }
 
         function claimBonus(amount) {
@@ -1330,7 +1492,7 @@
             updateUI();
             renderReferralUI();
             
-            // Custom Success Modal
+            // Custom Success Modal (AI Theme)
             const modalId = 'claimSuccessModal';
             if(document.getElementById(modalId)) document.getElementById(modalId).remove();
             
@@ -1340,16 +1502,18 @@
             div.style.display = 'flex';
             div.style.zIndex = '10001';
             div.innerHTML = `
-                <div class="modal-content" style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); border: 2px solid white; text-align:center; border-radius: 20px; width: 85%; max-width: 350px;">
-                    <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
-                        <i class="fas fa-gift" style="font-size: 3rem; color: #6c5ce7; animation: bounce 2s infinite;"></i>
+                <div class="modal-content ai-card-border" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; text-align:center; border-radius: 16px; width: 85%; max-width: 350px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); position: relative; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(transparent 50%, rgba(0, 242, 255, 0.02) 50%); background-size: 100% 4px; pointer-events: none;"></div>
+                    
+                    <div style="width: 80px; height: 80px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid #00f2ff; box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);">
+                        <i class="fas fa-gift" style="font-size: 3rem; color: #00f2ff; animation: bounce 2s infinite;"></i>
                     </div>
-                    <h2 style="color: white; margin:0 0 5px;">ยินดีด้วย!</h2>
-                    <p style="color: #eee; margin-bottom: 20px;">คุณได้รับโบนัสแนะนำเพื่อน</p>
-                    <div style="font-size: 2.5rem; font-weight: bold; color: #fff; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+                    <h2 style="color: #fff; margin:0 0 5px; text-shadow: 0 0 5px #00f2ff;">SYSTEM GRANT</h2>
+                    <p style="color: #94a3b8; margin-bottom: 20px; font-family: monospace;">Referral Bonus Acquired</p>
+                    <div style="font-size: 2.5rem; font-weight: bold; color: #00f2ff; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); font-family: monospace;">
                         ฿${amount.toFixed(2)}
                     </div>
-                    <button class="btn-action" style="background: white; color: #6c5ce7; font-weight: bold; border-radius: 30px;" onclick="document.getElementById('${modalId}').remove()">ตกลง</button>
+                    <button class="btn-action" style="background: rgba(0, 242, 255, 0.1); color: #00f2ff; border: 1px solid #00f2ff; font-weight: bold; border-radius: 8px;" onclick="document.getElementById('${modalId}').remove()">ACKNOWLEDGE</button>
                 </div>
             `;
             document.body.appendChild(div);
@@ -1357,37 +1521,60 @@
 
         // --- Shop ---
         function loadShop() {
-            // Try to load from LocalStorage first
-            let items = JSON.parse(localStorage.getItem('mining_shop_items'));
-            
-            // Initial Seed if empty
-            if(!items || items.length === 0) {
-                const catalog = [
-                    {id: 6, name: "Bitcoin Starter 24h", speed: 0.05, price: 0, tier: 'limited', tag: 'free', icon: 'fa-bitcoin'},
-                    {id: 1, name: "GTX 1060 Starter", speed: 0.5, price: 500, tier: 'basic', icon: 'fa-fan'},
-                    {id: 2, name: "RTX 3060 Ti", speed: 2.5, price: 2500, tier: 'mid', icon: 'fa-memory'},
-                    {id: 3, name: "RTX 4090 Ultimate", speed: 8.0, price: 9500, tier: 'pro', tag: 'hot', icon: 'fa-microchip'},
-                    {id: 4, name: "ASIC S19 Pro", speed: 25.0, price: 28000, tier: 'pro', icon: 'fa-server'},
-                    {id: 5, name: "Quantum Rig V1", speed: 80.0, price: 85000, tier: 'legendary', tag: 'new', icon: 'fa-atom'},
-                ];
-                localStorage.setItem('mining_shop_items', JSON.stringify(catalog));
-                items = catalog;
-            }
-
-            const g = document.getElementById('shopList'); 
+            const g = document.getElementById('shopList');
             if(!g) return;
             g.innerHTML = '';
-            
-            // Check active items for UI state
+            const disabled = localStorage.getItem('shop_disabled') === 'true';
+            const notice = localStorage.getItem('shop_notice');
+            let items = JSON.parse(localStorage.getItem('mining_shop_items'));
+            const seeded = localStorage.getItem('shop_seeded') === 'true';
+
+            if(disabled) {
+                g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
+                    <div style="font-size:1.2rem; font-weight:bold; color: var(--warning); margin-bottom: 8px;">ร้านค้าปรับปรุง</div>
+                    <div style="color: var(--text-muted);">กรุณากลับมาใหม่ภายหลัง</div>
+                    ${notice ? `<div style="margin-top:10px; color:#fff;">${notice}</div>` : ''}
+                </div>`;
+                return;
+            }
+
+            if(!items) {
+                if(!seeded) {
+                    const catalog = [
+                        {id: 6, name: "Bitcoin Starter 24h", speed: 0.05, price: 0, tier: 'limited', tag: 'free', icon: 'fa-bitcoin'},
+                        {id: 1, name: "GTX 1060 Starter", speed: 0.5, price: 500, tier: 'basic', icon: 'fa-fan'},
+                        {id: 7, name: "Titanium Rig Mk1", speed: 12.0, price: 12000, tier: 'mid', tag: 'used', icon: 'fa-hammer'},
+                        {id: 2, name: "RTX 3060 Ti", speed: 2.5, price: 2500, tier: 'mid', icon: 'fa-memory'},
+                        {id: 3, name: "RTX 4090 Ultimate", speed: 8.0, price: 9500, tier: 'pro', tag: 'hot', icon: 'fa-microchip'},
+                        {id: 4, name: "ASIC S19 Pro", speed: 25.0, price: 28000, tier: 'pro', icon: 'fa-server'},
+                        {id: 5, name: "Quantum Rig V1", speed: 80.0, price: 85000, tier: 'legendary', tag: 'new', icon: 'fa-atom'},
+                    ];
+                    localStorage.setItem('mining_shop_items', JSON.stringify(catalog));
+                    localStorage.setItem('shop_seeded', 'true');
+                    items = catalog;
+                } else {
+                    items = [];
+                }
+            }
+
+            if(items.length === 0) {
+                g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
+                    <div style="font-size:1.2rem; font-weight:bold; color: #fff; margin-bottom: 8px;">ยังไม่มีสินค้า</div>
+                    <div style="color: var(--text-muted);">แอดมินแจ้งระบบเชื่อมต่อให้ร้านค่าเครื่องเข้ามาใหม่ก่อน</div>
+                    ${notice ? `<div style="margin-top:10px; color:#fff;">${notice}</div>` : ''}
+                </div>`;
+                return;
+            }
+
             let activeItems = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
+            if(notice) g.innerHTML += `<div class="glass-panel" style="margin-bottom:15px;">${notice}</div>`;
 
             items.forEach(i => {
                 const tagClass = i.tag ? i.tag : '';
-                
+                const tagLabel = i.tag ? ({hot:'ฮอต', new:'ใหม่', sale:'ลดราคา', best:'แนะนำ', used:'มือสอง', free:'ฟรี'}[i.tag] || i.tag) : null;
                 let btnText = 'ซื้อสินค้า <i class="fas fa-shopping-cart"></i>';
                 let btnState = '';
                 let btnStyle = 'margin-top:5px; padding:8px 0; font-size:0.9rem;';
-                
                 if(i.id === 6) {
                     const existing = activeItems.find(x => x.id === 6);
                     if(existing) {
@@ -1402,21 +1589,31 @@
                         btnStyle += 'background: linear-gradient(135deg, #ffd700, #f1c40f); color: #000; font-weight: 800;';
                     }
                 }
-
-                // Fallback for icon and tier if missing (from basic admin add)
                 const icon = i.icon || 'fa-microchip';
                 const tier = i.tier || 'basic';
-
+                let tierColor = 'var(--primary)';
+                if(tier === 'legendary') tierColor = '#f1c40f';
+                else if(tier === 'pro') tierColor = '#e056fd';
+                else if(tier === 'mid') tierColor = '#00cec9';
+                else if(tier === 'basic') tierColor = '#74b9ff';
+                else if(tier === 'limited') tierColor = '#ff7675';
+                const isUsed = tagClass.includes('used');
+                const cardClass = isUsed ? 'shop-card-cyber used' : 'shop-card-cyber';
                 g.innerHTML += `
-                <div class="shop-card ${tier} ${tagClass}">
-                    <div class="shop-icon"><i class="fas ${icon}"></i></div>
-                    <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${i.name}</div>
-                    <div style="font-size:0.85rem; color:#aaa; display:flex; justify-content:center; gap:5px; align-items:center;">
-                        <i class="fas fa-bolt" style="font-size:0.7rem; color:${tier==='legendary'?'#f59e0b':'var(--accent)'}"></i> 
-                        แรงขุด +${i.speed}
+                <div class="${cardClass}" style="--card-color: ${tierColor};">
+                    ${tagLabel ? `<div style=\"position: absolute; top: 10px; right: 10px; background: ${tierColor}; color: #000; font-size: 0.6rem; font-weight: bold; padding: 2px 8px; border-radius: 4px;\">${tagLabel}</div>` : ''}
+                    <div class="cyber-icon-box" style="border-color: ${tierColor}; box-shadow: 0 0 15px ${tierColor}40;">
+                        <i class="fas ${icon}" style="color: ${tierColor};"></i>
                     </div>
-                    <div style="margin:10px 0; font-weight:bold; font-size:1.3rem; text-shadow:0 0 10px rgba(255,255,255,0.1);">${i.price === 0 ? 'ฟรี!' : '฿'+i.price.toLocaleString()}</div>
-                    <button class="btn-action" style="${btnStyle}" onclick="buyItem(${i.price}, ${i.speed}, ${i.id})" ${btnState}>
+                    <h3 style="margin: 10px 0 5px; font-size: 1rem; color: white;">${i.name}</h3>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 5px; color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px;">
+                        <i class="fas fa-bolt" style="color: ${tierColor};"></i>
+                        <span>+${i.speed} MH/s</span>
+                    </div>
+                    <div style="font-size: 1.2rem; font-weight: bold; color: white; margin-bottom: 15px; text-shadow: 0 0 10px ${tierColor}80;">
+                        ${i.price === 0 ? 'ฟรี' : '฿'+i.price.toLocaleString()}
+                    </div>
+                    <button class="cyber-btn" onclick="buyItem(${i.price}, ${i.speed}, ${i.id})" ${btnState} style="${btnState ? 'opacity:0.5;cursor:not-allowed;' : ''} border-color: ${tierColor}; color: ${tierColor}; box-shadow: 0 0 10px ${tierColor}20;">
                         ${btnText}
                     </button>
                 </div>`;
@@ -1443,25 +1640,32 @@
                     div.style.display = 'flex';
                     div.style.zIndex = '9999';
                     div.innerHTML = `
-                        <div class="modal-content" style="background: linear-gradient(135deg, #6c5ce7, #a29bfe); border: 2px solid white; text-align:center;">
-                            <i class="fas fa-rocket" style="font-size: 3rem; color: white; margin-bottom: 15px; animation: bounce 2s infinite;"></i>
-                            <h2 style="color: white; margin:0;">สินค้าใหม่มาแล้ว!</h2>
-                            <p style="color: #eee;">มีอุปกรณ์ขุดใหม่วางจำหน่ายในร้านค้า</p>
-                            <button class="btn-action" style="background: white; color: #6c5ce7; font-weight: bold;" onclick="document.getElementById('${modalId}').remove(); openShopPage()">ไปดูเลย</button>
-                            <div style="margin-top:10px; font-size:0.8rem; color:rgba(255,255,255,0.7); cursor:pointer;" onclick="document.getElementById('${modalId}').remove()">ปิดหน้าต่าง</div>
+                        <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; text-align:center; border-radius: 16px; width: 85%; max-width: 350px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); position: relative; overflow: hidden;">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(transparent 50%, rgba(0, 242, 255, 0.02) 50%); background-size: 100% 4px; pointer-events: none;"></div>
+                            
+                            <i class="fas fa-rocket" style="font-size: 3rem; color: #00f2ff; margin-bottom: 15px; animation: bounce 2s infinite; text-shadow: 0 0 15px rgba(0, 242, 255, 0.5);"></i>
+                            <h2 style="color: #fff; margin:0; text-shadow: 0 0 5px #00f2ff;">อัปเดตร้านค้า</h2>
+                            <p style="color: #94a3b8; font-family: monospace; margin-top: 5px;">มีสินค้าใหม่เข้าร้าน</p>
+                            
+                            <button class="btn-action" style="background: rgba(0, 242, 255, 0.1); color: #00f2ff; border: 1px solid #00f2ff; font-weight: bold; border-radius: 8px; margin-top: 20px;" onclick="document.getElementById('${modalId}').remove(); openShopPage()">เปิดร้านค้า</button>
+                            <div style="margin-top:10px; font-size:0.8rem; color: #64748b; cursor:pointer;" onclick="document.getElementById('${modalId}').remove()">ปิด</div>
                         </div>
                     `;
                     document.body.appendChild(div);
                 }
+                showToast('มีสินค้าใหม่เข้าร้าน', 'success');
             }
 
             if(currentUpdate && currentUpdate !== myLastSeen) {
-                // Show Badge
-                const badge = document.getElementById('shopBadge');
-                if(badge) badge.style.display = 'block';
+                const b1 = document.getElementById('shopBadgeFloat');
+                const b2 = document.getElementById('shopBadgeNav');
+                if(b1) b1.style.display = 'block';
+                if(b2) b2.style.display = 'block';
             } else {
-                const badge = document.getElementById('shopBadge');
-                if(badge) badge.style.display = 'none';
+                const b1 = document.getElementById('shopBadgeFloat');
+                const b2 = document.getElementById('shopBadgeNav');
+                if(b1) b1.style.display = 'none';
+                if(b2) b2.style.display = 'none';
             }
         }
         
@@ -1470,7 +1674,7 @@
                 let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
                 const existing = active.find(x => x.id === 6);
                 if(existing) {
-                    alert('คุณมีสินค้านี้ใช้งานอยู่แล้ว');
+                    showToast('คุณมีสินค้านี้ใช้งานอยู่แล้ว', 'warning');
                     return;
                 }
                 // 24 Hours Expiration
@@ -1481,13 +1685,99 @@
                 saveData(); 
                 updateUI(); 
                 loadShop(); // Refresh button state
-                alert('รับ Bitcoin Starter 24h สำเร็จ! เริ่มขุดทันที');
+                isMining = true;
+                updateMiningMode();
+                // Track rig for admin view
+                try {
+                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
+                    const itemsC = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
+                    const item = itemsC.find(x => x.id === id) || { name: 'Bitcoin Starter 24h', icon: 'fa-bitcoin' };
+                    rigs.push({ id, name: item.name, speed: s, price: 0, icon: item.icon, status: 'active', timestamp: Date.now(), expiresAt: Date.now() + (24 * 60 * 60 * 1000) });
+                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                } catch (_) {}
+                miningLoop();
+                
+                showToast('รับ Bitcoin Starter 24h สำเร็จ! เริ่มขุดทันที', 'success');
+                addLiveLog("SYSTEM: Free Starter Pack Activated", "#10b981");
+                addLiveLog(`MINING: Hashrate +${s} MH/s`, "#f1c40f");
+                sendAdminLog(`Activated Free Starter Pack +${s} MH/s`, 'success');
+
+                if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
+                if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
                 return;
             }
 
             if(balance >= p) {
-                balance -= p; hashrate += s; saveData(); updateUI(); alert('ซื้อสำเร็จ');
-            } else { alert('เงินไม่พอ'); }
+                balance -= p; 
+                hashrate += s; 
+                saveData(); 
+                updateUI(); 
+                isMining = true;
+                updateMiningMode();
+                // Track rig for admin view
+                try {
+                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
+                    const itemsC = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
+                    const item = itemsC.find(x => x.id === id) || { name: 'Rig', icon: 'fa-microchip' };
+                    rigs.push({ id, name: item.name, speed: s, price: p, icon: item.icon, status: 'active', timestamp: Date.now() });
+                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                } catch (_) {}
+                miningLoop();
+                
+                showToast(`สั่งซื้อสำเร็จ! กำลังขุดเพิ่มขึ้น +${s} MH/s`, 'success');
+                addLiveLog(`PURCHASE: New Hardware Installed`, "#10b981");
+                addLiveLog(`SYSTEM: Power rerouted. Hashrate +${s}`, "#f1c40f");
+                sendAdminLog(`Purchased Item (Price: ฿${p}) +${s} MH/s`, 'purchase');
+                
+                if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
+                if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
+            } else { 
+                showToast('ยอดเงินไม่เพียงพอ', 'error');
+                if(typeof soundMgr !== 'undefined') soundMgr.play('alert');
+                if(typeof vibMgr !== 'undefined') vibMgr.trigger('alert');
+            }
+        }
+
+        function updateMiningMode() {
+            const el = document.getElementById('miningMode');
+            if(!el) return;
+            if(isMining && hashrate > 0) {
+                el.innerText = 'กำลังขุด';
+                el.style.color = 'var(--success)';
+                el.style.textShadow = '0 0 10px var(--success)';
+            } else {
+                el.innerText = 'พัก';
+                el.style.color = '#94a3b8';
+                el.style.textShadow = 'none';
+            }
+        }
+
+        function autoMiningController() {
+            const paused = localStorage.getItem('mining_paused') === 'true';
+            if(paused) return;
+            
+            if(hashrate > 0 && !isMining) { 
+                isMining = true;
+                updateMiningMode(); 
+            }
+            if(hashrate <= 0 && isMining) { 
+                isMining = false;
+                updateMiningMode(); 
+            }
+        }
+
+        function startMining() {
+            isMining = true;
+            localStorage.setItem('mining_paused', 'false');
+            updateMiningMode();
+            miningLoop();
+            showToast('เริ่มขุดแล้ว', 'success');
+        }
+        function stopMining() {
+            isMining = false;
+            localStorage.setItem('mining_paused', 'true');
+            updateMiningMode();
+            showToast('หยุดขุดแล้ว', 'warning');
         }
 
         function checkExpiration() {
@@ -1514,6 +1804,14 @@
                 localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(updatedActive));
                 saveData();
                 updateUI();
+                autoMiningController();
+                updateMiningMode();
+                try {
+                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
+                    const nowTs = Date.now();
+                    rigs.forEach(r => { if(r.expiresAt && r.expiresAt <= nowTs) r.status = 'expired'; });
+                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                } catch (_) {}
                 loadShop(); // Update button if on shop page
                 // alert('ไอเทมหมดอายุ: แรงขุดลดลง ' + expiredSpeed.toFixed(2) + ' MH/s');
             }
@@ -1630,6 +1928,147 @@
             }
         }
 
+        function addNotification(msg, type) {
+            let history = JSON.parse(localStorage.getItem(`history_notifs_${currentUser.username}`)) || [];
+            history.push({
+                msg: msg,
+                type: type,
+                timestamp: Date.now(),
+                read: false
+            });
+            if(history.length > 50) history.shift();
+            localStorage.setItem(`history_notifs_${currentUser.username}`, JSON.stringify(history));
+            
+            // Update Badge
+            updateNotifBadge();
+        }
+
+        function updateNotifBadge() {
+            let history = JSON.parse(localStorage.getItem(`history_notifs_${currentUser.username}`)) || [];
+            let unread = history.filter(h => !h.read).length;
+            
+            const badge = document.getElementById('headerNotifBadge');
+            if(badge) {
+                if(unread > 0) {
+                    badge.style.display = 'block';
+                    badge.innerText = unread > 99 ? '99+' : unread;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        function openNotificationHistory() {
+            let history = JSON.parse(localStorage.getItem(`history_notifs_${currentUser.username}`)) || [];
+            
+            // Mark all as read
+            let hasUnread = false;
+            history.forEach(h => {
+                if(!h.read) {
+                    h.read = true;
+                    hasUnread = true;
+                }
+            });
+            if(hasUnread) {
+                localStorage.setItem(`history_notifs_${currentUser.username}`, JSON.stringify(history));
+                updateNotifBadge();
+            }
+
+            history.sort((a,b) => b.timestamp - a.timestamp);
+            
+            const modalId = 'notifHistoryModal';
+            if(document.getElementById(modalId)) document.getElementById(modalId).remove();
+            
+            let listHtml = '';
+            if(history.length === 0) {
+                listHtml = `
+                    <div style="text-align:center; color:var(--text-muted); padding:40px;">
+                        <div style="width: 60px; height: 60px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px dashed var(--text-muted);">
+                            <i class="fas fa-bell-slash" style="font-size:1.5rem; opacity:0.5;"></i>
+                        </div>
+                        <div>ไม่มีประวัติการแจ้งเตือน</div>
+                    </div>`;
+            } else {
+                history.forEach(h => {
+                    let icon = h.type === 'success' ? '<i class="fas fa-check-circle"></i>' : (h.type === 'error' ? '<i class="fas fa-times-circle"></i>' : '<i class="fas fa-info-circle"></i>');
+                    let color = h.type === 'success' ? 'var(--success)' : (h.type === 'error' ? 'var(--danger)' : 'var(--primary)');
+                    let bg = h.type === 'success' ? 'rgba(0, 255, 157, 0.1)' : (h.type === 'error' ? 'rgba(255, 0, 85, 0.1)' : 'rgba(0, 242, 255, 0.1)');
+                    
+                    listHtml += `
+                        <div class="glass-panel" style="padding: 15px; margin-bottom: 10px; display:flex; gap:15px; align-items:flex-start; animation: slideUp 0.3s ease-out;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: ${bg}; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: ${color}; border: 1px solid ${color}; box-shadow: 0 0 10px ${bg}; flex-shrink: 0;">
+                                ${icon}
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-size: 0.95rem; color: var(--text-main); line-height: 1.4;">${h.msg}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; display: flex; align-items: center; gap: 5px;">
+                                    <i class="far fa-clock"></i> ${new Date(h.timestamp).toLocaleString('th-TH')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            const div = document.createElement('div');
+            div.id = modalId;
+            div.className = 'modal';
+            div.style.display = 'flex';
+            div.style.zIndex = '10000';
+            div.innerHTML = `
+                <div class="modal-content" style="height: 70vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; background: rgba(10, 14, 30, 0.95);">
+                    <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2);">
+                        <div>
+                            <h2 style="margin:0; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">Notification Log</h2>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">ประวัติการแจ้งเตือนระบบ</div>
+                        </div>
+                        <div onclick="document.getElementById('${modalId}').remove()" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.05); cursor: pointer; color: var(--text-muted);">
+                            <i class="fas fa-times"></i>
+                        </div>
+                    </div>
+                    
+                    <div style="flex:1; overflow-y: auto; padding: 15px;">
+                        ${listHtml}
+                    </div>
+                    
+                    <div style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+                        <button class="cyber-btn" style="width: 100%;" onclick="document.getElementById('${modalId}').remove()">
+                            <i class="fas fa-check"></i> ปิดหน้าต่าง
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        function addLiveLog(msg, color = "#00cec9") {
+            const mon = document.getElementById('liveMonitorContent');
+            if(!mon) return;
+            const div = document.createElement('div');
+            div.innerText = "> " + msg;
+            div.style.color = color;
+            div.style.fontFamily = "monospace";
+            div.style.fontSize = "0.6rem";
+            div.style.fontWeight = "bold";
+            div.style.textShadow = `0 0 5px ${color}`;
+            mon.appendChild(div);
+            if(mon.children.length > 6) mon.removeChild(mon.children[0]);
+        }
+
+        function sendAdminLog(msg, type='info') {
+            if(!currentUser) return;
+            const logs = JSON.parse(localStorage.getItem('mining_live_logs')) || [];
+            logs.push({
+                timestamp: Date.now(),
+                user: currentUser.username,
+                msg: msg,
+                type: type
+            });
+            // Keep last 50 logs
+            if(logs.length > 50) logs.shift();
+            localStorage.setItem('mining_live_logs', JSON.stringify(logs));
+        }
+
         function updateLiveMonitor() {
             const mon = document.getElementById('liveMonitorContent');
             if(!mon) return;
@@ -1646,6 +2085,9 @@
                 "Network difficulty: " + (Math.random()*100).toFixed(2) + "T"
             ];
             const cmd = cmds[Math.floor(Math.random()*cmds.length)];
+            
+            // Only add random log if not paused or just randomly
+            // We reuse addLiveLog for consistency
             const div = document.createElement('div');
             div.innerText = "> " + cmd;
             div.style.color = "#00cec9";
@@ -1681,16 +2123,130 @@
             if(key === 'wake_enabled') toggleWakeLock(value);
             if(key === 'monitor_enabled') document.getElementById('liveMonitor').style.display = value ? 'block' : 'none';
         }
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `ai-toast ${type}`;
+            
+            let icon = 'fa-info-circle';
+            if(type === 'success') icon = 'fa-check-circle';
+            if(type === 'error') icon = 'fa-exclamation-circle';
+            if(type === 'warning') icon = 'fa-exclamation-triangle';
+
+            toast.innerHTML = `
+                <i class="fas ${icon}" style="font-size: 1.2rem;"></i>
+                <div>
+                    <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 2px;">SYSTEM NOTIFICATION</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9;">${msg}</div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            if(typeof soundMgr !== 'undefined') {
+                if(type === 'error') soundMgr.play('alert');
+                else soundMgr.play('standard');
+            }
+            if(typeof vibMgr !== 'undefined') vibMgr.trigger('standard');
+
+            // Auto remove
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         let clickCount = 0;
         function emergencyExit() {
             clickCount++;
             if(clickCount >= 5) {
-                localStorage.setItem('mining_maintenance', 'false');
+                // Override local maintenance check
+                sessionStorage.setItem('maintenance_bypass', 'true'); 
                 document.getElementById('maintenanceOverlay').style.display = 'none';
-                alert('ปิดโหมดบำรุงรักษาชั่วคราว (Emergency Exit)');
+                showToast('Emergency Bypass Activated', 'warning');
                 clickCount = 0;
             }
         }
+
+        // --- System Sync Loop ---
+        setInterval(() => {
+            // 1. Update Last Active (Heartbeat)
+            if(currentUser) {
+                localStorage.setItem(`last_active_${currentUser.username}`, Date.now());
+            }
+
+            // 2. Check Maintenance Mode
+            const bypass = sessionStorage.getItem('maintenance_bypass');
+            const maint = localStorage.getItem('mining_maintenance');
+            const overlay = document.getElementById('maintenanceOverlay');
+            
+            if (maint === 'true' && bypass !== 'true') {
+                const msg = localStorage.getItem('mining_maintenance_msg') || 'กำลังอัปเกรดระบบ...';
+                const msgEl = document.getElementById('maintMessage');
+                if(msgEl) msgEl.innerHTML = msg.replace(/\n/g, '<br>');
+                if(overlay) overlay.style.display = 'flex';
+            } else {
+                if(overlay) overlay.style.display = 'none';
+            }
+
+            // 3. Update Connection Status
+            const statusEl = document.getElementById('miningStatus');
+            if(statusEl) {
+                if(navigator.onLine) {
+                    statusEl.innerHTML = '<i class="fas fa-wifi"></i> CONNECTED';
+                    statusEl.style.color = '#00f2ff';
+                    statusEl.style.textShadow = '0 0 10px #00f2ff';
+                } else {
+                    statusEl.innerHTML = '<i class="fas fa-wifi-slash"></i> OFFLINE';
+                    statusEl.style.color = '#ff7675';
+                    statusEl.style.textShadow = 'none';
+                }
+            }
+
+            // 4. Check User Notifications (Real-time Admin Alerts)
+            if(currentUser) {
+                let notifs = JSON.parse(localStorage.getItem(`notifications_${currentUser.username}`)) || [];
+                let unread = notifs.filter(n => !n.read);
+                
+                if(unread.length > 0) {
+                    unread.forEach(n => {
+                        showToast(n.msg, n.type);
+                        n.read = true;
+                        
+                        // Add to local notification history if exists
+                        addNotification(n.msg, n.type);
+                    });
+                    localStorage.setItem(`notifications_${currentUser.username}`, JSON.stringify(notifs));
+                    
+                    // Sound & Vib
+                    if(typeof soundMgr !== 'undefined') soundMgr.play('alert');
+                    if(typeof vibMgr !== 'undefined') vibMgr.trigger('alert');
+                }
+            }
+
+            // 5. Update Announcement
+            let _rawAnn = localStorage.getItem('mining_announcement');
+            let annData = null;
+            try { annData = _rawAnn ? JSON.parse(_rawAnn) : null; } catch (_) { annData = _rawAnn ? { msg: _rawAnn, date: new Date().toISOString() } : null; }
+            const annEl = document.getElementById('dashboardAnnounce');
+            if(annEl && annData) {
+                // Only update if text is different to avoid flicker
+                if(annEl.innerText !== annData.msg) {
+                    annEl.innerText = annData.msg;
+                    // Show badge if new
+                    const annBadge = document.getElementById('annBadge');
+                    if(annBadge) annBadge.style.display = 'block';
+                    
+                    // Marquee effect if too long
+                    if(annData.msg.length > 40) {
+                        annEl.innerHTML = `<marquee scrollamount="5">${annData.msg}</marquee>`;
+                    }
+                }
+            }
+        }, 2000);
     </script>
+    <div id="toastContainer"></div>
 </body>
 </html>
