@@ -152,8 +152,81 @@
                 <div style="flex: 1;">ติดตั้งแอปพลิเคชัน</div>
                 <i class="fas fa-chevron-right" style="font-size: 1rem; margin: 0;"></i>
             </div>
+
+            <div style="margin-top: 20px; margin-bottom: 10px; color: #94a3b8; font-size: 0.8rem; padding-left: 5px;">การตั้งค่าระบบ (System Settings)</div>
+
+            <!-- Sound -->
+            <div class="switch-group">
+                <div>
+                    <div class="switch-label"><i class="fas fa-volume-up" style="width:20px;"></i> เสียงเตือน</div>
+                    <div class="switch-sub">Notification Sounds</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="swSound" onchange="saveSystemSetting('sound_enabled', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <select id="selSound" class="input-dark" style="margin-bottom: 15px;" onchange="saveSystemSetting('sound_type', this.value); soundMgr.play(this.value);">
+                <option value="standard">มาตรฐาน (Standard)</option>
+                <option value="alert">แจ้งเตือน (Alert)</option>
+                <option value="emphasis">เน้นข้อความ (Emphasis)</option>
+                <option value="rapid">รัว (Rapid)</option>
+                <option value="fast">เร็ว (Fast)</option>
+            </select>
+
+            <!-- Vibration -->
+            <div class="switch-group">
+                <div>
+                    <div class="switch-label"><i class="fas fa-mobile-alt" style="width:20px;"></i> การสั่น</div>
+                    <div class="switch-sub">Haptic Feedback</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="swVib" onchange="saveSystemSetting('vib_enabled', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <select id="selVib" class="input-dark" style="margin-bottom: 15px;" onchange="saveSystemSetting('vib_type', this.value); vibMgr.trigger(this.value);">
+                <option value="standard">มาตรฐาน (Standard)</option>
+                <option value="fast">เร็ว (Fast)</option>
+                <option value="emphasis">เน้น (Emphasis)</option>
+                <option value="alert">แจ้งเตือน (Alert)</option>
+            </select>
+
+            <!-- Wake Lock -->
+            <div class="switch-group">
+                <div>
+                    <div class="switch-label"><i class="fas fa-sun" style="width:20px;"></i> เปิดหน้าจอตลอดเวลา</div>
+                    <div class="switch-sub">Always On Display</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="swWake" onchange="saveSystemSetting('wake_enabled', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <!-- Live Monitor -->
+            <div class="switch-group">
+                <div>
+                    <div class="switch-label"><i class="fas fa-terminal" style="width:20px;"></i> แสดงหน้าจอ VPS</div>
+                    <div class="switch-sub">Live VPS Monitor</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="swMonitor" onchange="saveSystemSetting('monitor_enabled', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
 
+    </div>
+
+    <div id="liveMonitor">
+        <div style="border-bottom: 1px solid #00cec9; padding-bottom: 5px; margin-bottom: 5px; font-weight: bold; display: flex; justify-content: space-between;">
+            <span><i class="fas fa-network-wired"></i> VPS LIVE</span>
+            <span style="animation: pulse 1s infinite; color: #00cec9;">●</span>
+        </div>
+        <div id="liveMonitorContent" style="height: 80px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;">
+            <!-- Logs go here -->
+        </div>
     </div>
 
     <div class="bottom-nav">
@@ -385,6 +458,7 @@
             }
 
             loadUserData();
+            loadSystemSettings();
             checkExpiration(); // Clean up expired items on load
             loadShop();
             setInterval(miningLoop, 1000);
@@ -563,25 +637,13 @@
                          </div>
                     </div>
 
-                    <div style="margin-bottom: 10px;">
-                        <input type="file" id="slipUpload" accept="image/*" style="display:none" onchange="previewSlip()">
-                        <div onclick="document.getElementById('slipUpload').click()" 
-                             style="border: 2px dashed #334155; border-radius: 10px; padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.02);">
-                            <div style="width: 35px; height: 35px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-cloud-upload-alt" style="color: #64748b;"></i>
-                            </div>
-                            <div style="flex: 1; text-align: left;">
-                                <div style="color: #cbd5e1; font-size: 0.85rem;">อัปโหลดสลิป</div>
-                                <div style="color: #64748b; font-size: 0.7rem;">Max 5MB</div>
-                            </div>
-                            <div id="slipStatus" style="font-size: 0.75rem; color: #64748b;">เลือกไฟล์</div>
-                        </div>
-                        <div id="slipPreview" style="display:none; margin-top:10px; text-align:center;">
-                            <img id="slipImg" src="" style="max-width:100%; max-height:120px; border-radius:8px; border:1px solid #334155;">
-                        </div>
+                    <div style="margin-bottom: 15px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                        <i class="fas fa-info-circle"></i> ระบบจะตรวจสอบยอดเงินอัตโนมัติภายใน 30 วินาที
                     </div>
 
-                    <button id="btnDeposit" class="btn-action" onclick="submitDeposit()" style="width: 100%; padding: 10px;">ยืนยันการฝากเงิน</button>
+                    <button id="btnDeposit" class="btn-action" onclick="submitDeposit()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #00b09b, #96c93d); box-shadow: 0 4px 15px rgba(0, 176, 155, 0.4);">
+                        <i class="fas fa-qrcode"></i> ยืนยันการโอนเงิน
+                    </button>
                 `;
             } else {
                 // Withdrawal Tab
@@ -803,6 +865,8 @@
                          
                          // Prevent duplicate toast for same session if needed, or just show last
                          // Simple Implementation: Show Toast
+                         soundMgr.play('alert');
+                         vibMgr.trigger('alert');
                          const toastId = 'notifToast';
                          if(!document.getElementById(toastId)) {
                              const toast = document.createElement('div');
@@ -988,34 +1052,49 @@
             const amt = parseFloat(document.getElementById('walletAmount').value);
             if(!amt || amt < 40) return alert('กรุณาระบุยอดเงินขั้นต่ำ 40 บาท');
             
-            const file = document.getElementById('slipUpload').files[0];
-            if(!file) return alert('กรุณาอัปโหลดสลิปการโอนเงิน');
-
-            if(file.size > 5 * 1024 * 1024) return alert('ไฟล์ขนาดเกิน 5 MB');
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const slipBase64 = e.target.result;
-                
+            // Simulate Automatic Payment Check
+            const btn = document.getElementById('btnDeposit');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> กำลังตรวจสอบยอดเงิน...';
+            
+            // Play wait sound/vib if needed
+            // setTimeout to simulate network check
+            setTimeout(() => {
+                // Success
                 let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
                 trans.push({
                     id: Date.now(), 
                     user: currentUser.username, 
                     type: 'deposit', 
                     amount: amt,
-                    status: 'pending', 
+                    status: 'approved', 
                     timestamp: Date.now(), 
-                    processed: false,
-                    slip: slipBase64
+                    processed: true,
+                    method: 'qr_auto'
                 });
                 localStorage.setItem('mining_transactions', JSON.stringify(trans));
+                
+                balance += amt;
                 saveData(); 
                 updateUI();
                 
-                alert('แจ้งเตือน: ทำรายการฝากสำเร็จ กรุณารอการตรวจสอบ');
+                // Notify User
+                alert(`ทำรายการสำเร็จ! ได้รับเงิน ${amt.toLocaleString()} THB`);
+                
+                // Reset UI
+                btn.disabled = false;
+                btn.innerHTML = originalText;
                 document.getElementById('walletModal').style.display='none';
-            };
-            reader.readAsDataURL(file);
+                
+                // Sound & Vib Success
+                if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
+                if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
+
+                // Add Notification
+                addNotification(`เติมเงินสำเร็จ +${amt.toLocaleString()} THB`);
+                
+            }, 3000);
         }
 
         function submitTransaction() {
@@ -1442,6 +1521,159 @@
             }
             checkShopUpdate(); // Update UI to hide badge
             switchPage('shopPage', document.getElementById('navShop'));
+        }
+
+        // --- Sound & Vibration & Monitor ---
+        class SoundManager {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                this.enabled = localStorage.getItem('sound_enabled') === 'true';
+                this.type = localStorage.getItem('sound_type') || 'standard'; 
+            }
+
+            play(overrideType) {
+                if (!this.enabled) return;
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+
+                const type = overrideType || this.type;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                const now = this.ctx.currentTime;
+                
+                if (type === 'standard' || type === 'alert') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.exponentialRampToValueAtTime(440, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'emphasis') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(880, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'rapid') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                    
+                    const osc2 = this.ctx.createOscillator();
+                    const gain2 = this.ctx.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(this.ctx.destination);
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(800, now + 0.1);
+                    gain2.gain.setValueAtTime(0.1, now + 0.1);
+                    osc2.start(now + 0.1);
+                    osc2.stop(now + 0.15);
+                } else if (type === 'fast') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(1200, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            }
+        }
+
+        class VibrationManager {
+            constructor() {
+                this.enabled = localStorage.getItem('vib_enabled') === 'true';
+                this.type = localStorage.getItem('vib_type') || 'standard'; 
+            }
+
+            trigger(overrideType) {
+                if (!this.enabled || !navigator.vibrate) return;
+                const type = overrideType || this.type;
+                if (type === 'fast') navigator.vibrate(50);
+                else if (type === 'emphasis') navigator.vibrate([100, 50, 100]);
+                else if (type === 'alert') navigator.vibrate(200);
+                else navigator.vibrate(100); 
+            }
+        }
+
+        const soundMgr = new SoundManager();
+        const vibMgr = new VibrationManager();
+
+        let wakeLock = null;
+        async function toggleWakeLock(enable) {
+            if ('wakeLock' in navigator) {
+                if (enable) {
+                    try {
+                        wakeLock = await navigator.wakeLock.request('screen');
+                        console.log('Wake Lock active');
+                    } catch (err) { console.error(err); }
+                } else {
+                    if (wakeLock !== null) {
+                        wakeLock.release();
+                        wakeLock = null;
+                        console.log('Wake Lock released');
+                    }
+                }
+            }
+        }
+
+        function updateLiveMonitor() {
+            const mon = document.getElementById('liveMonitorContent');
+            if(!mon) return;
+            
+            const cmds = [
+                "Mining block #" + Math.floor(Math.random()*999999),
+                "Verifying hash...",
+                "Share accepted (" + (Math.random()*50+10).toFixed(2) + "ms)",
+                "Syncing with VPS...",
+                "Temperature: " + (Math.random()*10+60).toFixed(1) + "C",
+                "Fan Speed: " + Math.floor(Math.random()*20+80) + "%",
+                "Calculating nonce...",
+                "Peer connected: 192.168.X.X",
+                "Network difficulty: " + (Math.random()*100).toFixed(2) + "T"
+            ];
+            const cmd = cmds[Math.floor(Math.random()*cmds.length)];
+            const div = document.createElement('div');
+            div.innerText = "> " + cmd;
+            div.style.color = "#00cec9";
+            div.style.fontFamily = "monospace";
+            div.style.fontSize = "0.6rem";
+            mon.appendChild(div);
+            if(mon.children.length > 6) mon.removeChild(mon.children[0]);
+        }
+
+        setInterval(() => {
+            if(document.getElementById('liveMonitor')?.style.display === 'block') updateLiveMonitor();
+        }, 800);
+
+        function loadSystemSettings() {
+            document.getElementById('swSound').checked = soundMgr.enabled;
+            document.getElementById('swVib').checked = vibMgr.enabled;
+            document.getElementById('swWake').checked = localStorage.getItem('wake_enabled') === 'true';
+            document.getElementById('swMonitor').checked = localStorage.getItem('monitor_enabled') === 'true';
+            
+            if(localStorage.getItem('wake_enabled') === 'true') toggleWakeLock(true);
+            if(localStorage.getItem('monitor_enabled') === 'true') document.getElementById('liveMonitor').style.display = 'block';
+            
+            document.getElementById('selSound').value = soundMgr.type;
+            document.getElementById('selVib').value = vibMgr.type;
+        }
+
+        function saveSystemSetting(key, value) {
+            localStorage.setItem(key, value);
+            if(key === 'sound_enabled') soundMgr.enabled = value;
+            if(key === 'sound_type') soundMgr.type = value;
+            if(key === 'vib_enabled') vibMgr.enabled = value;
+            if(key === 'vib_type') vibMgr.type = value;
+            if(key === 'wake_enabled') toggleWakeLock(value);
+            if(key === 'monitor_enabled') document.getElementById('liveMonitor').style.display = value ? 'block' : 'none';
         }
     </script>
 </body>
