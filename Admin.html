@@ -55,11 +55,64 @@
             70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -260px;
+                top: 0;
+                height: 100%;
+                z-index: 1000;
+                transition: 0.3s;
+                box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+            }
+            .sidebar.show {
+                left: 0;
+            }
+            .content {
+                padding: 15px;
+                width: 100%;
+            }
+            .menu-toggle {
+                display: block !important;
+                position: fixed;
+                top: 15px;
+                right: 15px;
+                z-index: 1001;
+                background: #6c5ce7;
+                color: white;
+                border: none;
+                padding: 10px;
+                border-radius: 5px;
+                cursor: pointer;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            }
+            .overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+            .overlay.show {
+                display: block;
+            }
+        }
+        .menu-toggle { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
+    <button class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+    <div class="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
         <div class="brand"><i class="fas fa-user-astronaut"></i> ADMIN GOD</div>
         <div class="menu-item active" onclick="nav('dashboard')"><i class="fas fa-chart-line"></i> แดชบอร์ด</div>
         <div class="menu-item" onclick="nav('users')"><i class="fas fa-users"></i> ผู้ใช้งาน</div>
@@ -167,6 +220,24 @@
                     <button onclick="saveMaintMsg()" class="btn-sm btn-green" style="width: 100%; padding: 10px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
                         <i class="fas fa-save"></i> บันทึกข้อความ
                     </button>
+                </div>
+            </div>
+
+            <!-- Live Simulation Toggle -->
+            <div class="card" style="border-left: 4px solid #10b981; margin-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.5rem;">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">Live Connection Sim</h3>
+                            <p style="color: #94a3b8; margin: 5px 0 0; font-size: 0.9rem;">จำลองผู้ใช้งานออนไลน์ (Simulate Traffic)</p>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="simSwitch" onchange="toggleSim()" style="transform: scale(1.5); cursor: pointer;">
+                    </div>
                 </div>
             </div>
 
@@ -418,6 +489,16 @@
 
     <script>
 
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+            document.querySelector('.overlay').classList.toggle('show');
+        }
+
+        function toggleSim() {
+            const isSim = document.getElementById('simSwitch').checked;
+            localStorage.setItem('admin_simulation_mode', isSim);
+            renderUsers();
+        }
 
         function resetSystem() {
             if(confirm('⚠️ คำเตือน: คุณกำลังจะ "ล้างข้อมูลระบบทั้งหมด" รวมถึง:\n- ผู้ใช้งานทั้งหมด\n- ประวัติธุรกรรม\n- ร้านค้า\n- การตั้งค่าต่างๆ\n\nการกระทำนี้ไม่สามารถกู้คืนได้! ยืนยันหรือไม่?')) {
@@ -444,6 +525,7 @@
             renderShop();
             renderReferrals(); // Load Referrals
             document.getElementById('maintSwitch').checked = localStorage.getItem('mining_maintenance') === 'true';
+            document.getElementById('simSwitch').checked = localStorage.getItem('admin_simulation_mode') === 'true';
             document.getElementById('maintMsg').value = localStorage.getItem('mining_maintenance_msg') || ''; // Load Msg
             setInterval(renderDashboard, 5000); // Live Dashboard
             setInterval(renderUsers, 2000); // Live update users
@@ -527,18 +609,47 @@
             const tbody = document.getElementById('userTable');
             tbody.innerHTML = '';
 
+            // Simulation Logic
+            const isSim = localStorage.getItem('admin_simulation_mode') === 'true';
+            let displayUsers = [];
+
+            // Real Users
             Object.keys(users).forEach(u => {
-                const data = users[u];
-                const pf = JSON.parse(localStorage.getItem(`pf_${u}`)) || {hashrate:0, balance:0, avatar: null};
+                displayUsers.push({
+                    u: u,
+                    data: users[u],
+                    pf: JSON.parse(localStorage.getItem(`pf_${u}`)) || {hashrate:0, balance:0, avatar: null},
+                    isFake: false
+                });
+            });
+
+            // Fake Users (Simulate Mobile Traffic)
+            if (isSim) {
+                const fakeCount = 5 + Math.floor(Math.random() * 5); // 5-10 fake users
+                for(let i=0; i<fakeCount; i++) {
+                    const id = Math.floor(Math.random() * 90000) + 10000;
+                    displayUsers.push({
+                        u: `Mobile_${id}`,
+                        data: { id: id, name: `Guest Mobile ${i+1}`, bank: ['kbank','scb','bbl'][Math.floor(Math.random()*3)], acc: 'xxx-xxx-xxxx', banned: false },
+                        pf: { hashrate: (Math.random()*50).toFixed(1), balance: (Math.random()*1000).toFixed(2), avatar: null },
+                        isFake: true
+                    });
+                }
+            }
+
+            displayUsers.forEach(item => {
+                const u = item.u;
+                const data = item.data;
+                const pf = item.pf;
                 
                 // Filter
                 if(filter && !u.toLowerCase().includes(filter) && !data.id.toString().includes(filter)) return;
 
-                // Online Check (Active within 5s)
+                // Online Check (Active within 5s) or Fake is always online
                 const lastActive = localStorage.getItem(`last_active_${u}`);
-                const isOnline = lastActive && (Date.now() - parseInt(lastActive) < 5000);
+                const isOnline = item.isFake || (lastActive && (Date.now() - parseInt(lastActive) < 5000));
                 const status = isOnline ? 
-                    `<span class="badge badge-success"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Online</span>` : 
+                    `<span class="badge badge-success"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Online ${item.isFake ? '(Mobile)' : ''}</span>` : 
                     `<span class="badge badge-gray"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Offline</span>`;
 
                 const banBtn = data.banned ? 
@@ -550,7 +661,14 @@
                 // Avatar Logic
                 const avatar = pf.avatar ? 
                     `<img src="${pf.avatar}" style="width:35px; height:35px; border-radius:50%; object-fit:cover; border:2px solid #334155;">` : 
-                    `<div style="width:35px; height:35px; border-radius:50%; background:#1e293b; border:1px solid #334155; display:flex; align-items:center; justify-content:center;"><i class="fas fa-user" style="font-size:0.9rem; color:#64748b;"></i></div>`;
+                    `<div style="width:35px; height:35px; border-radius:50%; background:#1e293b; border:1px solid #334155; display:flex; align-items:center; justify-content:center;"><i class="fas fa-${item.isFake ? 'mobile-alt' : 'user'}" style="font-size:0.9rem; color:#64748b;"></i></div>`;
+
+                // Fake Actions
+                const actions = item.isFake ? 
+                    `<span style="color:#64748b; font-size:0.8rem;">Simulated</span>` :
+                    `<button class="btn-sm" style="background:#3b82f6;" onclick="openEditUser('${u}')"><i class="fas fa-edit"></i> แก้ไข</button>
+                     ${banBtn}
+                     <button class="btn-sm btn-gray" onclick="delUser('${u}')"><i class="fas fa-trash"></i></button>`;
 
                 tbody.innerHTML += `
                     <tr>
@@ -564,18 +682,14 @@
                                 </div>
                             </div>
                         </td>
-                        <td style="color:#10b981;">฿${pf.balance.toLocaleString()}</td>
+                        <td style="color:#10b981;">฿${parseFloat(pf.balance).toLocaleString()}</td>
                         <td>
                             <div style="font-size:0.9rem;">${data.bank.toUpperCase()}</div>
                             <div style="font-size:0.8rem; color:#64748b;">${data.acc}</div>
                         </td>
-                        <td style="color:#f59e0b;">${pf.hashrate.toFixed(1)} MH/s</td>
+                        <td style="color:#f59e0b;">${pf.hashrate} MH/s</td>
                         <td>${status}</td>
-                        <td>
-                            <button class="btn-sm" style="background:#3b82f6;" onclick="openEditUser('${u}')"><i class="fas fa-edit"></i> แก้ไข</button>
-                            ${banBtn}
-                            <button class="btn-sm btn-gray" onclick="delUser('${u}')"><i class="fas fa-trash"></i></button>
-                        </td>
+                        <td>${actions}</td>
                     </tr>
                 `;
             });
