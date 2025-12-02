@@ -1135,6 +1135,10 @@
 
         function copyRef() {
             const code = document.getElementById('myRefCode').innerText;
+            if(!code || code === '---' || code === 'undefinedX') {
+                alert('กำลังโหลดข้อมูล กรุณารอสักครู่...');
+                return;
+            }
             const link = `https://supachai2001774.github.io/my-crypto-app/indexApp.html?ref=${code}`;
             navigator.clipboard.writeText(link);
             
