@@ -36,7 +36,7 @@
             return response;
           }). catch(() => {
             // Return cached version or offline page
-            return caches.match(e.request).then(r => r || new Response('Offline'));
+            return caches.match(e.request).then(r => r || new Response('ออฟไลน์'));
           });
         })
       );

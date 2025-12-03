@@ -43,10 +43,10 @@
         <div class="maint-scanline"></div>
         <div class="maint-content">
             <i class="fas fa-microchip maint-icon" onclick="emergencyExit()"></i>
-            <div class="maint-title">SYSTEM OFFLINE</div>
+            <div class="maint-title">ระบบออฟไลน์</div>
             <div style="color: #00f2ff; font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;">ปิดปรับปรุงระบบชั่วคราว</div>
             <p id="maintMessage" class="maint-desc">กำลังอัปเกรดระบบเพื่อประสิทธิภาพที่ดียิ่งขึ้น<br>กรุณารอสักครู่...</p>
-            <div style="margin-top: 20px; font-size: 0.8rem; color: rgba(0, 242, 255, 0.5);">AI SECURITY PROTOCOL: ACTIVE</div>
+            <div style="margin-top: 20px; font-size: 0.8rem; color: rgba(0, 242, 255, 0.5);">ระบบความปลอดภัย AI: ทำงาน</div>
         </div>
     </div>
 
@@ -82,35 +82,42 @@
         <div class="page active" id="dashboardPage">
             <!-- AI Dashboard Card (Consolidated Stats) -->
             <div class="ai-dashboard-card">
+                <div style="position: absolute; top: 15px; right: 15px; z-index: 10;">
+                    <button onclick="confirmReset()" style="background: rgba(255, 0, 85, 0.1); border: 1px solid rgba(255, 0, 85, 0.3); color: #ff0055; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s;" onmouseover="this.style.background='rgba(255, 0, 85, 0.2)'" onmouseout="this.style.background='rgba(255, 0, 85, 0.1)'" title="รีเซ็ตข้อมูล">
+                        <i class="fas fa-redo-alt" style="font-size: 0.8rem;"></i>
+                    </button>
+                </div>
                 <div class="ai-core-visual">
                     <div class="ai-core-inner"></div>
                     <i class="fas fa-microchip" style="font-size: 2rem; color: var(--primary); position: absolute; z-index: 2; filter: drop-shadow(0 0 10px var(--primary));"></i>
                 </div>
-                <h2 style="margin: 0 0 5px; color: #fff; font-size: 1.5rem; letter-spacing: 1px;">AI Mining Core</h2>
+                <h2 style="margin: 0 0 5px; color: #fff; font-size: 1.5rem; letter-spacing: 1px;">ระบบขุด AI</h2>
                 <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 15px;">
-                    <div style="font-size: 0.8rem; color: #94a3b8;">STATUS: <span id="miningStatus" style="color: var(--success); text-shadow: 0 0 10px var(--success);">ONLINE</span></div>
+                    <div style="font-size: 0.8rem; color: #94a3b8;">สถานะ: <span id="miningStatus" style="color: var(--success); text-shadow: 0 0 10px var(--success);">ออนไลน์</span></div>
                     <div style="font-size: 0.8rem; color: #94a3b8;">โหมด: <span id="miningMode" style="color: #94a3b8;">พัก</span></div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="cyber-btn" onclick="startMining()" style="padding:4px 10px; font-size:0.75rem;">เริ่ม</button>
-                        <button class="cyber-btn" onclick="stopMining()" style="padding:4px 10px; font-size:0.75rem; background: transparent; border-color: var(--danger); color: var(--danger); box-shadow:none;">หยุด</button>
-                    </div>
                 </div>
                 
                 <div class="stat-row">
                     <div class="stat-item">
-                        <div class="label">Hashrate</div>
+                        <div class="label">กำลังขุด</div>
                         <div class="value" id="hashrateDisplay">0.0</div>
                         <div style="font-size: 0.7rem; color: var(--text-muted);">MH/s</div>
                     </div>
                     <div class="stat-item">
-                        <div class="label">Balance</div>
-                        <div class="value" id="balanceDisplay">฿0.00</div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted);">THB</div>
+                        <div class="label">รายวัน</div>
+                        <div class="value" id="dailyProfitDisplay">฿0.00</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">วันนี้</div>
                     </div>
                     <div class="stat-item">
-                        <div class="label">Income</div>
+                        <div class="label">ยอดเงิน</div>
+                        <div class="value" id="balanceDisplay">฿0.00</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">บาท</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="label">รายได้</div>
                         <div class="value" id="incomeDisplay">+฿0.00</div>
-                        <div style="font-size: 0.7rem; color: var(--text-muted);">/sec</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">/วินาที</div>
+                        <div style="font-size: 0.65rem; color: var(--success); margin-top: 2px; white-space: nowrap;" id="estDailyDisplay">วันละ ฿0.00</div>
                     </div>
                 </div>
             </div>
@@ -131,7 +138,7 @@
                     <div style="flex: 1; overflow: hidden;">
                         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
                             <span style="color: #00f2ff; font-size: 0.7rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 5px rgba(0, 242, 255, 0.5);">ประกาศระบบ</span>
-                        <span id="annBadge" style="display:none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #f59e0b; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem;">NEW</span>
+                        <span id="annBadge" style="display:none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #f59e0b; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem;">ใหม่</span>
                             <span id="annLabel" style="font-size: 0.7rem; color: #aaa; margin-left: auto;">ตรวจสอบ</span>
                         </div>
                         <div id="dashboardAnnounce" style="color: #fff; font-family: 'Courier New', monospace; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);">
@@ -139,6 +146,18 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Active Contracts Section -->
+            <div style="margin: 20px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px;">
+                    <div style="font-size: 0.9rem; color: #fff; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-file-contract" style="color: var(--primary);"></i>
+                        สัญญาการขุด
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="activeContractCount">0 รายการ</div>
+                </div>
+                <div id="activeContractsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
 
             <div class="menu-grid">
@@ -150,12 +169,12 @@
                 <div class="menu-item" onclick="openWalletModal('deposit')">
                     <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: var(--success); box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);"><i class="fas fa-arrow-circle-down" style="color: var(--success);"></i></div>
                     <div class="menu-label">ฝากเงิน</div>
-                    <div id="depositBadge" class="badge-float" style="background: var(--success); display: none;">SUCCESS</div>
+                    <div id="depositBadge" class="badge-float" style="background: var(--success); display: none;">สำเร็จ</div>
                 </div>
                 <div class="menu-item" onclick="openWalletModal('withdraw')">
                     <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: var(--warning); box-shadow: 0 0 10px rgba(255, 184, 0, 0.2);"><i class="fas fa-arrow-circle-up" style="color: var(--warning);"></i></div>
                     <div class="menu-label">ถอนเงิน</div>
-                    <div id="withdrawBadge" class="badge-float" style="background: var(--warning); display: none;">UPDATE</div>
+                    <div id="withdrawBadge" class="badge-float" style="background: var(--warning); display: none;">อัปเดต</div>
                 </div>
                 <div class="menu-item" onclick="showBankModal()">
                     <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem;"><i class="fas fa-university"></i></div>
@@ -164,7 +183,7 @@
                 <div class="menu-item" onclick="showReferralModal()">
                     <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: var(--danger); box-shadow: 0 0 10px rgba(255, 0, 85, 0.2);"><i class="fas fa-users" style="color: var(--danger);"></i></div>
                     <div class="menu-label">แนะนำเพื่อน</div>
-                    <div class="badge-float" style="background: var(--danger); animation: none; top: -5px; right: -5px;">HOT</div>
+                    <div class="badge-float" style="background: var(--danger); animation: none; top: -5px; right: -5px;">มาแรง</div>
                 </div>
                 <div class="menu-item" onclick="switchPage('settingsPage', document.getElementById('navSettings'))">
                     <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: #a0aec0;"><i class="fas fa-cog" style="color: #a0aec0;"></i></div>
@@ -194,7 +213,7 @@
                     </div>
                 </div>
                 <input type="file" id="uploadProfile" hidden accept="image/*" onchange="changeProfilePic()">
-                <h2 id="settingName" style="margin: 10px 0 5px;">Username</h2>
+                <h2 id="settingName" style="margin: 10px 0 5px;">ชื่อผู้ใช้</h2>
                 <div id="settingID" style="color: #aaa;">ID: ---</div>
                 <div style="margin-top: 5px; color: #00b894; font-size: 0.8rem;"><i class="fas fa-circle" style="font-size: 6px;"></i> ออนไลน์</div>
             </div>
@@ -225,13 +244,13 @@
                 </div>
             </div>
 
-            <div style="margin-top: 20px; margin-bottom: 10px; color: #94a3b8; font-size: 0.8rem; padding-left: 5px;">การตั้งค่าระบบ (System Settings)</div>
+            <div style="margin-top: 20px; margin-bottom: 10px; color: #94a3b8; font-size: 0.8rem; padding-left: 5px;">การตั้งค่าระบบ</div>
 
             <!-- Sound -->
             <div class="switch-group">
                 <div>
                     <div class="switch-label"><i class="fas fa-volume-up" style="width:20px;"></i> เสียงเตือน</div>
-                    <div class="switch-sub">Notification Sounds</div>
+                    <div class="switch-sub">เสียงแจ้งเตือน</div>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" id="swSound" onchange="saveSystemSetting('sound_enabled', this.checked)">
@@ -239,18 +258,18 @@
                 </label>
             </div>
             <select id="selSound" class="input-dark" style="margin-bottom: 15px;" onchange="saveSystemSetting('sound_type', this.value); soundMgr.play(this.value);">
-                <option value="standard">มาตรฐาน (Standard)</option>
-                <option value="alert">แจ้งเตือน (Alert)</option>
-                <option value="emphasis">เน้นข้อความ (Emphasis)</option>
-                <option value="rapid">รัว (Rapid)</option>
-                <option value="fast">เร็ว (Fast)</option>
+                <option value="standard">มาตรฐาน</option>
+                <option value="alert">แจ้งเตือน</option>
+                <option value="emphasis">เน้นข้อความ</option>
+                <option value="rapid">รัว</option>
+                <option value="fast">เร็ว</option>
             </select>
 
             <!-- Vibration -->
             <div class="switch-group">
                 <div>
                     <div class="switch-label"><i class="fas fa-mobile-alt" style="width:20px;"></i> การสั่น</div>
-                    <div class="switch-sub">Haptic Feedback</div>
+                    <div class="switch-sub">การสั่นตอบสนอง</div>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" id="swVib" onchange="saveSystemSetting('vib_enabled', this.checked)">
@@ -258,25 +277,45 @@
                 </label>
             </div>
             <select id="selVib" class="input-dark" style="margin-bottom: 15px;" onchange="saveSystemSetting('vib_type', this.value); vibMgr.trigger(this.value);">
-                <option value="standard">มาตรฐาน (Standard)</option>
-                <option value="fast">เร็ว (Fast)</option>
-                <option value="emphasis">เน้น (Emphasis)</option>
-                <option value="alert">แจ้งเตือน (Alert)</option>
+                <option value="standard">มาตรฐาน</option>
+                <option value="fast">เร็ว</option>
+                <option value="emphasis">เน้น</option>
+                <option value="alert">แจ้งเตือน</option>
             </select>
 
             <!-- Wake Lock -->
             <div class="switch-group">
                 <div>
                     <div class="switch-label"><i class="fas fa-sun" style="width:20px;"></i> เปิดหน้าจอตลอดเวลา</div>
-                    <div class="switch-sub">Always On Display</div>
+                    <div class="switch-sub">เปิดหน้าจอค้างไว้</div>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" id="swWake" onchange="saveSystemSetting('wake_enabled', this.checked)">
                     <span class="slider"></span>
                 </label>
             </div>
+
+            <!-- Live Monitor -->
+            <div class="switch-group">
+                <div>
+                    <div class="switch-label"><i class="fas fa-desktop" style="width:20px;"></i> จอภาพสถานะสด</div>
+                    <div class="switch-sub">แสดง Logs การทำงาน</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="swMonitor" onchange="saveSystemSetting('monitor_enabled', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
 
+    </div>
+
+    <div id="liveMonitor" style="display: none; position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; border-radius: 8px; padding: 10px; z-index: 900; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; margin-bottom: 5px;">
+            <div style="color: #00f2ff; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px;"><i class="fas fa-terminal"></i> SYSTEM TERMINAL</div>
+            <i class="fas fa-times" style="color: #94a3b8; cursor: pointer; font-size: 0.8rem;" onclick="document.getElementById('liveMonitor').style.display='none'; document.getElementById('swMonitor').checked=false; saveSystemSetting('monitor_enabled', false);"></i>
+        </div>
+        <div id="liveMonitorContent" style="height: 100px; overflow-y: auto; font-size: 0.65rem; font-family: 'Courier New', monospace;"></div>
     </div>
 
     <div class="bottom-nav-glass">
@@ -311,24 +350,24 @@
                     <i class="fas fa-user-astronaut" style="font-size: 2.5rem; color: #00f2ff;"></i>
                 </div>
                 <h2 style="color: #00f2ff; margin: 0; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">MINING PRO</h2>
-                <div style="font-size: 0.8rem; color: #94a3b8; letter-spacing: 1px;">SECURE ACCESS PORTAL</div>
+                <div style="font-size: 0.8rem; color: #94a3b8; letter-spacing: 1px;">ระบบเข้าสู่ใช้งาน</div>
             </div>
             
             <div class="input-group" style="margin-bottom: 15px;">
-                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px;">USERNAME</div>
-                <input type="text" id="loginUser" class="cyber-input" placeholder="Enter your ID">
+                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px;">ชื่อผู้ใช้</div>
+                <input type="text" id="loginUser" class="cyber-input" placeholder="กรอกไอดีของคุณ">
             </div>
             <div class="input-group" style="margin-bottom: 25px;">
-                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px;">PASSWORD</div>
-                <input type="password" id="loginPass" class="cyber-input" placeholder="Enter password">
+                <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 5px; margin-left: 5px;">รหัสผ่าน</div>
+                <input type="password" id="loginPass" class="cyber-input" placeholder="กรอกรหัสผ่าน">
             </div>
             
             <button class="cyber-btn" onclick="login()" style="width: 100%; margin-bottom: 15px;">
-                <i class="fas fa-sign-in-alt"></i> ACCESS SYSTEM
+                <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
             </button>
             
             <div style="text-align: center; font-size: 0.9rem; color: #94a3b8;">
-                No account? <span style="color: #00f2ff; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;" onclick="toSignup()">Register Now</span>
+                ยังไม่มีบัญชี? <span style="color: #00f2ff; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;" onclick="toSignup()">สมัครสมาชิก</span>
             </div>
         </div>
     </div>
@@ -336,31 +375,31 @@
     <div id="signupModal" class="modal">
         <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);">
             <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: #00f2ff; margin: 0; letter-spacing: 1px;">NEW USER REGISTRATION</h2>
-                <div style="font-size: 0.8rem; color: #94a3b8;">Create your mining identity</div>
+                <h2 style="color: #00f2ff; margin: 0; letter-spacing: 1px;">ลงทะเบียนสมาชิกใหม่</h2>
+                <div style="font-size: 0.8rem; color: #94a3b8;">สร้างบัญชีเพื่อเริ่มขุด</div>
             </div>
             
-            <input type="text" id="regUser" class="cyber-input" placeholder="Username" style="margin-bottom: 10px;">
-            <input type="password" id="regPass" class="cyber-input" placeholder="Password" style="margin-bottom: 10px;">
+            <input type="text" id="regUser" class="cyber-input" placeholder="ชื่อผู้ใช้" style="margin-bottom: 10px;">
+            <input type="password" id="regPass" class="cyber-input" placeholder="รหัสผ่าน" style="margin-bottom: 10px;">
             
             <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;"></div>
             
-            <input type="text" id="regName" class="cyber-input" placeholder="Full Name (Real Name)" style="margin-bottom: 10px;">
+            <input type="text" id="regName" class="cyber-input" placeholder="ชื่อ-นามสกุล (ชื่อจริง)" style="margin-bottom: 10px;">
             <select id="regBank" class="cyber-input" style="margin-bottom: 10px;">
-                <option value="kbank">KBANK - Kasikorn</option>
-                <option value="scb">SCB - Siam Commercial</option>
-                <option value="ktb">KTB - Krungthai</option>
-                <option value="bbl">BBL - Bangkok Bank</option>
-                <option value="gsb">GSB - Government Savings</option>
+                <option value="kbank">KBANK - กสิกรไทย</option>
+                <option value="scb">SCB - ไทยพาณิชย์</option>
+                <option value="ktb">KTB - กรุงไทย</option>
+                <option value="bbl">BBL - กรุงเทพ</option>
+                <option value="gsb">GSB - ออมสิน</option>
             </select>
-            <input type="tel" id="regAcc" class="cyber-input" placeholder="Bank Account Number" style="margin-bottom: 20px;">
+            <input type="tel" id="regAcc" class="cyber-input" placeholder="เลขบัญชีธนาคาร" style="margin-bottom: 20px;">
             
             <button class="cyber-btn" onclick="signup()" style="width: 100%; margin-bottom: 15px;">
-                <i class="fas fa-user-plus"></i> CONFIRM REGISTRATION
+                <i class="fas fa-user-plus"></i> ยืนยันการสมัคร
             </button>
             
             <div style="text-align: center; font-size: 0.8rem; cursor: pointer; color: #94a3b8;" onclick="toLogin()">
-                <i class="fas fa-arrow-left"></i> Back to Login
+                <i class="fas fa-arrow-left"></i> กลับไปหน้าเข้าสู่ระบบ
             </div>
         </div>
     </div>
@@ -390,10 +429,10 @@
                 <!-- Header Banner -->
                 <div class="ref-banner" style="background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, rgba(0, 242, 255, 0.05) 100%); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 15px; padding: 20px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); margin-bottom: 20px;">
                     <div style="position: relative; z-index: 2;">
-                        <h2 style="margin: 0; font-size: 1.5rem; color: #00f2ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">NETWORK NODE</h2>
-                        <p style="margin: 5px 0 10px; font-size: 0.8rem; color: #94a3b8;">Expand your mining network</p>
+                        <h2 style="margin: 0; font-size: 1.5rem; color: #00f2ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">เครือข่ายเพื่อน</h2>
+                        <p style="margin: 5px 0 10px; font-size: 0.8rem; color: #94a3b8;">ขยายเครือข่ายการขุดของคุณ</p>
                         <div style="display: inline-block; background: rgba(0, 242, 255, 0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; color: #00f2ff; border: 1px solid rgba(0, 242, 255, 0.3);">
-                            <i class="fas fa-users"></i> REFERRAL PROGRAM
+                            <i class="fas fa-users"></i> โปรแกรมแนะนำเพื่อน
                         </div>
                     </div>
                     <i class="fas fa-network-wired" style="position: absolute; right: -15px; bottom: -20px; font-size: 6rem; color: rgba(0, 242, 255, 0.05); transform: rotate(-20deg);"></i>
@@ -402,31 +441,31 @@
                 <!-- Stats Row -->
                 <div class="ref-stats-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                     <div class="ref-stat-box" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                        <div style="color: var(--warning); font-size: 0.7rem; margin-bottom: 5px; text-transform: uppercase;">Pending</div>
+                        <div style="color: var(--warning); font-size: 0.7rem; margin-bottom: 5px; text-transform: uppercase;">รออนุมัติ</div>
                         <div class="ref-stat-num" id="refPendingCount" style="color: var(--warning); font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">0</div>
-                        <div style="font-size: 0.6rem; color: #64748b;">NODES</div>
+                        <div style="font-size: 0.6rem; color: #64748b;">คน</div>
                     </div>
                     <div class="ref-stat-box" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
-                        <div style="color: var(--success); font-size: 0.7rem; margin-bottom: 5px; text-transform: uppercase;">Active</div>
+                        <div style="color: var(--success); font-size: 0.7rem; margin-bottom: 5px; text-transform: uppercase;">ใช้งานอยู่</div>
                         <div class="ref-stat-num" id="refCompletedCount" style="color: var(--success); font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);">0</div>
-                        <div style="font-size: 0.6rem; color: #64748b;">NODES</div>
+                        <div style="font-size: 0.6rem; color: #64748b;">คน</div>
                     </div>
                 </div>
 
                 <!-- Referral Code Box -->
                 <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; text-align: center; text-transform: uppercase;">Your Access Code</div>
+                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; text-align: center; text-transform: uppercase;">รหัสแนะนำของคุณ</div>
                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 242, 255, 0.05); padding: 12px 15px; border-radius: 8px; border: 1px dashed rgba(0, 242, 255, 0.3); position: relative;">
                         <div style="font-size: 1.5rem; font-weight: bold; color: #00f2ff; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.3); font-family: monospace;" id="myRefCode">---</div>
                         <i class="fas fa-copy" style="cursor: pointer; color: #00f2ff; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); transition: 0.3s;" onclick="copyRef()" onmouseover="this.style.background='rgba(0,242,255,0.2)'" onmouseout="this.style.background='rgba(0,242,255,0.1)'"></i>
                     </div>
                     <div style="text-align: center; margin-top: 10px; font-size: 0.7rem; color: #64748b;">
-                        Tap icon to copy invitation link
+                        แตะไอคอนเพื่อคัดลอกลิงก์เชิญ
                     </div>
                 </div>
 
                 <!-- Friend List -->
-                <div style="text-align: left; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #fff; padding-left: 5px; border-left: 3px solid #00f2ff; padding-left: 10px;">CONNECTED NODES</div>
+                <div style="text-align: left; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #fff; padding-left: 5px; border-left: 3px solid #00f2ff; padding-left: 10px;">เพื่อนที่เชื่อมต่อ</div>
                 <div id="refList" style="min-height: 100px; margin-bottom: 60px;">
                     <!-- Content -->
                 </div>
@@ -435,7 +474,7 @@
             <!-- Bottom Floating Button -->
             <div style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 15px; background: linear-gradient(to top, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.8)); border-top: 1px solid rgba(255,255,255,0.05);">
                 <button class="cyber-btn" onclick="claimBonus()" id="btnClaimBonus" style="width: 100%;">
-                    <i class="fas fa-gift"></i> CLAIM REWARD (0.00)
+                    <i class="fas fa-gift"></i> รับรางวัล (0.00)
                 </button>
             </div>
         </div>
@@ -539,6 +578,8 @@
         let currentUser = null;
         let balance = 0.00;
         let hashrate = 0.00;
+        let dailyProfit = 0.00;
+        let lastProfitDate = new Date().toDateString();
         let currentAction = '';
         let isMining = true;
 
@@ -670,6 +711,53 @@ liveSync.on('referrals_updated', (data) => {
     }
 });
 
+// เมื่อ Admin ส่งคำสั่ง Force Update (เช่น ลบเครื่องขุด)
+liveSync.on('force_update', (data) => {
+    if(currentUser && data.username === currentUser.username) {
+        console.log('📡 Force update received:', data);
+        
+        if(data.type === 'rig_deleted') {
+                    console.log('⚠️ Rig deleted event processed');
+                    isMining = false;
+                    
+                    // 1. Recalculate & Save Hashrate (Crucial!)
+                    let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
+                    hashrate = active.reduce((sum, item) => sum + (item.speed || 0), 0);
+                    saveData();
+
+                    // 2. Refresh Data & UI
+                    loadUserData();
+                    renderActiveContracts();
+                    updateUI();
+                    
+                    // 2.5 Force Pause UI Update
+                    const btnMode = document.getElementById('miningMode');
+                    if(btnMode) {
+                        btnMode.innerText = 'พัก';
+                        btnMode.style.color = '#94a3b8';
+                        btnMode.style.textShadow = 'none';
+                    }
+
+                    // 3. Notification
+                    if(soundMgr) soundMgr.play('alert');
+                    
+                    setTimeout(() => {
+                        const rigName = data.rigName || 'ไม่ระบุชื่อ';
+                        const profitShow = dailyProfit ? dailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00';
+                        
+                        if(hashrate > 0) {
+                             alert(`⚠️ เครื่องขุด "${rigName}" ถูกลบโดย Admin\n💰 กำไรวันนี้: ฿${profitShow}\n✅ ระบบกำลังเริ่มขุดใหม่ด้วยเครื่องที่เหลือ...`);
+                        } else {
+                             // Ask to buy more
+                             if(confirm(`⚠️ เครื่องขุด "${rigName}" ถูกลบโดย Admin\n💰 กำไรวันนี้: ฿${profitShow}\n⛔ การขุดหยุดลงชั่วคราว\n🛒 ต้องการซื้อเครื่องขุดใหม่หรือไม่?`)) {
+                                 openShopPage();
+                             }
+                        }
+                    }, 100);
+                }
+    }
+});
+
 // Manual refresh button
 document.addEventListener('keydown', (e) => {
     if(e.ctrlKey && e.key === 'r') {
@@ -694,9 +782,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
             loadUserData();
             loadSystemSettings();
-            const paused = localStorage.getItem('mining_paused') === 'true';
-            isMining = !paused;
-            updateMiningMode();
+            // Auto start if possible
+            autoMiningController();
             checkExpiration();
             loadShop();
             
@@ -1216,30 +1303,31 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         function miningLoop() {
-    checkExpiration();
-    autoMiningController();
-    
-    if(isMining && hashrate > 0) {
-        // เพิ่มรายได้ = hashrate ต่อวินาที
-        balance += hashrate;
-        
-        // บันทึกทุก 10 วินาที
-        if(Math.floor(Date.now() / 10000) % 1 === 0) {
-            saveData();
+            checkExpiration();
+            autoMiningController();
+            
+            // Check for new day reset
+            if(lastProfitDate !== new Date().toDateString()) {
+                dailyProfit = 0;
+                lastProfitDate = new Date().toDateString();
+                saveData();
+            }
+            
+            if(isMining && hashrate > 0) {
+                // เพิ่มรายได้ = hashrate ต่อวินาที
+                balance += hashrate;
+                dailyProfit += hashrate;
+                
+                // บันทึกทุก 10 วินาที
+                if(Math.floor(Date.now() / 10000) % 1 === 0) {
+                    saveData();
+                }
+                
+                updateUI();
+                
+                console.log(`⛏️ Mining: +${hashrate.toFixed(2)} ฿ | Balance: ${balance.toFixed(2)} ฿`);
+            }
         }
-        
-        updateUI();
-        
-        console.log(`⛏️ Mining: +${hashrate.toFixed(2)} ฿ | Balance: ${balance. toFixed(2)} ฿`);
-    } else {
-        // ถ้าหยุด แต่ hashrate > 0 ให้ auto restart
-        if(hashrate > 0 && !isMining) {
-            isMining = true;
-            console.log('Auto-restarting mining...');
-            updateMiningMode();
-        }
-    }
-}
 
         function checkAnnounce() {
             try {
@@ -1303,16 +1391,101 @@ console.log('Live Sync Status:', liveSync.getStatus());
             document.getElementById('announceModal').style.display = 'none';
         }
 
+
+
+        function renderActiveContracts() {
+            const list = document.getElementById('activeContractsList');
+            const countEl = document.getElementById('activeContractCount');
+            if(!list) return;
+
+            let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
+            
+            // Filter active rigs
+            const now = Date.now();
+            const activeRigs = rigs.filter(r => !r.expiresAt || r.expiresAt > now);
+            
+            if(countEl) countEl.innerText = `${activeRigs.length} รายการ`;
+
+            if(activeRigs.length === 0) {
+                list.innerHTML = `<div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 12px; color: var(--text-muted); font-size: 0.8rem;">ไม่มีสัญญาการขุดที่ใช้งานอยู่</div>`;
+                return;
+            }
+            
+            let html = '';
+            // Sort by expiry (shortest first), then permanent
+            activeRigs.sort((a, b) => {
+                if(a.expiresAt && b.expiresAt) return a.expiresAt - b.expiresAt;
+                if(a.expiresAt) return -1;
+                return 1;
+            });
+
+            activeRigs.forEach(r => {
+                let timeLeft = 'ถาวร';
+                let statusColor = 'var(--success)';
+                
+                if(r.paused) {
+                    timeLeft = '⛔ พักการขุด';
+                    statusColor = '#fbbf24'; // Warning yellow
+                } else if(r.expiresAt) {
+                    const diff = r.expiresAt - now;
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    timeLeft = `${h}ชม. ${m}น. ${s}วิ.`;
+                    
+                    if(diff < 60000) statusColor = 'var(--danger)'; // Last minute
+                    else if(diff < 3600000) statusColor = 'var(--warning)'; // Last hour
+                }
+
+                const daily = r.speed * 86400;
+
+                html += `
+                <div style="background: rgba(20, 25, 40, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 15px;">
+                    <div class="cyber-icon-box" style="width: 40px; height: 40px; font-size: 1rem; --card-color: ${statusColor}; border-color: ${statusColor}; box-shadow: 0 0 10px ${statusColor}20;">
+                        <i class="fas ${r.icon || 'fa-server'}" style="color: ${statusColor};"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="font-weight: bold; font-size: 0.9rem; color: #fff;">${r.name}</div>
+                            <div style="font-size: 0.75rem; color: ${statusColor}; font-weight: bold;">${timeLeft}</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.75rem; color: var(--text-muted);">
+                            <div>Speed: <span style="color: #fff;">${r.speed} MH/s</span></div>
+                            <div>≈ ฿${daily.toLocaleString()}/วัน</div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            
+            if(list.innerHTML !== html) {
+                list.innerHTML = html;
+            }
+        }
+
         function updateUI() {
+            renderActiveContracts();
             // แสดงรายได้ต่อวินาที
             const incomePerSec = hashrate > 0 ? hashrate : 0;
             
             document.getElementById('balanceDisplay').innerText = 
-                `฿${parseFloat(balance). toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                `฿${parseFloat(balance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             document.getElementById('incomeDisplay').innerText = 
-                `+฿${incomePerSec. toFixed(3)}`;
+                `+฿${incomePerSec.toFixed(3)}`;
+            
+            // Update Estimated Daily Profit
+            const dailyEst = incomePerSec * 86400;
+            const estEl = document.getElementById('estDailyDisplay');
+            if(estEl) estEl.innerText = `วันละ ฿${dailyEst.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+
             document.getElementById('hashrateDisplay').innerText = 
                 hashrate.toFixed(1);
+            
+            // Update Daily Profit Display
+            const dailyEl = document.getElementById('dailyProfitDisplay');
+            if(dailyEl) {
+                dailyEl.innerText = `฿${dailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
             
             autoMiningController();
             updateMiningMode();
@@ -1420,16 +1593,36 @@ console.log('Live Sync Status:', liveSync.getStatus());
         function logout() { localStorage.removeItem('current_user'); location.reload(); }
 
         // --- Data ---
-        function saveData() { if(currentUser) { let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); pf.balance = balance; pf.hashrate = hashrate; localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf)); } }
-                function loadUserData() {
-            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser. username}`));
+        function saveData() { 
+            if(currentUser) { 
+                let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); 
+                pf.balance = balance; 
+                pf.hashrate = hashrate; 
+                pf.dailyProfit = dailyProfit;
+                pf.lastProfitDate = lastProfitDate;
+                localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf)); 
+            } 
+        }
+        function loadUserData() {
+            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`));
             if(pf) {
                 balance = parseFloat(pf.balance || 0);
-                hashrate = parseFloat(pf. hashrate || 0);
-                console.log('📊 Loaded Data:', { balance, hashrate });
+                hashrate = parseFloat(pf.hashrate || 0);
+                dailyProfit = parseFloat(pf.dailyProfit || 0);
+                lastProfitDate = pf.lastProfitDate || new Date().toDateString();
+
+                // Check date reset immediately on load
+                if(lastProfitDate !== new Date().toDateString()) {
+                    dailyProfit = 0;
+                    lastProfitDate = new Date().toDateString();
+                    saveData();
+                }
+
+                console.log('📊 Loaded Data:', { balance, hashrate, dailyProfit });
                 
                 // ✅ Auto-start mining if hashrate > 0
                 if(hashrate > 0) {
+                    // Note: We allow auto-start here, but rig_deleted event might pause it momentarily
                     isMining = true;
                     console.log('🚀 Auto-starting mining...');
                 }
@@ -1603,7 +1796,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         </div>
                         <div style="text-align: right; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
                             <div style="font-weight: bold; font-size: 1.1rem;">${u.bank.toUpperCase()}</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8;">DEBIT CARD</div>
+                            <div style="font-size: 0.7rem; opacity: 0.8;">บัตรเดบิต</div>
                         </div>
                     </div>
                     
@@ -1611,7 +1804,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         <div class="bank-number" style="font-size: 1.5rem; letter-spacing: 3px; margin-bottom: 15px; font-family: monospace;">${formatBankAcc(u.acc)}</div>
                         <div class="bank-holder" style="display: flex; justify-content: space-between; align-items: flex-end;">
                             <div>
-                                <div style="font-size: 0.6rem; opacity: 0.7; margin-bottom: 2px;">CARD HOLDER</div>
+                                <div style="font-size: 0.6rem; opacity: 0.7; margin-bottom: 2px;">ชื่อผู้ถือบัตร</div>
                                 <div style="font-size: 1rem; text-transform: uppercase;">${u.name}</div>
                             </div>
                             <div style="font-size:1.5rem;">
@@ -1834,12 +2027,12 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     <div style="width: 80px; height: 80px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid #00f2ff; box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);">
                         <i class="fas fa-gift" style="font-size: 3rem; color: #00f2ff; animation: bounce 2s infinite;"></i>
                     </div>
-                    <h2 style="color: #fff; margin:0 0 5px; text-shadow: 0 0 5px #00f2ff;">SYSTEM GRANT</h2>
-                    <p style="color: #94a3b8; margin-bottom: 20px; font-family: monospace;">Referral Bonus Acquired</p>
+                    <h2 style="color: #fff; margin:0 0 5px; text-shadow: 0 0 5px #00f2ff;">รางวัลจากระบบ</h2>
+                    <p style="color: #94a3b8; margin-bottom: 20px; font-family: monospace;">ได้รับโบนัสการแนะนำเพื่อน</p>
                     <div style="font-size: 2.5rem; font-weight: bold; color: #00f2ff; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); font-family: monospace;">
                         ฿${amount.toFixed(2)}
                     </div>
-                    <button class="btn-action" style="background: rgba(0, 242, 255, 0.1); color: #00f2ff; border: 1px solid #00f2ff; font-weight: bold; border-radius: 8px;" onclick="document.getElementById('${modalId}').remove()">ACKNOWLEDGE</button>
+                    <button class="btn-action" style="background: rgba(0, 242, 255, 0.1); color: #00f2ff; border: 1px solid #00f2ff; font-weight: bold; border-radius: 8px;" onclick="document.getElementById('${modalId}').remove()">รับทราบ</button>
                 </div>
             `;
             document.body.appendChild(div);
@@ -1867,13 +2060,13 @@ console.log('Live Sync Status:', liveSync.getStatus());
             if(!items) {
                 if(!seeded) {
                     const catalog = [
-                        {id: 6, name: "Bitcoin Starter 24h", speed: 0.05, price: 0, tier: 'limited', tag: 'free', icon: 'fa-bitcoin'},
-                        {id: 1, name: "GTX 1060 Starter", speed: 0.5, price: 500, tier: 'basic', icon: 'fa-fan'},
-                        {id: 7, name: "Titanium Rig Mk1", speed: 12.0, price: 12000, tier: 'mid', tag: 'used', icon: 'fa-hammer'},
-                        {id: 2, name: "RTX 3060 Ti", speed: 2.5, price: 2500, tier: 'mid', icon: 'fa-memory'},
-                        {id: 3, name: "RTX 4090 Ultimate", speed: 8.0, price: 9500, tier: 'pro', tag: 'hot', icon: 'fa-microchip'},
-                        {id: 4, name: "ASIC S19 Pro", speed: 25.0, price: 28000, tier: 'pro', icon: 'fa-server'},
-                        {id: 5, name: "Quantum Rig V1", speed: 80.0, price: 85000, tier: 'legendary', tag: 'new', icon: 'fa-atom'},
+                        {id: 6, name: "ชุดขุด Bitcoin เริ่มต้น (24ชม.)", speed: 0.05, price: 0, tier: 'limited', tag: 'free', icon: 'fa-bitcoin'},
+                        {id: 1, name: "การ์ดจอ GTX 1060 (เริ่มต้น)", speed: 0.5, price: 500, tier: 'basic', icon: 'fa-fan'},
+                        {id: 7, name: "แท่นขุด Titanium Mk1", speed: 12.0, price: 12000, tier: 'mid', tag: 'used', icon: 'fa-hammer'},
+                        {id: 2, name: "การ์ดจอ RTX 3060 Ti", speed: 2.5, price: 2500, tier: 'mid', icon: 'fa-memory'},
+                        {id: 3, name: "การ์ดจอ RTX 4090 Ultimate", speed: 8.0, price: 9500, tier: 'pro', tag: 'hot', icon: 'fa-microchip'},
+                        {id: 4, name: "เครื่องขุด ASIC S19 Pro", speed: 25.0, price: 28000, tier: 'pro', icon: 'fa-server'},
+                        {id: 5, name: "แท่นขุด Quantum V1", speed: 80.0, price: 85000, tier: 'legendary', tag: 'new', icon: 'fa-atom'},
                     ];
                     localStorage.setItem('mining_shop_items', JSON.stringify(catalog));
                     localStorage.setItem('shop_seeded', 'true');
@@ -1932,9 +2125,14 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         <i class="fas ${icon}" style="color: ${tierColor};"></i>
                     </div>
                     <h3 style="margin: 10px 0 5px; font-size: 1rem; color: white;">${i.name}</h3>
-                    <div style="display: flex; justify-content: center; align-items: center; gap: 5px; color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px;">
-                        <i class="fas fa-bolt" style="color: ${tierColor};"></i>
-                        <span>+${i.speed} MH/s</span>
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: center; align-items: center; gap: 5px; color: #94a3b8; font-size: 0.8rem;">
+                            <i class="fas fa-bolt" style="color: ${tierColor};"></i>
+                            <span>+${i.speed} MH/s</span>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--success); text-shadow: 0 0 5px rgba(0,255,157,0.3);">
+                            ≈ ฿${(i.speed * 86400).toLocaleString()}/วัน
+                        </div>
                     </div>
                     <div style="font-size: 1.2rem; font-weight: bold; color: white; margin-bottom: 15px; text-shadow: 0 0 10px ${tierColor}80;">
                         ${i.price === 0 ? 'ฟรี' : '฿'+i.price.toLocaleString()}
@@ -2103,47 +2301,26 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         function autoMiningController() {
-            const paused = localStorage.getItem('mining_paused') === 'true';
-            
-            // ถ้าอุปกรณ์มี hashrate > 0 ควรขุด
-            if(hashrate > 0 && !paused && !isMining) {
+            // Pure automatic mining based on hashrate
+            if(hashrate > 0 && !isMining) {
                 isMining = true;
                 updateMiningMode();
-                console. log('🔄 Auto-resumed mining');
-            }
-            
-            // ถ้าไม่มี hashrate ให้หยุด
-            if(hashrate <= 0 && isMining) {
+                console.log('🔄 Auto-started mining');
+            } else if(hashrate <= 0 && isMining) {
                 isMining = false;
                 updateMiningMode();
+                console.log('🛑 Auto-stopped mining (No hashrate)');
             }
         }
 
         function startMining() {
-            if(hashrate <= 0) {
-                showToast('❌ คุณต้องซื้ออุปกรณ์ขุดก่อน', 'warning');
-                return;
-            }
-            
-            isMining = true;
-            localStorage.setItem('mining_paused', 'false');
-            updateMiningMode();
-            
-            console.log('🟢 Mining started!  Hashrate:', hashrate);
-            miningLoop();
-            
-            showToast('✅ เริ่มขุดแล้ว', 'success');
-            addNotification('🚀 เริ่มการขุด', 'success');
+            console.warn('Manual start is disabled. System is fully automatic.');
+            autoMiningController();
         }
 
         function stopMining() {
-            isMining = false;
-            localStorage.setItem('mining_paused', 'true');
-            updateMiningMode();
-            
-            console.log('🔴 Mining stopped');
-            showToast('⏸ หยุดขุดแล้ว', 'warning');
-            addNotification('⏸ หยุดการขุด', 'warning');
+            console.warn('Manual stop is disabled. System is fully automatic.');
+            autoMiningController();
         }
 
         function checkExpiration() {
@@ -2475,16 +2652,65 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }, 800);
 
         function loadSystemSettings() {
-            document.getElementById('swSound').checked = soundMgr.enabled;
-            document.getElementById('swVib').checked = vibMgr.enabled;
-            document.getElementById('swWake').checked = localStorage.getItem('wake_enabled') === 'true';
-            document.getElementById('swMonitor').checked = localStorage.getItem('monitor_enabled') === 'true';
+            const swSound = document.getElementById('swSound');
+            if(swSound) swSound.checked = soundMgr.enabled;
+
+            const swVib = document.getElementById('swVib');
+            if(swVib) swVib.checked = vibMgr.enabled;
+
+            const swWake = document.getElementById('swWake');
+            if(swWake) swWake.checked = localStorage.getItem('wake_enabled') === 'true';
+
+            const swMonitor = document.getElementById('swMonitor');
+            if(swMonitor) swMonitor.checked = localStorage.getItem('monitor_enabled') === 'true';
             
             if(localStorage.getItem('wake_enabled') === 'true') toggleWakeLock(true);
-            if(localStorage.getItem('monitor_enabled') === 'true') document.getElementById('liveMonitor').style.display = 'block';
+            if(localStorage.getItem('monitor_enabled') === 'true') {
+                const liveMonitor = document.getElementById('liveMonitor');
+                if(liveMonitor) liveMonitor.style.display = 'block';
+            }
             
-            document.getElementById('selSound').value = soundMgr.type;
-            document.getElementById('selVib').value = vibMgr.type;
+            const selSound = document.getElementById('selSound');
+            if(selSound) selSound.value = soundMgr.type;
+
+            const selVib = document.getElementById('selVib');
+            if(selVib) selVib.value = vibMgr.type;
+        }
+
+        function confirmReset() {
+            if(confirm('⚠️ คำเตือน: คุณต้องการรีเซ็ตข้อมูลการขุดทั้งหมดใช่หรือไม่?\n- เงินทั้งหมดจะหายไป\n- เครื่องขุดทั้งหมดจะถูกลบ')) {
+                resetUserData();
+            }
+        }
+
+        function resetUserData() {
+            if(!currentUser) return;
+            
+            // 1. Reset Memory
+            balance = 0;
+            hashrate = 0;
+            dailyProfit = 0;
+            isMining = false;
+            
+            // 2. Clear Storage
+            localStorage.removeItem(`mining_rigs_${currentUser.username}`);
+            localStorage.removeItem(`active_items_${currentUser.username}`);
+            
+            // 3. Reset Profile
+            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)) || {};
+            pf.balance = 0;
+            pf.hashrate = 0;
+            pf.dailyProfit = 0;
+            localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+            
+            // 4. Update UI
+            updateUI();
+            renderActiveContracts();
+            
+            showToast('✅ รีเซ็ตข้อมูลเรียบร้อย', 'success');
+            
+            // 5. Stop Mining Loop (it will restart if hashrate > 0, but now it is 0)
+            if(soundMgr) soundMgr.play('alert');
         }
 
         function saveSystemSetting(key, value) {
@@ -2511,7 +2737,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             toast.innerHTML = `
                 <i class="fas ${icon}" style="font-size: 1.2rem;"></i>
                 <div>
-                    <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 2px;">SYSTEM NOTIFICATION</div>
+                    <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 2px;">การแจ้งเตือนระบบ</div>
                     <div style="font-size: 0.85rem; opacity: 0.9;">${msg}</div>
                 </div>
             `;
@@ -2538,7 +2764,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 // Override local maintenance check
                 sessionStorage.setItem('maintenance_bypass', 'true'); 
                 document.getElementById('maintenanceOverlay').style.display = 'none';
-                showToast('Emergency Bypass Activated', 'warning');
+                showToast('เปิดใช้งานโหมดฉุกเฉิน', 'warning');
                 clickCount = 0;
             }
         }
@@ -2568,11 +2794,11 @@ console.log('Live Sync Status:', liveSync.getStatus());
             const statusEl = document.getElementById('miningStatus');
             if(statusEl) {
                 if(navigator.onLine) {
-                    statusEl.innerHTML = '<i class="fas fa-wifi"></i> CONNECTED';
+                    statusEl.innerHTML = '<i class="fas fa-wifi"></i> เชื่อมต่อแล้ว';
                     statusEl.style.color = '#00f2ff';
                     statusEl.style.textShadow = '0 0 10px #00f2ff';
                 } else {
-                    statusEl.innerHTML = '<i class="fas fa-wifi-slash"></i> OFFLINE';
+                    statusEl.innerHTML = '<i class="fas fa-wifi-slash"></i> ขาดการเชื่อมต่อ';
                     statusEl.style.color = '#ff7675';
                     statusEl.style.textShadow = 'none';
                 }
@@ -2619,6 +2845,68 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 }
             }
         }, 2000);
+
+        // Real-time Force Update Listener
+        liveSync.on('force_update', (data) => {
+            if(!currentUser || !data) return;
+            
+            if(data.username === currentUser.username) {
+                console.log('⚡ Force Update Received:', data);
+                
+                if(data.type === 'rig_paused' || data.type === 'rig_resumed' || data.type === 'rig_deleted') {
+                    // Show Toast Immediately
+                    if(data.msg) showToast(data.msg, data.type === 'rig_paused' || data.type === 'rig_deleted' ? 'warning' : 'success');
+                    
+                    // Special Warning Modal for Paused/Deleted
+                    if(data.type === 'rig_paused') {
+                         showSystemWarningModal('⚠️ แจ้งเตือนการระงับการขุด', data.msg || 'เครื่องขุดของคุณถูกพักการใช้งานโดยแอดมิน');
+                    }
+
+                    // Play sound
+                    if(typeof soundMgr !== 'undefined') {
+                        soundMgr.play(data.type === 'rig_resumed' ? 'success' : 'alert');
+                    }
+
+                    // Refresh Data
+                    loadUserData();
+                    
+                    // Refresh UI if on mining page
+                    if(currentAction === 'mining') {
+                         // Force re-render of rig list
+                         updateUI();
+                    }
+                }
+            }
+        });
+
+        function showSystemWarningModal(title, msg) {
+            const modalId = 'sysWarningModal';
+            if(document.getElementById(modalId)) document.getElementById(modalId).remove();
+            
+            const div = document.createElement('div');
+            div.id = modalId;
+            div.className = 'modal';
+            div.style.display = 'flex';
+            div.style.zIndex = '10002'; // Higher than others
+            div.innerHTML = `
+                <div class="modal-content ai-card-border" style="background: rgba(20, 10, 10, 0.98); border: 1px solid var(--danger); text-align:center; border-radius: 16px; width: 85%; max-width: 350px; box-shadow: 0 0 30px rgba(255, 0, 0, 0.3); position: relative; overflow: hidden; animation: slideUp 0.3s ease-out;">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 0, 0, 0.05) 10px, rgba(255, 0, 0, 0.05) 20px); pointer-events: none;"></div>
+                    
+                    <div style="width: 80px; height: 80px; background: rgba(255, 0, 0, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid var(--danger); box-shadow: 0 0 15px rgba(255, 0, 0, 0.2);">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--danger); animation: pulse 1s infinite;"></i>
+                    </div>
+                    <h2 style="color: var(--danger); margin:0 0 10px; text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);">${title}</h2>
+                    <p style="color: #e2e8f0; margin-bottom: 25px; line-height: 1.5;">${msg}</p>
+                    
+                    <button class="cyber-btn" style="width: 100%; --btn-bg: var(--danger); border: none; color: white;" onclick="document.getElementById('${modalId}').remove()">
+                        รับทราบ
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(div);
+            
+            if(typeof vibMgr !== 'undefined') vibMgr.trigger('alert');
+        }
     </script>
     <div id="toastContainer"></div>
 </body>

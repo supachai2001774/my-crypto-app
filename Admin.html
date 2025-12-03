@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Cyber Command</title>
-    <script src="sync-manager.js"></script>
-    <script src="live-sync.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -190,6 +188,7 @@
         .btn-sm { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; color: white; font-size: 0.85rem; margin-right: 5px; transition: 0.3s; font-weight: 500; }
         .btn-green { background: linear-gradient(45deg, #059669, #10b981); box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
         .btn-red { background: linear-gradient(45deg, #b91c1c, #ef4444); box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .btn-warning { background: linear-gradient(45deg, #d97706, #f59e0b); box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
         .btn-gray { background: #475569; }
         .btn-primary { background: linear-gradient(45deg, #0284c7, #0ea5e9); box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); }
         
@@ -266,19 +265,19 @@
         <div class="brand">
             <i class="fas fa-robot"></i> ผู้ดูแลระบบ
         </div>
-        <div class="menu-item active" onclick="nav('dashboard')"><i class="fas fa-chart-pie"></i> แดชบอร์ด</div>
-        <div class="menu-item" onclick="nav('users')"><i class="fas fa-users"></i> ผู้ใช้</div>
-        <div class="menu-item" onclick="nav('mining')"><i class="fas fa-microchip"></i> เครื่องขุด</div>
-        <div class="menu-item" onclick="nav('shop')"><i class="fas fa-shopping-cart"></i> ร้านค้า</div>
-        <div class="menu-item" onclick="nav('referrals')">
+        <div class="menu-item active" onclick="nav('dashboard', this)"><i class="fas fa-chart-pie"></i> แดชบอร์ด</div>
+        <div class="menu-item" onclick="nav('users', this)"><i class="fas fa-users"></i> ผู้ใช้</div>
+        <div class="menu-item" onclick="nav('mining', this)"><i class="fas fa-microchip"></i> เครื่องขุด</div>
+        <div class="menu-item" onclick="nav('shop', this)"><i class="fas fa-shopping-cart"></i> ร้านค้า</div>
+        <div class="menu-item" onclick="nav('referrals', this)">
             <i class="fas fa-user-friends"></i> แนะนำเพื่อน 
             <span id="navReferralBadge" class="nav-badge" style="display:none;">0</span>
         </div>
-        <div class="menu-item" onclick="nav('trans')" id="menuTrans">
+        <div class="menu-item" onclick="nav('trans', this)" id="menuTrans">
             <i class="fas fa-exchange-alt"></i> ธุรกรรม 
             <span id="navTransBadge" class="nav-badge" style="display:none;">0</span>
         </div>
-        <div class="menu-item" onclick="nav('announce')"><i class="fas fa-bullhorn"></i> ระบบ</div>
+        <div class="menu-item" onclick="nav('announce', this)"><i class="fas fa-bullhorn"></i> ระบบ</div>
 
         <div style="margin-top: auto; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--border);">
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px;">สถานะเซิร์ฟเวอร์</div>
@@ -539,19 +538,41 @@
     <!-- Image Modal -->
     <div id="imgModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; flex-direction: column;">
         <img id="modalImg" src="" style="max-width: 90%; max-height: 80vh; border: 2px solid var(--primary); box-shadow: 0 0 30px var(--primary); border-radius: 8px;">
-        <button onclick="document.getElementById('imgModal').style.display='none'" class="btn-sm btn-red" style="margin-top: 20px; padding: 10px 30px; font-size: 1.2rem;">Close</button>
+        <button onclick="document.getElementById('imgModal').style.display='none'" class="btn-sm btn-red" style="margin-top: 20px; padding: 10px 30px; font-size: 1.2rem;">ปิด</button>
     </div>
 
+    <script src="live-sync.js"></script>
     <script>
+        // Check if LiveSync is loaded from live-sync.js
+        if (typeof liveSync === 'undefined') {
+            console.error('LiveSync not loaded properly');
+            // Fallback to prevent crashes
+            window.liveSync = { 
+                broadcast: () => console.log('LiveSync disabled (fallback)'), 
+                on: () => {},
+                getStatus: () => 'disabled'
+            };
+        }
 
         // Navigation
-        function nav(id) {
+        function nav(id, el) {
+            // Safety check for target section
+            const target = document.getElementById(id);
+            if (!target) {
+                console.error('Section not found:', id);
+                return;
+            }
+
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            target.classList.add('active');
             
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-            // Find the menu item that calls this function (simplified)
-            event.currentTarget.classList.add('active');
+            
+            if(el) {
+                el.classList.add('active');
+            } else if(typeof event !== 'undefined' && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
             
             if(window.innerWidth <= 768) toggleSidebar();
         }
@@ -645,64 +666,36 @@
             });
         }
 
-            function deleteUser(username) {
+        function deleteUser(username) {
             if(confirm('ลบผู้ใช้ ' + username + ' หรือไม่?')) {
                 let raw = JSON.parse(localStorage.getItem('mining_users')) || {};
-                if (Array.isArray(raw)) { 
-                    raw = raw.filter(u => u.username !== username); 
-                } else { 
-                    delete raw[username]; 
-                }
+                if (Array.isArray(raw)) { raw = raw.filter(u => u.username !== username); }
+                else { delete raw[username]; }
                 saveUsersRaw(raw);
-                localStorage. removeItem(`mining_rigs_${username}`);
+                localStorage.removeItem(`mining_rigs_${username}`);
                 localStorage.removeItem(`notifications_${username}`);
-                localStorage.removeItem(`pf_${username}`);
-                localStorage.removeItem(`mining_referrals_${username}`);
-                localStorage.removeItem(`active_items_${username}`);
-                
-                // 🔴 Broadcast to all tabs/App
-                syncManager.broadcast('user_deleted', { 
-                    username: username,
-                    timestamp: Date.now()
-                });
-                syncManager.emitLocal('user_deleted', { username });
-                
                 renderUsers();
                 renderDashboard();
                 showToast('ลบผู้ใช้แล้ว', 'success');
             }
         }
         
-               function resetPass(username) {
-            let newPass = prompt('ระบุรหัสผ่านใหม่สำหรับ ' + username + ':');
-            if(newPass) {
-                let raw = JSON. parse(localStorage.getItem('mining_users')) || {};
-                if (Array.isArray(raw)) {
-                    let idx = raw.findIndex(u => u. username === username);
-                    if(idx !== -1) { raw[idx].password = newPass; raw[idx].pass = newPass; }
-                } else {
-                    if (! raw[username]) raw[username] = {};
-                    raw[username]. password = newPass;
-                    raw[username].pass = newPass;
-                }
-                saveUsersRaw(raw);
-                
-                // 🔴 Notify user
-                let notifs = JSON.parse(localStorage.getItem(`notifications_${username}`)) || [];
-                notifs. push({
-                    id: Date.now(),
-                    msg: '⚠️ แอดมินรีเซ็ตรหัสผ่านของคุณแล้ว',
-                    type: 'warning',
-                    timestamp: Date.now(),
-                    read: false
-                });
-                localStorage.setItem(`notifications_${username}`, JSON.stringify(notifs));
-                
-                syncManager.broadcast('password_reset', { username });
-                
-                showToast('อัปเดตรหัสผ่านแล้ว', 'success');
-            }
-        } 
+        function resetPass(username) {
+             let newPass = prompt('ระบุรหัสผ่านใหม่สำหรับ ' + username + ':');
+             if(newPass) {
+                 let raw = JSON.parse(localStorage.getItem('mining_users')) || {};
+                 if (Array.isArray(raw)) {
+                     let idx = raw.findIndex(u => u.username === username);
+                     if(idx !== -1) { raw[idx].password = newPass; raw[idx].pass = newPass; }
+                 } else {
+                     if (!raw[username]) raw[username] = {};
+                     raw[username].password = newPass;
+                     raw[username].pass = newPass;
+                 }
+                 saveUsersRaw(raw);
+                 showToast('อัปเดตรหัสผ่านแล้ว', 'success');
+             }
+        }
 
         // User Rigs (View Only)
         function renderMining() {
@@ -732,7 +725,8 @@
                         timeLabel = `${h} ชม. ${m} น.`;
                     }
 
-                    const statusLabel = (r.status === 'expired' || diff <= 0) ? '<span class="badge badge-danger">หมดอายุ</span>' : '<span class="badge badge-success">ใช้งาน</span>';
+                    const statusLabel = (r.status === 'expired' || diff <= 0) ? '<span class="badge badge-danger">หมดอายุ</span>' : 
+                                        '<span class="badge badge-success">ใช้งาน</span>';
                     const connDot = online ? '<span class="badge badge-success">ออนไลน์</span>' : '<span class="badge badge-warning">ออฟไลน์</span>';
                     
                     tr.innerHTML = `
@@ -743,8 +737,11 @@
                         <td>${statusLabel}</td>
                         <td>${connDot}</td>
                         <td>
+                            <button class="btn-sm ${r.status === 'paused' ? 'btn-green' : 'btn-warning'}" onclick="toggleRigPause('${u.username}', ${idx})">
+                                ${r.status === 'paused' ? 'เริ่ม' : 'หยุด'}
+                            </button>
                             <button class="btn-sm btn-green" onclick="renewRig('${u.username}', ${idx})">ต่ออายุ</button>
-                            <button class="btn-sm btn-red" onclick="deleteRig('${u.username}', ${r.id})">ลบ</button>
+                            <button class="btn-sm btn-red" onclick="deleteRig('${u.username}', ${r.id}, '${r.name}')">ลบ</button>
                         </td>
                     `;
                     tb.appendChild(tr);
@@ -775,14 +772,100 @@
                 renderMining();
             }
         }
+
+
         
-        function deleteRig(user, id) {
-            if(confirm('ลบเครื่องนี้หรือไม่?')) {
+        function toggleRigPause(username, idx) {
+            let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${username}`)) || [];
+            if(!rigs[idx]) return;
+
+            const r = rigs[idx];
+            const isPaused = r.status === 'paused';
+            
+            // Toggle Status
+            r.status = isPaused ? 'active' : 'paused';
+            rigs[idx] = r;
+            localStorage.setItem(`mining_rigs_${username}`, JSON.stringify(rigs));
+            
+            // Update Active Items
+            let active = JSON.parse(localStorage.getItem(`active_items_${username}`)) || [];
+            
+            // Find corresponding active item
+            let activeIdx = -1;
+            if(!isPaused) { // Switching to PAUSED
+                activeIdx = active.findIndex(a => a.id === r.id && a.speed === r.speed && !a.paused);
+            } else { // Switching to ACTIVE
+                activeIdx = active.findIndex(a => a.id === r.id && a.speed === r.speed && a.paused);
+            }
+
+            if(activeIdx !== -1) {
+                if(!isPaused) {
+                    active[activeIdx].paused = true;
+                } else {
+                    delete active[activeIdx].paused;
+                }
+                localStorage.setItem(`active_items_${username}`, JSON.stringify(active));
+            }
+
+            // Recalculate Hashrate
+            let pf = JSON.parse(localStorage.getItem(`pf_${username}`)) || {};
+            pf.hashrate = active.reduce((sum, item) => {
+                if(item.paused) return sum;
+                return sum + (item.speed || 0);
+            }, 0);
+            localStorage.setItem(`pf_${username}`, JSON.stringify(pf));
+
+            // Notify User
+            const msg = !isPaused ? `⚠️ เครื่องขุด "${r.name}" ถูกพักการใช้งานโดยแอดมิน` : `✅ เครื่องขุด "${r.name}" กลับมาทำงานแล้ว`;
+            const type = !isPaused ? 'rig_paused' : 'rig_resumed';
+            
+            // Update notification history
+            let notifs = JSON.parse(localStorage.getItem(`notifications_${username}`)) || [];
+            notifs.push({
+                msg: msg,
+                type: !isPaused ? 'warning' : 'success',
+                read: false,
+                timestamp: Date.now()
+            });
+            localStorage.setItem(`notifications_${username}`, JSON.stringify(notifs));
+
+            liveSync.broadcast('force_update', { username: username, type: type, rigName: r.name, msg: msg });
+            
+            renderMining();
+            showToast(msg, 'success');
+        }
+
+        function deleteRig(user, id, rigName) {
+            if(confirm(`⚠️ ยืนยันการลบเครื่องขุด "${rigName}" ของผู้ใช้ ${user}?\n- การกระทำนี้ไม่สามารถเรียกคืนได้\n- ผู้ใช้จะได้รับการแจ้งเตือนทันที`)) {
+                // 1. Remove from storage
                 let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${user}`)) || [];
                 rigs = rigs.filter(r => r.id !== id);
                 localStorage.setItem(`mining_rigs_${user}`, JSON.stringify(rigs));
+                
+                // 2. Remove from active items (if exists)
+                let active = JSON.parse(localStorage.getItem(`active_items_${user}`)) || [];
+                active = active.filter(r => r.id !== id);
+                localStorage.setItem(`active_items_${user}`, JSON.stringify(active));
+
+                // 2.5 Update User Hashrate
+                let pf = JSON.parse(localStorage.getItem(`pf_${user}`)) || {};
+                pf.hashrate = active.reduce((sum, item) => sum + (item.paused ? 0 : (item.speed || 0)), 0);
+                localStorage.setItem(`pf_${user}`, JSON.stringify(pf));
+
+                // 3. Send Notification to User
+                let notifs = JSON.parse(localStorage.getItem(`notifications_${user}`)) || [];
+                notifs.push({
+                    msg: `⚠️ เครื่องขุด "${rigName}" ของคุณถูกลบโดยผู้ดูแลระบบ`,
+                    type: 'error',
+                    read: false,
+                    timestamp: Date.now()
+                });
+                localStorage.setItem(`notifications_${user}`, JSON.stringify(notifs));
+
+                // 4. Trigger Updates
+                liveSync.broadcast('force_update', { username: user, type: 'rig_deleted', rigName: rigName });
                 renderMining();
-                showToast('ลบเครื่องแล้ว', 'success');
+                showToast(`ลบเครื่อง ${rigName} ของ ${user} แล้ว`, 'success');
             }
         }
 
@@ -943,10 +1026,11 @@
                 let slipLink = t.slip ? `<button onclick="viewSlip('${t.slip}')" class="btn-sm btn-primary"><i class="fas fa-image"></i> ดู</button>` : '-';
 
                 let tr = document.createElement('tr');
+                const typeLabel = t.type === 'deposit' ? '<span style="color:#10b981">ฝากเงิน</span>' : '<span style="color:#ef4444">ถอนเงิน</span>';
                 tr.innerHTML = `
                     <td>${new Date(t.date).toLocaleString()}</td>
                     <td style="font-weight: bold; color: white;">${t.user}</td>
-                    <td style="text-transform: uppercase; color: ${t.type==='deposit'?'#10b981':'#ef4444'}">${t.type}</td>
+                    <td style="text-transform: uppercase;">${typeLabel}</td>
                     <td style="font-weight: bold;">฿${parseFloat(t.amount).toLocaleString()}</td>
                     <td>${slipLink}</td>
                     <td>${statusBadge}</td>
@@ -984,16 +1068,17 @@
                 
                 // Notification to User
                 const user = trans[idx].user;
-                const type = status === 'approved' ? 'success' : 'error';
+                const notifType = status === 'approved' ? 'success' : 'error';
+                const typeThai = trans[idx].type === 'deposit' ? 'ฝากเงิน' : 'ถอนเงิน';
                 const msg = status === 'approved' 
-                    ? `ธุรกรรม ${trans[idx].type.toUpperCase()} ฿${parseFloat(trans[idx].amount).toLocaleString()} อนุมัติแล้ว!` 
-                    : `ธุรกรรม ${trans[idx].type.toUpperCase()} ฿${parseFloat(trans[idx].amount).toLocaleString()} ถูกปฏิเสธ`;
+                    ? `รายการ${typeThai} ฿${parseFloat(trans[idx].amount).toLocaleString()} อนุมัติแล้ว` 
+                    : `รายการ${typeThai} ฿${parseFloat(trans[idx].amount).toLocaleString()} ถูกปฏิเสธ`;
 
                 let notifs = JSON.parse(localStorage.getItem(`notifications_${user}`)) || [];
                 notifs.push({
                     id: Date.now(),
                     msg: msg,
-                    type: type,
+                    type: notifType,
                     timestamp: Date.now(),
                     read: false
                 });
@@ -1001,7 +1086,8 @@
 
                 renderTrans();
                 renderDashboard();
-                showToast(`ทำเครื่องหมายธุรกรรมเป็น ${status.toUpperCase()}`, 'success');
+                const statusThai = status === 'approved' ? 'อนุมัติ' : 'ปฏิเสธ';
+                showToast(`ทำเครื่องหมายธุรกรรมเป็น ${statusThai}`, 'success');
             }
         }
         
@@ -1011,57 +1097,32 @@
         }
 
         // Announcements & System
-            function postAnnounce() {
-                const txt = document.getElementById('announceText').value;
-                if(txt) {
+        function postAnnounce() {
+            const txt = document.getElementById('announceText').value;
+            if(txt) {
                 const annObj = { msg: txt, date: new Date().toISOString() };
                 localStorage.setItem('mining_announcement', JSON.stringify(annObj));
                 document.getElementById('currentAnnounce').innerText = txt;
                 document.getElementById('announceText').value = '';
-                
-                // 🔴 Broadcast to all apps
-                syncManager.broadcast('announcement_posted', annObj);
-                syncManager. emitLocal('announcement_posted', annObj);
-                
                 showToast('อัปเดตประกาศแล้ว', 'success');
             }
         }
         
-                function clearAnnounce() {
-    localStorage.removeItem('mining_announcement');
-    document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
-    
-    // 🔴 Broadcast to all apps
-    syncManager.broadcast('announcement_cleared', { timestamp: Date.now() });
-    syncManager.emitLocal('announcement_cleared', {});
-    
-    showToast('ล้างประกาศแล้ว', 'info');
-}
+        function clearAnnounce() {
+            localStorage.removeItem('mining_announcement');
+            document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
+            showToast('ล้างประกาศแล้ว', 'info');
+        }
 
-                function toggleMaint() {
+        function toggleMaint() {
             const isMaint = document.getElementById('maintSwitch').checked;
             localStorage.setItem('mining_maintenance', isMaint);
-            
-            // 🔴 Broadcast to all apps
-            syncManager.broadcast('maintenance_mode_changed', { 
-                enabled: isMaint,
-                timestamp: Date.now()
-            });
-            syncManager.emitLocal('maintenance_mode_changed', { enabled: isMaint });
-            
             showToast(isMaint ? 'เปิดโหมดบำรุงรักษา' : 'ปิดโหมดบำรุงรักษา', isMaint ? 'warning' : 'info');
         }
         
-                function saveMaintMsg() {
-            const msg = document. getElementById('maintMsg').value;
+        function saveMaintMsg() {
+            const msg = document.getElementById('maintMsg').value;
             localStorage.setItem('mining_maintenance_msg', msg);
-            
-            // 🔴 Broadcast to all apps
-            syncManager.broadcast('maintenance_msg_changed', { 
-                message: msg,
-                timestamp: Date.now()
-            });
-            
             showToast('บันทึกข้อความบำรุงรักษาแล้ว', 'success');
         }
         
@@ -1071,78 +1132,7 @@
                 location.reload();
             }
         }
-        // ============ ADMIN LIVE SYNC ============
-liveSync.on('users', (data) => {
-    console. log('📡 Users updated from app');
-    renderUsers();
-    renderDashboard();
-});
 
-liveSync.on('transactions', (data) => {
-    console.log('📡 Transactions updated from app');
-    renderTrans();
-    renderDashboard();
-});
-
-liveSync.on('shop', (data) => {
-    console.log('📡 Shop updated from app');
-    renderShop();
-});
-
-liveSync.on('maintenance', (data) => {
-    console.log('📡 Maintenance status updated');
-    const isMaint = localStorage.getItem('mining_maintenance') === 'true';
-    document.getElementById('maintSwitch').checked = isMaint;
-});
-
-liveSync.on('announcement', (data) => {
-    console.log('📡 Announcement updated from app');
-    const ann = localStorage.getItem('mining_announcement');
-    if(ann) {
-        document.getElementById('currentAnnounce').innerText = JSON.parse(ann). msg;
-    }
-});
-
-liveSync.on('profile_updated', (data) => {
-    console.log('📡 Profile updated:', data.username);
-    renderUsers();
-    renderDashboard();
-});
-
-liveSync.on('referrals_updated', (data) => {
-    console.log('📡 Referral updated:', data.username);
-    renderReferrals();
-});
-
-// Auto refresh admin dashboard
-setInterval(() => {
-    if (document.querySelector('.section. active')) {
-        const activeSection = document.querySelector('.section. active'). id;
-        
-        switch(activeSection) {
-            case 'dashboard':
-                renderDashboard();
-                break;
-            case 'users':
-                renderUsers();
-                break;
-            case 'trans':
-                renderTrans();
-                break;
-            case 'mining':
-                renderMining();
-                break;
-            case 'shop':
-                renderShop();
-                break;
-            case 'referrals':
-                renderReferrals();
-                break;
-        }
-    }
-}, 2000);
-
-console.log('✅ Admin Live Sync listeners registered');
         // Init
         window.onload = function() {
             renderDashboard();
@@ -1153,7 +1143,14 @@ console.log('✅ Admin Live Sync listeners registered');
             renderTrans();
             
             const ann = localStorage.getItem('mining_announcement');
-            if(ann) document.getElementById('currentAnnounce').innerText = ann;
+            if(ann) {
+                try {
+                    const annObj = JSON.parse(ann);
+                    document.getElementById('currentAnnounce').innerText = annObj.msg || ann;
+                } catch(e) {
+                    document.getElementById('currentAnnounce').innerText = ann;
+                }
+            }
             
             const maint = localStorage.getItem('mining_maintenance') === 'true';
             document.getElementById('maintSwitch').checked = maint;
@@ -1167,42 +1164,6 @@ console.log('✅ Admin Live Sync listeners registered');
                 renderReferrals();
             }, 5000);
         };
-                // ============ ADMIN SYNC LISTENERS ============
-        document.addEventListener('DOMContentLoaded', function() {
-            // Listen for forced sync from other tabs
-            syncManager.on('force_sync_requested', () => {
-                console.log('Force sync requested, reloading data');
-                renderDashboard();
-                renderUsers();
-                renderMining();
-                renderShop();
-                renderReferrals();
-                renderTrans();
-            });
-
-            // Monitor transaction updates from other tabs
-            syncManager.on('transactions_updated', (trans) => {
-                console.log('Transactions updated from external source');
-                renderTrans();
-                renderDashboard();
-            });
-
-            // Monitor user updates
-            syncManager.on('users_updated', (users) => {
-                console.log('Users updated from external source');
-                renderUsers();
-                renderDashboard();
-            });
-
-            // Monitor shop updates
-            syncManager.on('shop_updated', () => {
-                console.log('Shop updated from external source');
-                renderShop();
-            });
-
-            console.log('✅ Admin Sync Listeners Registered');
-            console.log('Sync Manager Debug:', syncManager.debugInfo());
-        });
     </script>
 </body>
 </html>

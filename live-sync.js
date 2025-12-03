@@ -20,8 +20,31 @@ class LiveSync {
         
         // Listen to storage changes
         window.addEventListener('storage', (e) => this.handleStorageChange(e));
+
+        // Listen to BroadcastChannel
+        if ('BroadcastChannel' in window) {
+            const bc = new BroadcastChannel('live_sync');
+            bc.onmessage = (event) => {
+                if(event.data && event.data.event) {
+                    console.log('📡 Broadcast received:', event.data.event);
+                    this.emit(event.data.event, event.data.data);
+                }
+            };
+        }
         
         console.log('✅ LiveSync initialized');
+    }
+
+    /**
+     * Broadcast event to all tabs
+     */
+    broadcast(event, data) {
+        if ('BroadcastChannel' in window) {
+            const bc = new BroadcastChannel('live_sync');
+            bc.postMessage({ event: event, data: data });
+        }
+        // Also emit locally
+        this.emit(event, data);
     }
 
     /**
