@@ -501,11 +501,17 @@
             </div>
 
             <div class="card">
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center;">
                     <button onclick="filterTrans('all')" class="btn-sm btn-primary">ทั้งหมด</button>
                     <button onclick="filterTrans('pending')" class="btn-sm btn-warning" style="background: #f59e0b;">รอตรวจสอบ</button>
                     <button onclick="filterTrans('approved')" class="btn-sm btn-green">อนุมัติแล้ว</button>
                     <button onclick="filterTrans('rejected')" class="btn-sm btn-red">ปฏิเสธ</button>
+                    
+                    <div style="flex-grow: 1;"></div>
+                    
+                    <button onclick="clearTransactions()" class="btn-sm btn-red" style="background: #dc2626; border: 1px solid rgba(255,255,255,0.2);">
+                        <i class="fas fa-trash"></i> ล้างข้อมูล
+                    </button>
                 </div>
                 <div style="overflow-x: auto;">
                     <table id="transTable">
@@ -1026,6 +1032,16 @@
 
         // Transactions
         let currentTransFilter = 'all';
+
+        function clearTransactions() {
+            if(confirm('คุณแน่ใจหรือไม่ที่จะล้างประวัติธุรกรรมทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+                localStorage.removeItem('mining_transactions');
+                renderTrans();
+                renderDashboard();
+                showToast('ล้างประวัติธุรกรรมเรียบร้อยแล้ว', 'success');
+            }
+        }
+
         function filterTrans(status) {
             currentTransFilter = status;
             renderTrans();
@@ -1033,10 +1049,20 @@
 
         function renderTrans() {
             let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            trans.sort((a, b) => b.date - a.date); // Newest first
+            // Sort by timestamp (support both date and timestamp fields)
+            trans.sort((a, b) => (b.timestamp || b.date || 0) - (a.timestamp || a.date || 0));
             
             const tb = document.querySelector('#transTable tbody');
             tb.innerHTML = '';
+
+            if(trans.length === 0) {
+                tb.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">
+                    <i class="fas fa-inbox" style="font-size:2rem; margin-bottom:10px; opacity:0.5;"></i><br>
+                    ไม่พบประวัติธุรกรรม
+                </td></tr>`;
+                document.getElementById('navTransBadge').style.display = 'none';
+                return;
+            }
 
             let pendingCount = 0;
 
@@ -1057,12 +1083,17 @@
                     `;
                 }
 
-                let slipLink = t.slip ? `<button onclick="viewSlip('${t.slip}')" class="btn-sm btn-primary"><i class="fas fa-image"></i> ดู</button>` : '-';
+                let slipLink = t.slip ? `<button onclick="viewSlip(${t.id})" class="btn-sm btn-primary"><i class="fas fa-image"></i> ดู</button>` : '-';
 
                 let tr = document.createElement('tr');
                 const typeLabel = t.type === 'deposit' ? '<span style="color:#10b981">ฝากเงิน</span>' : '<span style="color:#ef4444">ถอนเงิน</span>';
+                
+                // Handle date/timestamp
+                const ts = t.timestamp || t.date;
+                const dateStr = ts ? new Date(ts).toLocaleString() : 'Invalid Date';
+
                 tr.innerHTML = `
-                    <td>${new Date(t.date).toLocaleString()}</td>
+                    <td>${dateStr}</td>
                     <td style="font-weight: bold; color: white;">${t.user}</td>
                     <td style="text-transform: uppercase;">${typeLabel}</td>
                     <td style="font-weight: bold;">฿${parseFloat(t.amount).toLocaleString()}</td>
@@ -1125,9 +1156,15 @@
             }
         }
         
-        function viewSlip(url) {
-            document.getElementById('modalImg').src = url;
-            document.getElementById('imgModal').style.display = 'flex';
+        function viewSlip(id) {
+            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+            let t = trans.find(item => item.id === id);
+            if(t && t.slip) {
+                document.getElementById('modalImg').src = t.slip;
+                document.getElementById('imgModal').style.display = 'flex';
+            } else {
+                showToast('ไม่พบรูปสลิป', 'error');
+            }
         }
 
         // Announcements & System

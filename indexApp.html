@@ -1136,23 +1136,31 @@ console.log('Live Sync Status:', liveSync.getStatus());
                             <!-- Instructions -->
                             <div style="text-align: left; font-size: 0.8rem; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                                 <div style="margin-bottom: 8px; font-weight: bold; color: var(--primary);">กรุณาทำตามขั้นตอนที่แนะนำ:</div>
-                                <div style="margin-bottom: 4px;">1. คลิกปุ่ม "บันทึก QR" หรือแคปหน้าจอ</div>
+                                <div style="margin-bottom: 4px;">1. แคปหน้าจอ QR Code นี้เพื่อนำไปชำระเงิน</div>
                                 <div style="margin-bottom: 4px;">2. เปิดแอปพลิเคชันธนาคารบนอุปกรณ์ของท่าน</div>
-                                <div style="margin-bottom: 4px;">3. เลือกไปที่ปุ่ม "สแกน" หรือ "QR Code" และกดที่ "รูปภาพ"</div>
-                                <div style="margin-bottom: 4px;">4. เลือกรูปภาพที่ท่านแคปไว้และทำการชำระเงิน</div>
-                                <div style="margin-top: 8px; color: var(--warning); line-height: 1.4;">5. คำสั่งซื้อจะได้รับการยืนยันทันทีหลังจากชำระเงินสำเร็จ หรือ ภายใน 1 ชั่วโมงในกรณีที่มีธุรกรรมจำนวนมาก</div>
+                                <div style="margin-bottom: 4px;">3. เลือกเมนู "สแกน" หรือ "QR Code" แล้วเลือกรูปภาพที่แคปไว้</div>
+                                <div style="margin-bottom: 4px;">4. ตรวจสอบยอดเงินและทำการโอนเงิน</div>
+                                <div style="margin-bottom: 4px;">5. บันทึกสลิป แล้วนำมาอัปโหลดในช่องด้านล่างเพื่อยืนยัน</div>
+                                <div style="margin-top: 8px; color: var(--warning); line-height: 1.4;">* กรุณาแนบสลิปทุกครั้งเพื่อความรวดเร็วในการตรวจสอบ</div>
                                 <div style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px;">
                                     หมายเหตุ: ช่องทางชำระเงินพร้อมเพย์ใช้ได้กับแอปพลิเคชันธนาคารหรือวอลเล็ตที่รองรับการชำระเงินด้วยพร้อมเพย์เท่านั้น
                                 </div>
                             </div>
 
+                            <!-- Slip Upload -->
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">แนบหลักฐานการโอนเงิน (สลิป)</div>
+                                <input type="file" id="slipUpload" accept="image/*" class="cyber-input" style="padding: 10px; font-size: 0.9rem; height: auto;" onchange="handleSlipSelect(this)">
+                                <div id="slipPreview" style="margin-top:10px; text-align:center; display:none;">
+                                    <img id="slipPreviewImg" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid var(--text-muted);">
+                                    <div style="font-size:0.7rem; color:var(--success); margin-top:5px;"><i class="fas fa-check-circle"></i> แนบสลิปแล้ว</div>
+                                </div>
+                            </div>
+
                             <!-- Buttons -->
                             <div style="display: flex; gap: 10px;">
-                                <button class="cyber-btn" onclick="saveQRSnapshot()" style="flex: 1; background: transparent; border: 1px solid var(--primary); color: var(--primary); box-shadow: none;">
-                                    <i class="fas fa-download"></i> บันทึก QR
-                                </button>
-                                <button class="cyber-btn" onclick="confirmPayment()" style="flex: 1;">
-                                    <i class="fas fa-check"></i> ตกลง
+                                <button id="btnConfirmPayment" class="cyber-btn" onclick="confirmPayment()" style="width: 100%; opacity: 0.5; cursor: not-allowed; filter: grayscale(100%);" disabled>
+                                    <i class="fas fa-check"></i> ยืนยันการชำระเงิน
                                 </button>
                             </div>
 
@@ -1332,43 +1340,86 @@ console.log('Live Sync Status:', liveSync.getStatus());
             if(timerEl) timerEl.innerText = "กรุณาชำระภายใน 01:00:00";
         }
 
-        function saveQRSnapshot() {
-            const qrImg = document.getElementById('qrImage');
-            if(qrImg && qrImg.src) {
-                const a = document.createElement('a');
-                a.href = qrImg.src;
-                a.download = 'payment_qr.png';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                showToast('บันทึก QR Code เรียบร้อย', 'success');
+        function handleSlipSelect(input) {
+            const btn = document.getElementById('btnConfirmPayment');
+            const preview = document.getElementById('slipPreview');
+            const previewImg = document.getElementById('slipPreviewImg');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    // Enable button
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                        btn.style.filter = 'none';
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+                // Disable button
+                if(btn) {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    btn.style.filter = 'grayscale(100%)';
+                }
             }
         }
 
         function confirmPayment() {
              const amtInput = document.getElementById('walletAmount');
              const val = parseFloat(amtInput.value);
+             const slipInput = document.getElementById('slipUpload');
              
              if(!val || val < 1) return showToast('ยอดเงินไม่ถูกต้อง (ขั้นต่ำ 1 บาท)', 'error');
              
-             // Create Pending Transaction
-             let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-             trans.push({
-                id: Date.now(),
-                user: currentUser.username,
-                type: 'deposit',
-                amount: val,
-                timestamp: Date.now(),
-                status: 'pending'
-             });
-             localStorage.setItem('mining_transactions', JSON.stringify(trans));
+             if (!slipInput || !slipInput.files || slipInput.files.length === 0) {
+                 return showToast('กรุณาแนบสลิปการโอนเงินก่อนยืนยัน', 'error');
+             }
              
-             // Show Success
-             showToast('แจ้งชำระเงินเรียบร้อย รอการตรวจสอบ', 'success');
-             document.getElementById('walletModal').style.display = 'none';
+             const file = slipInput.files[0];
+             const reader = new FileReader();
              
-             // Refresh Trans List
-             renderUserTrans();
+             reader.onload = function(e) {
+                 const slipBase64 = e.target.result;
+                 
+                 // Create Pending Transaction
+                 let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+                 trans.push({
+                    id: Date.now(),
+                    user: currentUser.username,
+                    type: 'deposit',
+                    amount: val,
+                    timestamp: Date.now(),
+                    status: 'pending',
+                    slip: slipBase64
+                 });
+                 localStorage.setItem('mining_transactions', JSON.stringify(trans));
+                 
+                 // Show Success
+                 showToast('แจ้งชำระเงินเรียบร้อย รอการตรวจสอบ', 'success');
+                 document.getElementById('walletModal').style.display = 'none';
+                 
+                 // Clear inputs
+                 amtInput.value = '';
+                 slipInput.value = '';
+                 updateDepositUI(0);
+                 
+                 // Refresh Trans List
+                 renderUserTrans();
+             };
+             
+             reader.onerror = function() {
+                 showToast('เกิดข้อผิดพลาดในการอ่านไฟล์รูปภาพ', 'error');
+             };
+             
+             reader.readAsDataURL(file);
         }
 
         function openWalletPage() {
