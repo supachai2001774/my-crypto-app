@@ -1,7 +1,7 @@
     const CACHE_NAME = 'miner-app-v9';
     const ASSETS = [
       './indexApp.html',
-      './Admin.html',
+      './admin.html',
       './style.css',
       './sync-manager.js',
       './manifest.json',
