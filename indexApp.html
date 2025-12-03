@@ -230,6 +230,12 @@
                 <i class="fas fa-chevron-right" style="font-size: 1rem; color: var(--text-muted);"></i>
             </div>
 
+            <div class="menu-list-item" onclick="showRemoteGuide()">
+                <i class="fas fa-mobile-alt" style="font-size: 1.2rem;"></i>
+                <div style="flex: 1;">การเข้าถึงระยะไกล</div>
+                <i class="fas fa-chevron-right" style="font-size: 1rem; color: var(--text-muted);"></i>
+            </div>
+
             <!-- Referral Card -->
             <div class="menu-list-item" style="background: linear-gradient(135deg, rgba(255, 0, 85, 0.1), rgba(0, 0, 0, 0)); border: 1px solid var(--danger);" onclick="showReferralModal()">
                 <div style="display: flex; align-items: center; width: 100%;">
@@ -423,13 +429,13 @@
 
     <div id="refModal" class="modal">
         <div class="modal-content" style="padding: 0; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; width: 90%; max-width: 400px; border-radius: 16px; box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);">
-            <div style="padding: 20px; max-height: 85vh; overflow-y: auto;">
-                <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer; z-index: 10; color: #94a3b8; background: rgba(255,255,255,0.05); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('refModal').style.display='none'"></i>
+            <div style="padding: 15px; max-height: 80vh; overflow-y: auto;">
+                <i class="fas fa-times" style="position: absolute; right: 10px; top: 10px; cursor: pointer; z-index: 10; color: #94a3b8; background: rgba(255,255,255,0.05); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('refModal').style.display='none'"></i>
                 
                 <!-- Header Banner -->
-                <div class="ref-banner" style="background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, rgba(0, 242, 255, 0.05) 100%); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 15px; padding: 20px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); margin-bottom: 20px;">
+                <div class="ref-banner" style="background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, rgba(0, 242, 255, 0.05) 100%); border: 1px solid rgba(0, 242, 255, 0.2); border-radius: 15px; padding: 15px; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); margin-bottom: 15px;">
                     <div style="position: relative; z-index: 2;">
-                        <h2 style="margin: 0; font-size: 1.5rem; color: #00f2ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">เครือข่ายเพื่อน</h2>
+                        <h2 style="margin: 0; font-size: 1.3rem; color: #00f2ff; font-weight: 800; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">เครือข่ายเพื่อน</h2>
                         <p style="margin: 5px 0 10px; font-size: 0.8rem; color: #94a3b8;">ขยายเครือข่ายการขุดของคุณ</p>
                         <div style="display: inline-block; background: rgba(0, 242, 255, 0.1); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; color: #00f2ff; border: 1px solid rgba(0, 242, 255, 0.3);">
                             <i class="fas fa-users"></i> โปรแกรมแนะนำเพื่อน
@@ -439,7 +445,7 @@
                 </div>
 
                 <!-- Stats Row -->
-                <div class="ref-stats-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div class="ref-stats-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div class="ref-stat-box" style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
                         <div style="color: var(--warning); font-size: 0.7rem; margin-bottom: 5px; text-transform: uppercase;">รออนุมัติ</div>
                         <div class="ref-stat-num" id="refPendingCount" style="color: var(--warning); font-size: 1.5rem; font-weight: bold; text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);">0</div>
@@ -453,7 +459,7 @@
                 </div>
 
                 <!-- Referral Code Box -->
-                <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05);">
                     <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 10px; text-align: center; text-transform: uppercase;">รหัสแนะนำของคุณ</div>
                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 242, 255, 0.05); padding: 12px 15px; border-radius: 8px; border: 1px dashed rgba(0, 242, 255, 0.3); position: relative;">
                         <div style="font-size: 1.5rem; font-weight: bold; color: #00f2ff; letter-spacing: 3px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.3); font-family: monospace;" id="myRefCode">---</div>
@@ -503,7 +509,28 @@
         </div>
     </div>
 
+    <div id="warningFloatBadge" style="display: none; position: fixed; top: 20%; right: 0; z-index: 9900; background: rgba(255, 0, 85, 0.9); color: white; padding: 12px 15px 12px 12px; border-radius: 12px 0 0 12px; box-shadow: -5px 5px 20px rgba(255, 0, 85, 0.4); cursor: pointer; transition: 0.3s; border-left: 3px solid #fff;" onclick="showLastWarning()">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 10px; height: 10px; background: #fff; border-radius: 50%; animation: blink 1s infinite;"></div>
+            <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem;"></i>
+            <div style="font-size: 0.8rem; font-weight: bold; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); margin-left: 5px; max-height: 60px;">แจ้งเตือน</div>
+        </div>
+    </div>
+
     <script>
+        let lastWarningData = null;
+
+        function showLastWarning() {
+            if(lastWarningData) {
+                showSystemWarningModal(lastWarningData.title, lastWarningData.msg);
+            }
+        }
+
+        function hideWarningBadge() {
+            const badge = document.getElementById('warningFloatBadge');
+            if(badge) badge.style.display = 'none';
+        }
+
             function manualRefresh() {
         const icon = document.getElementById('refreshIcon');
         icon.style.animation = 'spin 1s linear';
@@ -1078,35 +1105,59 @@ console.log('Live Sync Status:', liveSync.getStatus());
                                    oninput="updateDepositUI(this.value)">
                         </div>
                         <div style="font-size: 0.75rem; color: var(--warning); margin-top: 10px;">
-                            <i class="fas fa-exclamation-triangle"></i> ขั้นต่ำ 40 บาท
+                            <i class="fas fa-exclamation-triangle"></i> ขั้นต่ำ 1 บาท
                         </div>
                     </div>
 
-                    <!-- Auto QR Section -->
-                    <div id="qrSection" style="display:none; margin-bottom: 20px; animation: slideUp 0.3s ease-out;">
-                         <div class="glass-panel" style="border: 1px solid var(--primary); box-shadow: 0 0 15px var(--primary-dim);">
-                            <div style="text-align: center; padding: 10px;">
-                                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:15px;">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay-logo.png" style="height:24px; background:white; padding:4px 8px; border-radius:4px;">
-                                    <span style="color:white; font-weight:bold; font-size:1rem;">สแกนจ่ายทันที</span>
-                                </div>
-                                <div style="background: white; padding: 10px; display: inline-block; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
-                                    <img id="qrImage" src="" style="width: 140px; height: 140px; display: block;">
-                                </div>
-                                <div style="color: var(--text-muted); font-size: 0.8rem;">ยอดชำระ</div>
-                                <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary); text-shadow: 0 0 10px var(--primary-dim);"><span id="qrAmount">0.00</span> THB</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">บัญชี: บจก. คริปโต ไมน์เนอร์</div>
+                    <!-- Auto QR Section (Hidden by default) -->
+                    <div id="qrSection" style="display:none; animation: slideUp 0.3s ease-out;">
+                         
+                         <div style="text-align: center; margin-bottom: 15px;">
+                            <h3 style="color: var(--primary); margin: 0; text-transform: uppercase; letter-spacing: 1px;">QR Payment AP</h3>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">ระบบชำระเงินอัตโนมัติ</div>
+                         </div>
+
+                         <div class="glass-panel" style="border: 1px solid var(--primary); box-shadow: 0 0 15px var(--primary-dim); padding: 20px; position: relative; overflow: hidden;">
+                            <!-- Header Info -->
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <div style="font-size: 0.9rem; color: white; margin-bottom: 5px;">ข้อมูลการชำระเงิน</div>
+                                <div style="font-size: 1.2rem; color: var(--success); font-weight: bold;">ยอดชำระเงินทั้งหมด <span id="qrAmountDisplay">0.00</span> บาท</div>
+                                <div style="font-size: 0.9rem; color: var(--danger); margin-top: 5px; font-weight: bold;" id="qrTimer">กรุณาชำระภายใน 01:00:00</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" id="qrExpiry">หมดเวลาวันที่ --/--/--</div>
                             </div>
+
+                            <!-- QR Code -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <div style="background: white; padding: 10px; display: inline-block; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                                    <img id="qrImage" src="" style="width: 180px; height: 180px; display: block;">
+                                </div>
+                            </div>
+
+                            <!-- Instructions -->
+                            <div style="text-align: left; font-size: 0.8rem; color: #cbd5e1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <div style="margin-bottom: 8px; font-weight: bold; color: var(--primary);">กรุณาทำตามขั้นตอนที่แนะนำ:</div>
+                                <div style="margin-bottom: 4px;">1. คลิกปุ่ม "บันทึก QR" หรือแคปหน้าจอ</div>
+                                <div style="margin-bottom: 4px;">2. เปิดแอปพลิเคชันธนาคารบนอุปกรณ์ของท่าน</div>
+                                <div style="margin-bottom: 4px;">3. เลือกไปที่ปุ่ม "สแกน" หรือ "QR Code" และกดที่ "รูปภาพ"</div>
+                                <div style="margin-bottom: 4px;">4. เลือกรูปภาพที่ท่านแคปไว้และทำการชำระเงิน</div>
+                                <div style="margin-top: 8px; color: var(--warning); line-height: 1.4;">5. คำสั่งซื้อจะได้รับการยืนยันทันทีหลังจากชำระเงินสำเร็จ หรือ ภายใน 1 ชั่วโมงในกรณีที่มีธุรกรรมจำนวนมาก</div>
+                                <div style="margin-top: 10px; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid rgba(255,255,255,0.1); padding-top: 5px;">
+                                    หมายเหตุ: ช่องทางชำระเงินพร้อมเพย์ใช้ได้กับแอปพลิเคชันธนาคารหรือวอลเล็ตที่รองรับการชำระเงินด้วยพร้อมเพย์เท่านั้น
+                                </div>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div style="display: flex; gap: 10px;">
+                                <button class="cyber-btn" onclick="saveQRSnapshot()" style="flex: 1; background: transparent; border: 1px solid var(--primary); color: var(--primary); box-shadow: none;">
+                                    <i class="fas fa-download"></i> บันทึก QR
+                                </button>
+                                <button class="cyber-btn" onclick="confirmPayment()" style="flex: 1;">
+                                    <i class="fas fa-check"></i> ตกลง
+                                </button>
+                            </div>
+
                          </div>
                     </div>
-
-                    <div style="margin-bottom: 20px; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                        <i class="fas fa-sync fa-spin" style="font-size: 0.7rem;"></i> ระบบตรวจสอบยอดเงินอัตโนมัติใน 30 วินาที
-                    </div>
-
-                    <button id="btnDeposit" class="cyber-btn" onclick="submitDeposit()" style="width: 100%; --btn-bg: var(--success);">
-                        <i class="fas fa-qrcode"></i> ยืนยันการโอนเงิน
-                    </button>
                 `;
             } else {
                 // Withdrawal Tab
@@ -1205,28 +1256,119 @@ console.log('Live Sync Status:', liveSync.getStatus());
             updateWithdrawUI(balance);
         }
 
+        let depositTimerInterval = null;
+
         function updateDepositUI(val) {
-            const info = document.getElementById('depositInfo');
-            const disp = document.getElementById('displayAmount');
             const qrSec = document.getElementById('qrSection');
             const qrImg = document.getElementById('qrImage');
-            const qrAmt = document.getElementById('qrAmount');
+            const qrAmtDisp = document.getElementById('qrAmountDisplay');
             
-            if(val && parseFloat(val) >= 40) {
+            if(val && parseFloat(val) >= 1) {
                 if(qrSec) {
                     qrSec.style.display = 'block';
-                    qrAmt.innerText = parseFloat(val).toFixed(2);
-                    // Using PromptPay.io API with a test number (081-234-5678)
-                    qrImg.src = `https://promptpay.io/0812345678/${val}`;
-                }
-                if(info) {
-                    info.style.display = 'block';
-                    if(disp) disp.innerText = parseFloat(val).toFixed(2);
+                    
+                    const amt = parseFloat(val).toFixed(2);
+                    if(qrAmtDisp) qrAmtDisp.innerText = amt;
+                    
+                    // Get PromptPay Number from Admin Settings
+                    const adminSettings = JSON.parse(localStorage.getItem('admin_payment_settings')) || {};
+                    const ppNumber = adminSettings.pp_number || '0812345678'; 
+                    
+                    // Generate QR (PromptPay)
+                    qrImg.src = `https://promptpay.io/${ppNumber}/${val}`;
+                    
+                    // Start Timer if not running
+                    startQRTimer();
                 }
             } else {
                 if(qrSec) qrSec.style.display = 'none';
-                if(info) info.style.display = 'none';
+                stopQRTimer();
             }
+        }
+
+        function startQRTimer() {
+            if(depositTimerInterval) clearInterval(depositTimerInterval);
+            
+            // Set 1 hour from now
+            const now = new Date();
+            const expireTime = new Date(now.getTime() + 60 * 60 * 1000);
+            
+            // Update Expiry Date Text
+            const expiryEl = document.getElementById('qrExpiry');
+            if(expiryEl) {
+                const dateStr = expireTime.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+                const timeStr = expireTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                expiryEl.innerText = `หมดเวลาวันที่ ${dateStr} ${timeStr}`;
+            }
+
+            const timerEl = document.getElementById('qrTimer');
+            
+            // Update immediately
+            updateTimerDisplay(expireTime, timerEl);
+
+            depositTimerInterval = setInterval(() => {
+                updateTimerDisplay(expireTime, timerEl);
+            }, 1000);
+        }
+
+        function updateTimerDisplay(expireTime, timerEl) {
+            const diff = expireTime - Date.now();
+            if(diff <= 0) {
+                clearInterval(depositTimerInterval);
+                if(timerEl) timerEl.innerText = "หมดเวลาการชำระเงิน";
+                return;
+            }
+            
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            
+            if(timerEl) timerEl.innerText = `กรุณาชำระภายใน ${h} ชั่วโมง ${m} นาที ${s} วินาที`;
+        }
+
+        function stopQRTimer() {
+            if(depositTimerInterval) clearInterval(depositTimerInterval);
+            const timerEl = document.getElementById('qrTimer');
+            if(timerEl) timerEl.innerText = "กรุณาชำระภายใน 01:00:00";
+        }
+
+        function saveQRSnapshot() {
+            const qrImg = document.getElementById('qrImage');
+            if(qrImg && qrImg.src) {
+                const a = document.createElement('a');
+                a.href = qrImg.src;
+                a.download = 'payment_qr.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('บันทึก QR Code เรียบร้อย', 'success');
+            }
+        }
+
+        function confirmPayment() {
+             const amtInput = document.getElementById('walletAmount');
+             const val = parseFloat(amtInput.value);
+             
+             if(!val || val < 1) return showToast('ยอดเงินไม่ถูกต้อง (ขั้นต่ำ 1 บาท)', 'error');
+             
+             // Create Pending Transaction
+             let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+             trans.push({
+                id: Date.now(),
+                user: currentUser.username,
+                type: 'deposit',
+                amount: val,
+                timestamp: Date.now(),
+                status: 'pending'
+             });
+             localStorage.setItem('mining_transactions', JSON.stringify(trans));
+             
+             // Show Success
+             showToast('แจ้งชำระเงินเรียบร้อย รอการตรวจสอบ', 'success');
+             document.getElementById('walletModal').style.display = 'none';
+             
+             // Refresh Trans List
+             renderUserTrans();
         }
 
         function openWalletPage() {
@@ -2880,6 +3022,17 @@ console.log('Live Sync Status:', liveSync.getStatus());
         });
 
         function showSystemWarningModal(title, msg) {
+            // Store for recall
+            lastWarningData = { title, msg };
+            
+            // Show floating badge
+            const badge = document.getElementById('warningFloatBadge');
+            if(badge) {
+                badge.style.display = 'block';
+                badge.classList.add('shake');
+                setTimeout(() => badge.classList.remove('shake'), 500);
+            }
+
             const modalId = 'sysWarningModal';
             if(document.getElementById(modalId)) document.getElementById(modalId).remove();
             
@@ -2898,14 +3051,51 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     <h2 style="color: var(--danger); margin:0 0 10px; text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);">${title}</h2>
                     <p style="color: #e2e8f0; margin-bottom: 25px; line-height: 1.5;">${msg}</p>
                     
-                    <button class="cyber-btn" style="width: 100%; --btn-bg: var(--danger); border: none; color: white;" onclick="document.getElementById('${modalId}').remove()">
-                        รับทราบ
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="cyber-btn" style="flex: 1; --btn-bg: #334155; border: none; color: white;" onclick="document.getElementById('${modalId}').remove()">
+                            ปิดหน้าต่าง
+                        </button>
+                        <button class="cyber-btn" style="flex: 1; --btn-bg: var(--danger); border: none; color: white;" onclick="hideWarningBadge(); document.getElementById('${modalId}').remove()">
+                            รับทราบ (ลบแจ้งเตือน)
+                        </button>
+                    </div>
                 </div>
             `;
             document.body.appendChild(div);
             
             if(typeof vibMgr !== 'undefined') vibMgr.trigger('alert');
+        }
+
+        function showRemoteGuide() {
+            const modalId = 'remoteGuideModal';
+            if(document.getElementById(modalId)) document.getElementById(modalId).remove();
+            
+            const div = document.createElement('div');
+            div.id = modalId;
+            div.className = 'modal';
+            div.style.display = 'flex';
+            div.style.zIndex = '10005';
+            div.innerHTML = `
+                <div class="modal-content ai-card-border" style="max-width: 350px; background: rgba(10, 14, 30, 0.95); border: 1px solid var(--primary); text-align:center; border-radius: 16px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); animation: slideUp 0.3s ease-out;">
+                    <div style="width: 70px; height: 70px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid var(--primary); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);">
+                        <i class="fas fa-mobile-alt" style="font-size: 2rem; color: var(--primary);"></i>
+                    </div>
+                    <h2 style="color: var(--primary); margin: 0 0 15px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);">การเข้าถึงระยะไกล</h2>
+                    
+                    <div style="text-align: left; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+                        <h4 style="color: white; margin: 0 0 5px;"><i class="fas fa-download" style="color: var(--success);"></i> 1. ติดตั้งแอปพลิเคชัน</h4>
+                        <p style="color: #94a3b8; font-size: 0.85rem; margin: 0 0 10px; padding-left: 20px;">หากต้องการใช้อุปกรณ์มือถือเพื่อเข้าถึงจากระยะไกล ให้ดาวน์โหลดแอป <strong>Chrome Remote Desktop</strong> จาก Google Play Store หรือ App Store</p>
+                        
+                        <h4 style="color: white; margin: 0 0 5px;"><i class="fas fa-desktop" style="color: var(--warning);"></i> 2. เชื่อมต่อ</h4>
+                        <p style="color: #94a3b8; font-size: 0.85rem; margin: 0; padding-left: 20px;">เข้าสู่ระบบด้วยบัญชี Google เดียวกันเพื่อควบคุมเครื่องขุดของคุณได้ทุกที่</p>
+                    </div>
+                    
+                    <button class="cyber-btn" style="width: 100%;" onclick="document.getElementById('${modalId}').remove()">
+                        เข้าใจแล้ว
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(div);
         }
     </script>
     <div id="toastContainer"></div>

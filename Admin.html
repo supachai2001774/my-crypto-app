@@ -352,6 +352,8 @@
                     <table id="usersTable">
                         <thead>
                             <tr>
+                                <th>ID</th>
+                                <th>รูปโปรไฟล์</th>
                                 <th>ผู้ใช้</th>
                                 <th>ยอดเงิน</th>
                                 <th>เครื่องขุด</th>
@@ -480,6 +482,24 @@
         <!-- Transactions -->
         <div id="trans" class="section">
             <h2><i class="fas fa-exchange-alt"></i> ธุรกรรม</h2>
+            
+            <div class="card">
+                <h3 style="color: var(--primary); margin-top: 0;"><i class="fas fa-cog"></i> ตั้งค่าการชำระเงิน (QR Code)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="color: var(--text-muted); font-size: 0.9rem;">หมายเลข PromptPay</label>
+                        <input type="text" id="adminPPNumber" class="cyber-input" placeholder="08x-xxx-xxxx">
+                    </div>
+                    <div>
+                         <label style="color: var(--text-muted); font-size: 0.9rem;">ชื่อบัญชี</label>
+                        <input type="text" id="adminPPName" class="cyber-input" placeholder="ชื่อบัญชี">
+                    </div>
+                </div>
+                <button onclick="savePaymentSettings()" class="btn-sm btn-green" style="width: 100%; padding: 12px; margin-top: 10px;">
+                    <i class="fas fa-save"></i> บันทึกการตั้งค่า
+                </button>
+            </div>
+
             <div class="card">
                 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                     <button onclick="filterTrans('all')" class="btn-sm btn-primary">ทั้งหมด</button>
@@ -643,13 +663,27 @@
             const tb = document.querySelector('#usersTable tbody');
             tb.innerHTML = '';
             
-            users.forEach(u => {
+            users.forEach((u, index) => {
                 // Count rigs
                 let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${u.username}`)) || [];
                 
                 let tr = document.createElement('tr');
                 const pf = getUserProfile(u.username);
+                
+                // ID & Avatar Logic
+                const userId = u.id || (index + 1).toString().padStart(3, '0');
+                const avatarUrl = u.avatar || pf.avatar;
+                let profileHtml = '';
+                
+                if(avatarUrl) {
+                    profileHtml = `<img src="${avatarUrl}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; cursor: pointer;" onclick="viewSlip('${avatarUrl}')">`;
+                } else {
+                    profileHtml = `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0, 242, 255, 0.1); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto;"><i class="fas fa-user" style="color: var(--primary);"></i></div>`;
+                }
+
                 tr.innerHTML = `
+                    <td style="color: #94a3b8; font-family: monospace;">#${userId}</td>
+                    <td style="text-align: center;">${profileHtml}</td>
                     <td>
                         <div style="font-weight:bold; color: white;">${u.username}</div>
                         <div style="font-size:0.8rem; color: #94a3b8;">${u.email || '-'}</div>
@@ -1133,6 +1167,19 @@
             }
         }
 
+        function savePaymentSettings() {
+            const pp = document.getElementById('adminPPNumber').value;
+            const name = document.getElementById('adminPPName').value;
+            
+            if(pp) {
+                const settings = { pp_number: pp, pp_name: name };
+                localStorage.setItem('admin_payment_settings', JSON.stringify(settings));
+                showToast('บันทึกการตั้งค่าการชำระเงินแล้ว', 'success');
+            } else {
+                showToast('กรุณากรอกเบอร์ PromptPay', 'error');
+            }
+        }
+
         // Init
         window.onload = function() {
             renderDashboard();
@@ -1141,6 +1188,11 @@
             renderShop();
             renderReferrals();
             renderTrans();
+            
+            // Load Payment Settings
+            const paySet = JSON.parse(localStorage.getItem('admin_payment_settings')) || {};
+            if(paySet.pp_number) document.getElementById('adminPPNumber').value = paySet.pp_number;
+            if(paySet.pp_name) document.getElementById('adminPPName').value = paySet.pp_name;
             
             const ann = localStorage.getItem('mining_announcement');
             if(ann) {
