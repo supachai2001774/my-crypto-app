@@ -567,8 +567,54 @@
         <button onclick="document.getElementById('imgModal').style.display='none'" class="btn-sm btn-red" style="margin-top: 20px; padding: 10px 30px; font-size: 1.2rem;">ปิด</button>
     </div>
 
+    <!-- Admin Login Overlay -->
+    <div id="adminLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <i class="fas fa-user-shield" style="font-size: 4rem; color: var(--primary); text-shadow: 0 0 20px var(--primary);"></i>
+            <h1 style="color: var(--primary); margin: 15px 0; letter-spacing: 2px;">SYSTEM ADMIN</h1>
+            <div style="color: var(--text-muted);">เข้าสู่ระบบจัดการหลังบ้าน</div>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 16px; border: 1px solid var(--border); width: 300px; text-align: center;">
+            <input type="password" id="adminPin" placeholder="Enter Access PIN" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 1.2rem; text-align: center; margin-bottom: 20px; outline: none;">
+            <button onclick="checkAdminLogin()" class="btn-sm btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;">ACCESS SYSTEM</button>
+        </div>
+        <div style="margin-top: 20px; color: var(--danger); font-size: 0.9rem; opacity: 0;" id="loginError">
+            <i class="fas fa-exclamation-circle"></i> รหัสผ่านไม่ถูกต้อง
+        </div>
+    </div>
+
     <script src="live-sync.js"></script>
     <script>
+        // Admin Login Logic
+        function checkAdminLogin() {
+            const pin = document.getElementById('adminPin').value;
+            // Default PIN: 8888 or admin123
+            if(pin === '8888' || pin === 'admin123') {
+                document.getElementById('adminLogin').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('adminLogin').style.display = 'none';
+                }, 500);
+                sessionStorage.setItem('admin_logged_in', 'true');
+            } else {
+                const err = document.getElementById('loginError');
+                err.style.opacity = '1';
+                err.classList.add('shake');
+                setTimeout(() => err.classList.remove('shake'), 500);
+            }
+        }
+
+        // Check session on load
+        if(sessionStorage.getItem('admin_logged_in') === 'true') {
+            document.getElementById('adminLogin').style.display = 'none';
+        }
+
+        // Enter key support
+        document.getElementById('adminPin').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkAdminLogin();
+            }
+        });
+
         // Check if LiveSync is loaded from live-sync.js
         if (typeof liveSync === 'undefined') {
             console.error('LiveSync not loaded properly');
