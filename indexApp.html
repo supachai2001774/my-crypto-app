@@ -421,7 +421,13 @@
                 <option value="bbl">BBL - กรุงเทพ</option>
                 <option value="gsb">GSB - ออมสิน</option>
             </select>
-            <input type="tel" id="regAcc" class="cyber-input" placeholder="เลขบัญชีธนาคาร" style="margin-bottom: 20px;">
+            <input type="tel" id="regAcc" class="cyber-input" placeholder="เลขบัญชีธนาคาร" style="margin-bottom: 10px;">
+            
+            <!-- Referral Code Input -->
+            <div style="position: relative; margin-bottom: 20px;">
+                <input type="text" id="regRefCode" class="cyber-input" placeholder="รหัสแนะนำเพื่อน (ถ้ามี)" style="padding-right: 40px;">
+                <i class="fas fa-ticket-alt" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #00f2ff;"></i>
+            </div>
             
             <button class="cyber-btn" onclick="signup()" style="width: 100%; margin-bottom: 15px;">
                 <i class="fas fa-user-plus"></i> ยืนยันการสมัคร
@@ -1907,6 +1913,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             const name = document.getElementById('regName').value;
             const bank = document.getElementById('regBank').value;
             const acc = document.getElementById('regAcc').value;
+            const manualRef = document.getElementById('regRefCode').value;
             
             if(!u || !p || !name || !acc) return showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
@@ -1924,10 +1931,20 @@ console.log('Live Sync Status:', liveSync.getStatus());
             
             let startBalance = 0;
 
-            // Process Referral
-            const pendingRef = localStorage.getItem('pending_ref');
-            if(pendingRef) {
-                const refId = pendingRef.replace('X','');
+            // Process Referral (Manual Code or Link)
+            let refId = null;
+            
+            // 1. Priority: Manual Input
+            if(manualRef && manualRef.trim().length > 0) {
+                refId = manualRef.trim();
+            } 
+            // 2. Fallback: URL Link
+            else {
+                const pendingRef = localStorage.getItem('pending_ref');
+                if(pendingRef) refId = pendingRef.replace('X','');
+            }
+
+            if(refId) {
                 const referrerName = Object.keys(users).find(k => users[k].id == refId);
                 if(referrerName) {
                     // Save Referrer Link
@@ -1946,15 +1963,17 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         });
                         localStorage.setItem(`mining_referrals_${referrerName}`, JSON.stringify(refs));
                         
-                        // Notify Referrer (Mock Notification Logic)
+                        // Notify Referrer
                         let refNotifications = JSON.parse(localStorage.getItem(`notifications_${referrerName}`)) || [];
                         refNotifications.push({
-                            msg: `เพื่อนใหม่! ${u} สมัครผ่านลิงก์แนะนำของคุณ (รอตรวจสอบ)`,
+                            msg: `เพื่อนใหม่! ${u} สมัครผ่านรหัสแนะนำ (รอตรวจสอบ)`,
                             date: new Date().toISOString(),
                             read: false
                         });
                         localStorage.setItem(`notifications_${referrerName}`, JSON.stringify(refNotifications));
                     }
+                } else if(manualRef) {
+                    showToast('ไม่พบรหัสแนะนำเพื่อนนี้ (สมัครต่อโดยไม่มีผู้แนะนำ)', 'warning');
                 }
                 localStorage.removeItem('pending_ref');
             }
