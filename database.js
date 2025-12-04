@@ -170,6 +170,12 @@ const db = {
         const newItem = { ...item, id: Date.now() };
         items.push(newItem);
         writeJson(SHOP_FILE, items);
+        
+        // Update timestamp for polling
+        const settings = readJsonObj(SETTINGS_FILE);
+        settings.last_shop_update = Date.now();
+        writeJson(SETTINGS_FILE, settings);
+
         return newItem;
     },
     deleteShopItem: (id) => {
@@ -178,12 +184,24 @@ const db = {
         items = items.filter(i => i.id != id);
         if (items.length !== initLen) {
             writeJson(SHOP_FILE, items);
+            
+            // Update timestamp for polling
+            const settings = readJsonObj(SETTINGS_FILE);
+            settings.last_shop_update = Date.now();
+            writeJson(SETTINGS_FILE, settings);
+            
             return true;
         }
         return false;
     },
     clearShopItems: () => {
         writeJson(SHOP_FILE, []);
+        
+        // Update timestamp for polling
+        const settings = readJsonObj(SETTINGS_FILE);
+        settings.last_shop_update = Date.now();
+        writeJson(SETTINGS_FILE, settings);
+        
         return true;
     },
     clearTransactions: () => {
