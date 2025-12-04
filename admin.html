@@ -786,37 +786,61 @@
         // --- CORE FUNCTIONS ---
 
         // Dashboard
-        function renderDashboard() {
-            // Calculate stats
-            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            let userCount = Object.keys(users).length;
-            document.getElementById('dashUsers').innerText = userCount;
+        async function renderDashboard() {
+            try {
+                const [resUsers, resTrans, resSettings] = await Promise.all([
+                    fetch('/api/admin/users'),
+                    fetch('/api/admin/transactions'),
+                    fetch('/api/admin/settings')
+                ]);
+                
+                const users = await resUsers.json();
+                const trans = await resTrans.json();
+                const settings = await resSettings.json();
+                
+                // 1. Users
+                const userCount = Object.keys(users).length;
+                document.getElementById('dashUsers').innerText = userCount;
 
-            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            let deposit = trans.filter(t => t.type === 'deposit' && t.status === 'approved').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-            let withdraw = trans.filter(t => t.type === 'withdraw' && t.status === 'approved').reduce((sum, t) => sum + parseFloat(t.amount), 0);
-            
-            document.getElementById('dashDeposit').innerText = '฿' + deposit.toLocaleString();
-            document.getElementById('dashWithdraw').innerText = '฿' + withdraw.toLocaleString();
-            document.getElementById('dashNet').innerText = '฿' + (deposit - withdraw).toLocaleString();
-            
-            // Maint Status
-            const maint = localStorage.getItem('mining_maintenance') === 'true';
-            document.getElementById('maintSwitch').checked = maint;
-            document.getElementById('maintMsg').value = localStorage.getItem('mining_maintenance_msg') || '';
+                // 2. Financials
+                let deposit = trans.filter(t => t.type === 'deposit' && t.status === 'approved').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                let withdraw = trans.filter(t => t.type === 'withdraw' && t.status === 'approved').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+                
+                document.getElementById('dashDeposit').innerText = '฿' + deposit.toLocaleString();
+                document.getElementById('dashWithdraw').innerText = '฿' + withdraw.toLocaleString();
+                document.getElementById('dashNet').innerText = '฿' + (deposit - withdraw).toLocaleString();
+                
+                // Maint Status
+                const maint = settings.maintenance === true || settings.maintenance === 'true';
+                document.getElementById('maintSwitch').checked = maint;
+                document.getElementById('maintMsg').value = settings.maintenance_msg || '';
+
+            } catch(err) { console.error('Dashboard Error:', err); }
         }
 
         // Maintenance
-        function toggleMaint() {
+        async function toggleMaint() {
             const status = document.getElementById('maintSwitch').checked;
-            localStorage.setItem('mining_maintenance', status);
-            showToast(status ? 'เปิดโหมดบำรุงรักษาแล้ว' : 'ปิดโหมดบำรุงรักษาแล้ว', 'warning');
+            try {
+                await fetch('/api/admin/settings', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({ maintenance: status })
+                });
+                showToast(status ? 'เปิดโหมดบำรุงรักษาแล้ว' : 'ปิดโหมดบำรุงรักษาแล้ว', 'warning');
+            } catch(e) { showToast('เกิดข้อผิดพลาดในการบันทึก', 'error'); }
         }
         
-        function saveMaintMsg() {
+        async function saveMaintMsg() {
             const msg = document.getElementById('maintMsg').value;
-            localStorage.setItem('mining_maintenance_msg', msg);
-            showToast('บันทึกข้อความบำรุงรักษาแล้ว', 'success');
+            try {
+                await fetch('/api/admin/settings', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({ maintenance_msg: msg })
+                });
+                showToast('บันทึกข้อความบำรุงรักษาแล้ว', 'success');
+            } catch(e) { showToast('เกิดข้อผิดพลาดในการบันทึก', 'error'); }
         }
 
         // Users
@@ -825,159 +849,176 @@
             renderUsers(term);
         }
 
-        function renderUsers(filter = '') {
-            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            const tb = document.querySelector('#usersTable tbody');
-            tb.innerHTML = '';
-            
-            Object.keys(users).forEach(username => {
-                if(filter && !username.toLowerCase().includes(filter)) return;
+        async function renderUsers(filter = '') {
+            try {
+                const response = await fetch('/api/admin/users');
+                const users = await response.json();
                 
-                const u = users[username];
-                const pf = JSON.parse(localStorage.getItem(`pf_${username}`)) || {};
-                const rigs = JSON.parse(localStorage.getItem(`mining_rigs_${username}`)) || [];
+                const tb = document.querySelector('#usersTable tbody');
+                tb.innerHTML = '';
                 
-                let tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${u.id.toString().substr(-6)}</td>
-                    <td><img src="${pf.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+username}" style="width:30px; height:30px; border-radius:50%;"></td>
-                    <td style="font-weight: bold; color: var(--primary);">${username}</td>
-                    <td>฿${parseFloat(pf.balance || 0).toLocaleString()}</td>
-                    <td>${rigs.length} เครื่อง</td>
-                    <td><span class="badge badge-success">ปกติ</span></td>
-                    <td>
-                        <button onclick="resetUserPass('${username}')" class="btn-sm btn-warning"><i class="fas fa-key"></i></button>
-                        <button onclick="deleteUser('${username}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
-                    </td>
-                `;
-                tb.appendChild(tr);
-            });
-        }
-        
-        function resetUserPass(user) {
-            if(confirm(`รีเซ็ตรหัสผ่านของ ${user} เป็น '123456'?`)) {
-                let users = JSON.parse(localStorage.getItem('mining_users'));
-                users[user].password = '123456'; // In real app, hash this
-                localStorage.setItem('mining_users', JSON.stringify(users));
-                showToast('รีเซ็ตรหัสผ่านแล้ว', 'success');
-            }
-        }
-        
-        function deleteUser(user) {
-            if(confirm(`ยืนยันการลบผู้ใช้ ${user}? ข้อมูลทั้งหมดจะหายไป!`)) {
-                let users = JSON.parse(localStorage.getItem('mining_users'));
-                delete users[user];
-                localStorage.setItem('mining_users', JSON.stringify(users));
-                
-                // Clean up other data
-                localStorage.removeItem(`pf_${user}`);
-                localStorage.removeItem(`mining_rigs_${user}`);
-                localStorage.removeItem(`active_items_${user}`);
-                localStorage.removeItem(`notifications_${user}`);
-                
-                renderUsers();
-                renderDashboard();
-                showToast('ลบผู้ใช้แล้ว', 'success');
-            }
-        }
-
-        // Mining Management (All Users Rigs)
-        function renderMining() {
-            const tb = document.querySelector('#miningTable tbody');
-            tb.innerHTML = '';
-            
-            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            
-            Object.keys(users).forEach(username => {
-                const rigs = JSON.parse(localStorage.getItem(`mining_rigs_${username}`)) || [];
-                
-                rigs.forEach(r => {
-                    let tr = document.createElement('tr');
+                Object.keys(users).forEach(username => {
+                    if(filter && !username.toLowerCase().includes(filter)) return;
                     
-                    // Calculate Time Left
-                    let timeLeft = '-';
-                    if(r.expiresAt) {
-                        const diff = r.expiresAt - Date.now();
-                        if(diff > 0) {
-                            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-                            timeLeft = `${days} วัน`;
-                        } else {
-                            timeLeft = 'หมดอายุ';
-                        }
-                    } else {
-                        timeLeft = 'ถาวร';
-                    }
-
+                    const u = users[username];
+                    const avatar = u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
+                    const balance = u.balance || 0;
+                    const rigsCount = u.rigs ? u.rigs.length : 0; 
+                    
+                    let tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td style="color: var(--primary);">${username}</td>
-                        <td><i class="fas ${r.icon}"></i> ${r.name}</td>
-                        <td>${r.speed} MH/s</td>
-                        <td>${timeLeft}</td>
-                        <td><span class="badge badge-success">Active</span></td>
-                        <td><div style="width:8px;height:8px;background:#00ff9d;border-radius:50%;box-shadow:0 0 5px #00ff9d;"></div></td>
+                        <td>${(u.id || '').toString().substr(-6)}</td>
+                        <td><img src="${avatar}" style="width:30px; height:30px; border-radius:50%;"></td>
+                        <td style="font-weight: bold; color: var(--primary);">${username}</td>
+                        <td>฿${parseFloat(balance).toLocaleString()}</td>
+                        <td>${rigsCount} เครื่อง</td>
+                        <td><span class="badge badge-success">ปกติ</span></td>
                         <td>
-                            <button onclick="deleteUserRig('${username}', '${r.name}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
+                            <button onclick="resetUserPass('${username}')" class="btn-sm btn-warning"><i class="fas fa-key"></i></button>
+                            <button onclick="deleteUser('${username}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
                         </td>
                     `;
                     tb.appendChild(tr);
                 });
-            });
+            } catch(err) {
+                console.error('Load Users Error:', err);
+                showToast('ไม่สามารถโหลดข้อมูลผู้ใช้ได้', 'error');
+            }
         }
         
-        function deleteUserRig(user, rigName) {
-            if(confirm(`ลบเครื่องขุด ${rigName} ของ ${user}?`)) {
-                let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${user}`)) || [];
-                rigs = rigs.filter(r => r.name !== rigName);
-                localStorage.setItem(`mining_rigs_${user}`, JSON.stringify(rigs));
+        async function resetUserPass(user) {
+            if(confirm(`รีเซ็ตรหัสผ่านของ ${user} เป็น '123456'?`)) {
+                try {
+                    const res = await fetch('/api/admin/reset-password', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ username: user, password: '123456' })
+                    });
+                    const data = await res.json();
+                    if(data.success) showToast('รีเซ็ตรหัสผ่านแล้ว', 'success');
+                    else showToast('Error: ' + data.error, 'error');
+                } catch(e) { showToast('Connection Error', 'error'); }
+            }
+        }
+        
+        async function deleteUser(user) {
+            if(confirm(`ยืนยันการลบผู้ใช้ ${user}? ข้อมูลทั้งหมดจะหายไป!`)) {
+                try {
+                    const res = await fetch('/api/admin/delete-user', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ username: user })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        showToast('ลบผู้ใช้เรียบร้อย', 'success');
+                        renderUsers();
+                        renderDashboard();
+                    } else showToast('Error: ' + data.error, 'error');
+                } catch(e) { showToast('Connection Error', 'error'); }
+            }
+        }
+
+
+        // Mining Management (All Users Rigs)
+        async function renderMining() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
                 
-                // 2. Sync active_items
-                let active = JSON.parse(localStorage.getItem(`active_items_${user}`)) || [];
-                active = active.filter(r => r.name !== rigName);
-                localStorage.setItem(`active_items_${user}`, JSON.stringify(active));
+                const tb = document.querySelector('#miningTable tbody');
+                tb.innerHTML = '';
+                
+                Object.values(users).forEach(u => {
+                    if(u.rigs && u.rigs.length > 0) {
+                        u.rigs.forEach(r => {
+                            let tr = document.createElement('tr');
+                            
+                            // Calculate Time Left
+                            let timeLeft = '-';
+                            if(r.expiresAt) {
+                                const diff = r.expiresAt - Date.now();
+                                if(diff > 0) {
+                                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                                    timeLeft = `${days} วัน`;
+                                } else {
+                                    timeLeft = 'หมดอายุ';
+                                }
+                            } else {
+                                timeLeft = 'ถาวร';
+                            }
 
-                // 3. Notify User
-                let notifs = JSON.parse(localStorage.getItem(`notifications_${user}`)) || [];
-                notifs.push({
-                    id: Date.now(),
-                    msg: `เครื่องขุด ${rigName} ถูกลบโดยผู้ดูแลระบบ (หมดอายุหรือผิดกฎ)`,
-                    type: 'error',
-                    timestamp: Date.now(),
-                    read: false
+                            tr.innerHTML = `
+                                <td style="color: var(--primary);">${u.username}</td>
+                                <td><i class="fas ${r.icon}"></i> ${r.name}</td>
+                                <td>${r.speed} MH/s</td>
+                                <td>${timeLeft}</td>
+                                <td><span class="badge badge-success">Active</span></td>
+                                <td><div style="width:8px;height:8px;background:#00ff9d;border-radius:50%;box-shadow:0 0 5px #00ff9d;"></div></td>
+                                <td>
+                                    <button onclick="deleteUserRig('${u.username}', '${r.name}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
+                                </td>
+                            `;
+                            tb.appendChild(tr);
+                        });
+                    }
                 });
-                localStorage.setItem(`notifications_${user}`, JSON.stringify(notifs));
-
-                // 4. Trigger Updates
-                liveSync.broadcast('force_update', { username: user, type: 'rig_deleted', rigName: rigName });
-                renderMining();
-                showToast(`ลบเครื่อง ${rigName} ของ ${user} แล้ว`, 'success');
+            } catch(err) {
+                console.error('Load Mining Error:', err);
+                showToast('ไม่สามารถโหลดข้อมูลเครื่องขุดได้', 'error');
+            }
+        }
+        
+        async function deleteUserRig(user, rigName) {
+            if(confirm(`ลบเครื่องขุด ${rigName} ของ ${user}?`)) {
+                try {
+                    const res = await fetch('/api/admin/delete-rig', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ username: user, rigName })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        renderMining();
+                        showToast(`ลบเครื่อง ${rigName} ของ ${user} แล้ว`, 'success');
+                    } else {
+                        showToast('Error: ' + data.error, 'error');
+                    }
+                } catch(e) { showToast('Connection Error', 'error'); }
             }
         }
 
         // Shop
-        function renderShop() {
-            const items = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
-            const tb = document.querySelector('#shopTable tbody');
-            tb.innerHTML = '';
-            
-            items.forEach(i => {
-                let tr = document.createElement('tr');
-                let tagBadge = i.tag ? `<span class="badge badge-info">${i.tag}</span>` : '-';
-                if(i.tag === 'used') tagBadge = `<span class="badge badge-warning" style="border-color: #cd7f32; color: #cd7f32;">USED</span>`;
+        async function renderShop() {
+            try {
+                const res = await fetch('/api/shop/items');
+                const items = await res.json();
                 
-                tr.innerHTML = `
-                    <td><i class="fas ${i.icon}" style="margin-right: 5px; color: var(--primary);"></i> ${i.name}</td>
-                    <td>฿${i.price.toLocaleString()}</td>
-                    <td>${i.speed} MH/s</td>
-                    <td>${tagBadge}</td>
-                    <td>
-                        <button onclick="deleteShopItem(${i.id})" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
-                    </td>
-                `;
-                tb.appendChild(tr);
-            });
+                const tb = document.querySelector('#shopTable tbody');
+                tb.innerHTML = '';
+                
+                items.forEach(i => {
+                    let tr = document.createElement('tr');
+                    let tagBadge = i.tag ? `<span class="badge badge-info">${i.tag}</span>` : '-';
+                    if(i.tag === 'used') tagBadge = `<span class="badge badge-warning" style="border-color: #cd7f32; color: #cd7f32;">USED</span>`;
+                    
+                    tr.innerHTML = `
+                        <td><i class="fas ${i.icon}" style="margin-right: 5px; color: var(--primary);"></i> ${i.name}</td>
+                        <td>฿${i.price.toLocaleString()}</td>
+                        <td>${i.speed} MH/s</td>
+                        <td>${tagBadge}</td>
+                        <td>
+                            <button onclick="deleteShopItem(${i.id})" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
+                        </td>
+                    `;
+                    tb.appendChild(tr);
+                });
+            } catch(err) {
+                console.error('Load Shop Error:', err);
+            }
         }
 
-        function addShopItem() {
+        async function addShopItem() {
             const name = document.getElementById('shopName').value;
             const price = parseFloat(document.getElementById('shopPrice').value);
             const speed = parseFloat(document.getElementById('shopSpeed').value);
@@ -985,203 +1026,254 @@
             const tag = document.getElementById('shopTag').value;
 
             if(name && !isNaN(price) && !isNaN(speed)) {
-                let items = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
-                items.push({ id: Date.now(), name, price, speed, icon, tag });
-                localStorage.setItem('mining_shop_items', JSON.stringify(items));
-                localStorage.setItem('shop_last_update', String(Date.now()));
-                
-                renderShop();
-                showToast('เพิ่มสินค้าแล้ว', 'success');
-                
-                // Clear inputs
-                document.getElementById('shopName').value = '';
-                document.getElementById('shopPrice').value = '';
-                document.getElementById('shopSpeed').value = '';
+                try {
+                    const res = await fetch('/api/admin/shop/items', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ name, price, speed, icon, tag })
+                    });
+                    const data = await res.json();
+                    
+                    if(data.success) {
+                        renderShop();
+                        showToast('เพิ่มสินค้าแล้ว', 'success');
+                        // Clear inputs
+                        document.getElementById('shopName').value = '';
+                        document.getElementById('shopPrice').value = '';
+                        document.getElementById('shopSpeed').value = '';
+                    } else {
+                        showToast('Error: ' + data.error, 'error');
+                    }
+                } catch(e) { showToast('Connection Error', 'error'); }
             } else {
                 showToast('กรุณากรอกข้อมูลให้ครบและถูกต้อง', 'error');
             }
         }
 
-        function deleteShopItem(id) {
+        async function deleteShopItem(id) {
             if(confirm('ลบสินค้านี้หรือไม่?')) {
-                let items = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
-                items = items.filter(i => i.id !== id);
-                localStorage.setItem('mining_shop_items', JSON.stringify(items));
-                localStorage.setItem('shop_last_update', String(Date.now()));
-                renderShop();
-                showToast('ลบสินค้าแล้ว', 'success');
+                try {
+                    const res = await fetch('/api/admin/delete-shop-item', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ id })
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        renderShop();
+                        showToast('ลบสินค้าแล้ว', 'success');
+                    } else showToast('Error: ' + data.error, 'error');
+                } catch(e) { showToast('Connection Error', 'error'); }
             }
         }
 
         // Referrals
-        function renderReferrals() {
-            const tb = document.querySelector('#referralTable tbody');
-            tb.innerHTML = '';
-            
-            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            let allRefs = [];
-            
-            // Aggregate
-            Object.keys(users).forEach(referrer => {
-                let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
-                refs.forEach(r => {
-                    allRefs.push({
-                        ...r,
-                        referrer: referrer
-                    });
+        async function renderReferrals() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const users = await res.json();
+                
+                const tb = document.querySelector('#referralTable tbody');
+                tb.innerHTML = '';
+                
+                let allRefs = [];
+                const userArray = Object.values(users);
+                
+                // Map ID to Username for Referrer lookup
+                const idToUsername = {};
+                userArray.forEach(u => { if(u.id) idToUsername[u.id] = u.username; });
+                
+                // Build Referral List from Users who have referrer_id
+                userArray.forEach(u => {
+                    if(u.referrer_id) {
+                        const referrerName = idToUsername[u.referrer_id] || `ID:${u.referrer_id}`;
+                        allRefs.push({
+                            date: u.regDate,
+                            referrer: referrerName,
+                            name: u.username,
+                            status: u.status || 'pending',
+                            ip: u.ip || 'Unknown',
+                            deviceId: u.deviceId || 'Unknown'
+                        });
+                    }
                 });
-            });
 
-            // Sort by Date Descending
-            allRefs.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            // Fraud Detection Map
-            const ipCounts = {};
-            const deviceCounts = {};
-            allRefs.forEach(r => {
-                if(r.ip && r.ip !== 'Unknown') ipCounts[r.ip] = (ipCounts[r.ip] || 0) + 1;
-                if(r.deviceId) deviceCounts[r.deviceId] = (deviceCounts[r.deviceId] || 0) + 1;
-            });
-
-            let pendingCount = allRefs.filter(r => r.status === 'pending').length;
-            const badge = document.getElementById('navReferralBadge');
-            if(badge) {
-                badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
-                badge.innerText = pendingCount;
-            }
-
-            if(allRefs.length === 0) {
-                tb.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบข้อมูลการแนะนำ</td></tr>';
-                return;
-            }
-
-            allRefs.forEach(r => {
-                let tr = document.createElement('tr');
+                // Sort by Date Descending
+                allRefs.sort((a, b) => new Date(b.date) - new Date(a.date));
                 
-                // Fraud Check
-                let isFraudIP = (ipCounts[r.ip] > 1);
-                let isFraudDev = (deviceCounts[r.deviceId] > 1);
-                
-                // Check against Referrer's IP/Device
-                let refUser = users[r.referrer];
-                let sameAsUpline = false;
-                if(refUser && refUser.ip && r.ip && r.ip !== 'Unknown' && refUser.ip === r.ip) sameAsUpline = true;
-                if(refUser && refUser.deviceId && r.deviceId && refUser.deviceId === r.deviceId) sameAsUpline = true;
+                // Fraud Detection Map
+                const ipCounts = {};
+                const deviceCounts = {};
+                allRefs.forEach(r => {
+                    if(r.ip && r.ip !== 'Unknown') ipCounts[r.ip] = (ipCounts[r.ip] || 0) + 1;
+                    if(r.deviceId && r.deviceId !== 'Unknown') deviceCounts[r.deviceId] = (deviceCounts[r.deviceId] || 0) + 1;
+                });
 
-                let fraudAlert = '';
-                if(isFraudIP || isFraudDev || sameAsUpline) {
-                    fraudAlert = '<div style="color:#ff4444; font-size:0.8rem; margin-top:5px;"><i class="fas fa-exclamation-triangle"></i> พบความผิดปกติ!</div>';
-                    if(sameAsUpline) fraudAlert += '<div style="font-size:0.75rem; color:orange;">IP/Device ตรงกับ Upline</div>';
-                    else if(isFraudIP) fraudAlert += '<div style="font-size:0.75rem; color:orange;">IP ซ้ำกันหลายบัญชี</div>';
+                let pendingCount = allRefs.filter(r => r.status === 'pending').length;
+                const badge = document.getElementById('navReferralBadge');
+                if(badge) {
+                    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+                    badge.innerText = pendingCount;
                 }
 
-                let statusBadge = '';
-                if(r.status === 'pending') statusBadge = '<span class="badge badge-warning">รอตรวจสอบ</span>';
-                else if(r.status === 'approved') statusBadge = '<span class="badge badge-success">อนุมัติแล้ว</span>';
-                else if(r.status === 'rejected') statusBadge = '<span class="badge badge-danger">ปฏิเสธ</span>';
-                else if(r.status === 'fraud') statusBadge = '<span class="badge badge-danger" style="background:darkred;">ทุจริต</span>';
-                else statusBadge = `<span class="badge">${r.status}</span>`;
+                if(allRefs.length === 0) {
+                    tb.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบข้อมูลการแนะนำ</td></tr>';
+                    return;
+                }
 
-                let actionBtns = '';
-                if(r.status === 'pending') {
-                    actionBtns = `
-                        <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'approved')" class="btn-sm btn-green" title="อนุมัติ"><i class="fas fa-check"></i></button>
-                        <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'rejected')" class="btn-sm btn-red" title="ปฏิเสธ"><i class="fas fa-times"></i></button>
-                        <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'fraud')" class="btn-sm" style="background:black; border:1px solid red;" title="ระบุว่าทุจริต"><i class="fas fa-ban"></i></button>
+                allRefs.forEach(r => {
+                    let tr = document.createElement('tr');
+                    
+                    // Fraud Check
+                    let isFraudIP = (ipCounts[r.ip] > 1);
+                    let isFraudDev = (deviceCounts[r.deviceId] > 1);
+                    
+                    // Check against Referrer's IP/Device (need referrer obj)
+                    // We only have referrerName. We need to find referrer obj from users
+                    const referrerObj = users[r.referrer]; // This assumes referrerName is username, which it is from idToUsername
+                    
+                    let sameAsUpline = false;
+                    if(referrerObj) {
+                        if(referrerObj.ip && r.ip && r.ip !== 'Unknown' && referrerObj.ip === r.ip) sameAsUpline = true;
+                        if(referrerObj.deviceId && r.deviceId && referrerObj.deviceId !== 'Unknown' && referrerObj.deviceId === r.deviceId) sameAsUpline = true;
+                    }
+
+                    let fraudAlert = '';
+                    if(isFraudIP || isFraudDev || sameAsUpline) {
+                        fraudAlert = '<div style="color:#ff4444; font-size:0.8rem; margin-top:5px;"><i class="fas fa-exclamation-triangle"></i> พบความผิดปกติ!</div>';
+                        if(sameAsUpline) fraudAlert += '<div style="font-size:0.75rem; color:orange;">IP/Device ตรงกับ Upline</div>';
+                        else if(isFraudIP) fraudAlert += '<div style="font-size:0.75rem; color:orange;">IP ซ้ำกันหลายบัญชี</div>';
+                    }
+
+                    let statusBadge = '';
+                    if(r.status === 'pending') statusBadge = '<span class="badge badge-warning">รอตรวจสอบ</span>';
+                    else if(r.status === 'approved') statusBadge = '<span class="badge badge-success">อนุมัติแล้ว</span>';
+                    else if(r.status === 'rejected') statusBadge = '<span class="badge badge-danger">ปฏิเสธ</span>';
+                    else if(r.status === 'fraud') statusBadge = '<span class="badge badge-danger" style="background:darkred;">ทุจริต</span>';
+                    else statusBadge = `<span class="badge">${r.status}</span>`;
+
+                    let actionBtns = '';
+                    if(r.status === 'pending') {
+                        // Pass referrer name for reference, but backend mainly needs referee username
+                        actionBtns = `
+                            <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'approved')" class="btn-sm btn-green" title="อนุมัติ"><i class="fas fa-check"></i></button>
+                            <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'rejected')" class="btn-sm btn-red" title="ปฏิเสธ"><i class="fas fa-times"></i></button>
+                            <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'fraud')" class="btn-sm" style="background:black; border:1px solid red;" title="ระบุว่าทุจริต"><i class="fas fa-ban"></i></button>
+                        `;
+                    } else {
+                        actionBtns = '<span style="color:#aaa;">-</span>';
+                    }
+
+                    tr.innerHTML = `
+                        <td>${new Date(r.date).toLocaleString()}</td>
+                        <td style="font-weight:bold; color:var(--primary);">${r.referrer}</td>
+                        <td style="font-weight:bold;">${r.name}</td>
+                        <td>${statusBadge}</td>
+                        <td style="font-size:0.85rem; color:#aaa;">
+                            IP: ${r.ip || 'N/A'}<br>
+                            Dev: ${r.deviceId ? r.deviceId.substr(0,8)+'...' : 'N/A'}
+                            ${fraudAlert}
+                        </td>
+                        <td>${actionBtns}</td>
                     `;
-                } else {
-                    actionBtns = '<span style="color:#aaa;">-</span>';
-                }
-
-                tr.innerHTML = `
-                    <td>${new Date(r.date).toLocaleString()}</td>
-                    <td style="font-weight:bold; color:var(--primary);">${r.referrer}</td>
-                    <td style="font-weight:bold;">${r.name}</td>
-                    <td>${statusBadge}</td>
-                    <td style="font-size:0.85rem; color:#aaa;">
-                        IP: ${r.ip || 'N/A'}<br>
-                        Dev: ${r.deviceId ? r.deviceId.substr(0,8)+'...' : 'N/A'}
-                        ${fraudAlert}
-                    </td>
-                    <td>${actionBtns}</td>
-                `;
-                tb.appendChild(tr);
-            });
+                    tb.appendChild(tr);
+                });
+            } catch(err) {
+                console.error('Load Referrals Error:', err);
+                showToast('ไม่สามารถโหลดข้อมูลแนะนำเพื่อนได้', 'error');
+            }
         }
 
-        function updateRefStatus(referrer, referee, status) {
+        async function updateRefStatus(referrer, referee, status) {
             if(!confirm(`ยืนยันเปลี่ยนสถานะเป็น ${status}?`)) return;
             
-            let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
-            let idx = refs.findIndex(r => r.name === referee);
-            if(idx !== -1) {
-                refs[idx].status = status;
-                localStorage.setItem(`mining_referrals_${referrer}`, JSON.stringify(refs));
+            try {
+                const res = await fetch('/api/admin/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: referee, status, referrer_id: referrer }) 
+                });
                 
-                // Logic for Approval
-                if(status === 'approved') {
-                    let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-                    
-                    // 1. Bonus for New User (100 THB)
-                    trans.push({
-                        id: Date.now(), user: referee, type: 'deposit', amount: 100,
-                        status: 'approved', timestamp: Date.now(), processed: true,
-                        method: 'referral_bonus', fee: 0, net: 100
-                    });
-                    
-                    // Note: Referrer Commission is handled via "Claim" button in App
-                    // We do not auto-credit Referrer here to avoid double counting
-                    
-                    localStorage.setItem('mining_transactions', JSON.stringify(trans));
-                    
-                    // Update Balances
-                    // Referee (Auto-credit)
-                    let pfRef = JSON.parse(localStorage.getItem(`pf_${referee}`)) || {balance: 0};
-                    pfRef.balance = parseFloat(pfRef.balance || 0) + 100;
-                    localStorage.setItem(`pf_${referee}`, JSON.stringify(pfRef));
-                    
-                    // Notify Referee
-                    let notifs = JSON.parse(localStorage.getItem(`notifications_${referee}`)) || [];
-                    notifs.push({ msg: 'ยินดีด้วย! บัญชีของคุณได้รับการอนุมัติ รับโบนัส ฿100', date: new Date().toISOString(), read: false });
-                    localStorage.setItem(`notifications_${referee}`, JSON.stringify(notifs));
+                const data = await res.json();
+                if(data.success) {
+                    showToast(`อัปเดตสถานะเป็น ${status} แล้ว`, 'success');
+                    renderReferrals();
+                    if(typeof updateMonitor === 'function') updateMonitor();
+                } else {
+                    showToast('เกิดข้อผิดพลาด: ' + (data.error || 'Unknown'), 'error');
                 }
-                
-                updateMonitor();
-                renderReferrals();
-                showToast(`อัปเดตสถานะเป็น ${status} แล้ว`, 'success');
+            } catch(err) {
+                console.error(err);
+                showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
             }
         }
 
-        function saveShopNotice() {
+        async function saveShopNotice() {
             const txt = document.getElementById('shopNotice').value || '';
-            localStorage.setItem('shop_notice', txt);
-            showToast('บันทึกประกาศร้านค้าแล้ว', 'success');
+            try {
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ shop_notice: txt })
+                });
+                showToast('บันทึกประกาศร้านค้าแล้ว', 'success');
+            } catch(e) { showToast('Connection Error', 'error'); }
         }
-        function disableShop() {
-            localStorage.setItem('shop_disabled', 'true');
-            showToast('ปิดร้านค้าชั่วคราว', 'warning');
+        async function disableShop() {
+            try {
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ shop_disabled: 'true' })
+                });
+                showToast('ปิดร้านค้าชั่วคราว', 'warning');
+            } catch(e) { showToast('Connection Error', 'error'); }
         }
-        function enableShop() {
-            localStorage.setItem('shop_disabled', 'false');
-            showToast('เปิดร้านค้าแล้ว', 'success');
+        async function enableShop() {
+            try {
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ shop_disabled: 'false' })
+                });
+                showToast('เปิดร้านค้าแล้ว', 'success');
+            } catch(e) { showToast('Connection Error', 'error'); }
         }
-        function clearShopItems() {
-            localStorage.setItem('mining_shop_items', JSON.stringify([]));
-            localStorage.setItem('shop_seeded', 'true');
-            localStorage.setItem('shop_last_update', String(Date.now()));
-            renderShop();
-            showToast('ล้างสินค้าทั้งหมดแล้ว', 'success');
+        async function clearShopItems() {
+            if(!confirm('ล้างสินค้าทั้งหมด?')) return;
+            try {
+                const res = await fetch('/api/admin/shop/clear', { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    renderShop();
+                    showToast('ล้างสินค้าทั้งหมดแล้ว', 'success');
+                } else {
+                    showToast('Error: ' + data.error, 'error');
+                }
+            } catch(e) { showToast('Connection Error', 'error'); }
         }
 
         // Transactions
         let currentTransFilter = 'all';
+        let currentTransactions = []; // Store for viewSlip access
+        let currentUsers = {}; // Store for bank info access
 
-        function clearTransactions() {
+        async function clearTransactions() {
             if(confirm('คุณแน่ใจหรือไม่ที่จะล้างประวัติธุรกรรมทั้งหมด? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
-                localStorage.removeItem('mining_transactions');
-                renderTrans();
-                renderDashboard();
-                showToast('ล้างประวัติธุรกรรมเรียบร้อยแล้ว', 'success');
+                try {
+                    const res = await fetch('/api/admin/transactions/clear', { method: 'POST' });
+                    const data = await res.json();
+                    
+                    if(data.success) {
+                        renderTrans();
+                        showToast('ล้างประวัติธุรกรรมแล้ว', 'success');
+                    } else {
+                        showToast('Error: ' + data.error, 'error');
+                    }
+                } catch(e) { 
+                    console.error(e);
+                    showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                }
             }
         }
 
@@ -1190,119 +1282,112 @@
             renderTrans();
         }
 
-        function renderTrans() {
-            loadPaymentSettings(); // Load settings into inputs
-            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            // Sort by timestamp (support both date and timestamp fields)
-            trans.sort((a, b) => (b.timestamp || b.date || 0) - (a.timestamp || a.date || 0));
+        async function renderTrans() {
+            loadPaymentSettings(); 
             
-            const tb = document.querySelector('#transTable tbody');
-            tb.innerHTML = '';
+            try {
+                // Fetch both transactions and users for cross-referencing (bank info)
+                const [resTrans, resUsers] = await Promise.all([
+                    fetch('/api/admin/transactions'),
+                    fetch('/api/admin/users')
+                ]);
+                
+                const trans = await resTrans.json();
+                const users = await resUsers.json();
+                
+                currentTransactions = trans;
+                currentUsers = users;
 
-            if(trans.length === 0) {
-                tb.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">
-                    <i class="fas fa-inbox" style="font-size:2rem; margin-bottom:10px; opacity:0.5;"></i><br>
-                    ไม่พบประวัติธุรกรรม
-                </td></tr>`;
-                document.getElementById('navTransBadge').style.display = 'none';
-                return;
-            }
+                // Sort by timestamp
+                trans.sort((a, b) => (b.timestamp || b.date || 0) - (a.timestamp || a.date || 0));
+                
+                const tb = document.querySelector('#transTable tbody');
+                tb.innerHTML = '';
 
-            let pendingCount = 0;
-
-            trans.forEach(t => {
-                if(t.status === 'pending') pendingCount++;
-                if(currentTransFilter !== 'all' && t.status !== currentTransFilter) return;
-
-                let statusBadge = '';
-                if(t.status === 'pending') statusBadge = '<span class="badge badge-warning">รอตรวจสอบ</span>';
-                else if(t.status === 'approved') statusBadge = '<span class="badge badge-success">อนุมัติแล้ว</span>';
-                else if(t.status === 'rejected') statusBadge = '<span class="badge badge-danger">ปฏิเสธ</span>';
-
-                let actionBtns = '';
-                if(t.status === 'pending') {
-                    actionBtns = `
-                        <button onclick="approveTrans(${t.id}, 'approved')" class="btn-sm btn-green"><i class="fas fa-check"></i></button>
-                        <button onclick="approveTrans(${t.id}, 'rejected')" class="btn-sm btn-red"><i class="fas fa-times"></i></button>
-                    `;
+                if(trans.length === 0) {
+                    tb.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">
+                        <i class="fas fa-inbox" style="font-size:2rem; margin-bottom:10px; opacity:0.5;"></i><br>
+                        ไม่พบประวัติธุรกรรม
+                    </td></tr>`;
+                    document.getElementById('navTransBadge').style.display = 'none';
+                    return;
                 }
 
-                let slipLink = t.slip ? `<button onclick="viewSlip(${t.id})" class="btn-sm btn-primary"><i class="fas fa-image"></i> ดู</button>` : '-';
+                let pendingCount = 0;
 
-                let tr = document.createElement('tr');
-                const typeLabel = t.type === 'deposit' ? '<span style="color:#10b981">ฝากเงิน</span>' : '<span style="color:#ef4444">ถอนเงิน</span>';
+                trans.forEach(t => {
+                    if(t.status === 'pending') pendingCount++;
+                    if(currentTransFilter !== 'all' && t.status !== currentTransFilter) return;
+
+                    let statusBadge = '';
+                    if(t.status === 'pending') statusBadge = '<span class="badge badge-warning">รอตรวจสอบ</span>';
+                    else if(t.status === 'approved') statusBadge = '<span class="badge badge-success">อนุมัติแล้ว</span>';
+                    else if(t.status === 'rejected') statusBadge = '<span class="badge badge-danger">ปฏิเสธ</span>';
+
+                    let actionBtns = '';
+                    if(t.status === 'pending') {
+                        actionBtns = `
+                            <button onclick="approveTrans(${t.id}, 'approved')" class="btn-sm btn-green"><i class="fas fa-check"></i></button>
+                            <button onclick="approveTrans(${t.id}, 'rejected')" class="btn-sm btn-red"><i class="fas fa-times"></i></button>
+                        `;
+                    }
+
+                    let slipLink = t.slip ? `<button onclick="viewSlip(${t.id})" class="btn-sm btn-primary"><i class="fas fa-image"></i> ดู</button>` : '-';
+
+                    let tr = document.createElement('tr');
+                    const typeLabel = t.type === 'deposit' ? '<span style="color:#10b981">ฝากเงิน</span>' : '<span style="color:#ef4444">ถอนเงิน</span>';
+                    
+                    const ts = t.timestamp || t.date;
+                    const dateStr = ts ? new Date(ts).toLocaleString() : 'Invalid Date';
+
+                    tr.innerHTML = `
+                        <td>${dateStr}</td>
+                        <td style="font-weight: bold; color: white;">${t.user}</td>
+                        <td style="text-transform: uppercase;">${typeLabel}</td>
+                        <td style="font-weight: bold;">฿${parseFloat(t.amount).toLocaleString()}</td>
+                        <td>${slipLink}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionBtns}</td>
+                    `;
+                    tb.appendChild(tr);
+                });
                 
-                // Handle date/timestamp
-                const ts = t.timestamp || t.date;
-                const dateStr = ts ? new Date(ts).toLocaleString() : 'Invalid Date';
-
-                tr.innerHTML = `
-                    <td>${dateStr}</td>
-                    <td style="font-weight: bold; color: white;">${t.user}</td>
-                    <td style="text-transform: uppercase;">${typeLabel}</td>
-                    <td style="font-weight: bold;">฿${parseFloat(t.amount).toLocaleString()}</td>
-                    <td>${slipLink}</td>
-                    <td>${statusBadge}</td>
-                    <td>${actionBtns}</td>
-                `;
-                tb.appendChild(tr);
-            });
-            
-            document.getElementById('navTransBadge').style.display = pendingCount > 0 ? 'inline-block' : 'none';
-            document.getElementById('navTransBadge').innerText = pendingCount;
+                const badge = document.getElementById('navTransBadge');
+                if(badge) {
+                    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+                    badge.innerText = pendingCount;
+                }
+            } catch(err) {
+                console.error('Load Trans Error:', err);
+                showToast('ไม่สามารถโหลดข้อมูลธุรกรรมได้', 'error');
+            }
         }
 
-        function approveTrans(id, status) {
-            let trans = JSON.parse(localStorage.getItem('mining_transactions'));
-            let idx = trans.findIndex(t => t.id === id);
-            if(idx !== -1) {
-                trans[idx].status = status;
-                
-                if(status === 'approved') {
-                    const pf = getUserProfile(trans[idx].user);
-                    if(trans[idx].type === 'deposit') {
-                        pf.balance = parseFloat(pf.balance || 0) + parseFloat(trans[idx].amount);
-                        saveUserProfile(trans[idx].user, pf);
-                    }
-                } else if (status === 'rejected') {
-                     // Refund if withdraw was rejected
-                     if(trans[idx].type === 'withdraw') {
-                        const pf = getUserProfile(trans[idx].user);
-                        pf.balance = parseFloat(pf.balance || 0) + parseFloat(trans[idx].amount);
-                        saveUserProfile(trans[idx].user, pf);
-                     }
-                }
-
-                localStorage.setItem('mining_transactions', JSON.stringify(trans));
-                
-                // Notification to User
-                const user = trans[idx].user;
-                const notifType = status === 'approved' ? 'success' : 'error';
-                const typeThai = trans[idx].type === 'deposit' ? 'ฝากเงิน' : 'ถอนเงิน';
-                const msg = status === 'approved' 
-                    ? `รายการ${typeThai} ฿${parseFloat(trans[idx].amount).toLocaleString()} อนุมัติแล้ว` 
-                    : `รายการ${typeThai} ฿${parseFloat(trans[idx].amount).toLocaleString()} ถูกปฏิเสธ`;
-
-                let notifs = JSON.parse(localStorage.getItem(`notifications_${user}`)) || [];
-                notifs.push({
-                    id: Date.now(),
-                    msg: msg,
-                    type: notifType,
-                    timestamp: Date.now(),
-                    read: false
+        async function approveTrans(id, status) {
+            try {
+                const res = await fetch('/api/admin/update-transaction-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, status })
                 });
-                localStorage.setItem(`notifications_${user}`, JSON.stringify(notifs));
-
-                renderTrans();
-                renderDashboard();
-                const statusThai = status === 'approved' ? 'อนุมัติ' : 'ปฏิเสธ';
-                showToast(`ทำเครื่องหมายธุรกรรมเป็น ${statusThai}`, 'success');
+                
+                const data = await res.json();
+                if(data.success) {
+                    renderTrans();
+                    renderDashboard();
+                    const statusThai = status === 'approved' ? 'อนุมัติ' : 'ปฏิเสธ';
+                    showToast(`ทำเครื่องหมายธุรกรรมเป็น ${statusThai}`, 'success');
+                } else {
+                    showToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
+                }
+            } catch(err) {
+                console.error(err);
+                showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
             }
         }
         
         function viewSlip(id) {
-            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            let t = trans.find(item => item.id === id);
+            let t = currentTransactions.find(item => item.id === id);
             if(t) {
                 if(t.slip) {
                     document.getElementById('modalImg').src = t.slip;
@@ -1312,8 +1397,7 @@
                 }
 
                 // Show User Bank Info
-                const users = JSON.parse(localStorage.getItem('mining_users')) || {};
-                const u = users[t.user] || {};
+                const u = currentUsers[t.user] || {};
                 
                 const content = document.getElementById('modalBankContent');
                 let bankHtml = '';
@@ -1374,33 +1458,49 @@
         }
 
         // Announcements & System
-        function postAnnounce() {
+        async function postAnnounce() {
             const txt = document.getElementById('announceText').value;
             if(txt) {
                 const annObj = { msg: txt, date: new Date().toISOString() };
-                localStorage.setItem('mining_announcement', JSON.stringify(annObj));
-                document.getElementById('currentAnnounce').innerText = txt;
-                document.getElementById('announceText').value = '';
-                showToast('อัปเดตประกาศแล้ว', 'success');
+                try {
+                    await fetch('/api/admin/settings', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ mining_announcement: annObj })
+                    });
+                    document.getElementById('currentAnnounce').innerText = txt;
+                    document.getElementById('announceText').value = '';
+                    showToast('อัปเดตประกาศแล้ว', 'success');
+                } catch(e) { showToast('Connection Error', 'error'); }
             }
         }
         
-        function clearAnnounce() {
-            localStorage.removeItem('mining_announcement');
-            document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
-            showToast('ล้างประกาศแล้ว', 'success');
+        async function clearAnnounce() {
+            try {
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ mining_announcement: null })
+                });
+                document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
+                showToast('ล้างประกาศแล้ว', 'success');
+            } catch(e) { showToast('Connection Error', 'error'); }
         }
 
-        function resetSystem() {
+        async function resetSystem() {
             if(confirm('⚠️ อันตราย! คุณแน่ใจหรือไม่ที่จะล้างข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถกู้คืนได้!')) {
-                localStorage.clear();
-                alert('ระบบถูกรีเซ็ตแล้ว');
-                location.reload();
+                try {
+                    const res = await fetch('/api/admin/reset-system', { method: 'POST' });
+                    if(res.ok) {
+                        alert('ระบบถูกรีเซ็ตแล้ว');
+                        location.reload();
+                    }
+                } catch(e) { alert('Error resetting system'); }
             }
         }
 
         // Payment Settings
-        function savePaymentSettings() {
+        async function savePaymentSettings() {
             const bank = document.getElementById('adminBankName').value;
             const number = document.getElementById('adminBankNumber').value;
             const name = document.getElementById('adminAccName').value;
@@ -1410,39 +1510,37 @@
                 return;
             }
 
-            localStorage.setItem('admin_bank_name', bank);
-            localStorage.setItem('admin_bank_number', number);
-            localStorage.setItem('admin_acc_name', name);
-            
-            // Sync legacy keys if PromptPay
-            if(bank === 'promptpay') {
-                localStorage.setItem('admin_pp_number', number);
-            }
-            
-            showToast('บันทึกข้อมูลบัญชีธนาคารแล้ว', 'success');
+            try {
+                await fetch('/api/admin/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        admin_bank_name: bank,
+                        admin_bank_number: number,
+                        admin_acc_name: name
+                    })
+                });
+                showToast('บันทึกข้อมูลบัญชีธนาคารแล้ว', 'success');
+            } catch(e) { showToast('Connection Error', 'error'); }
         }
 
-        function loadPaymentSettings() {
-            const bank = localStorage.getItem('admin_bank_name') || 'promptpay';
-            const number = localStorage.getItem('admin_bank_number') || localStorage.getItem('admin_pp_number') || '';
-            const name = localStorage.getItem('admin_acc_name') || localStorage.getItem('admin_pp_name') || '';
-            
-            const elBank = document.getElementById('adminBankName');
-            const elNum = document.getElementById('adminBankNumber');
-            const elName = document.getElementById('adminAccName');
-            
-            if(elBank) elBank.value = bank;
-            if(elNum) elNum.value = number;
-            if(elName) elName.value = name;
-        }
-
-        // Helper to get user profile safely
-        function getUserProfile(username) {
-            return JSON.parse(localStorage.getItem(`pf_${username}`)) || { balance: 0, mining_power: 0 };
-        }
-        
-        function saveUserProfile(username, data) {
-            localStorage.setItem(`pf_${username}`, JSON.stringify(data));
+        async function loadPaymentSettings() {
+            try {
+                const res = await fetch('/api/admin/settings');
+                const settings = await res.json();
+                
+                const bank = settings.admin_bank_name || 'promptpay';
+                const number = settings.admin_bank_number || '';
+                const name = settings.admin_acc_name || '';
+                
+                const elBank = document.getElementById('adminBankName');
+                const elNum = document.getElementById('adminBankNumber');
+                const elName = document.getElementById('adminAccName');
+                
+                if(elBank) elBank.value = bank;
+                if(elNum) elNum.value = number;
+                if(elName) elName.value = name;
+            } catch(e) { console.error('Load Settings Error:', e); }
         }
 
         // --- Live Monitor System ---
@@ -1480,150 +1578,131 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
-        function updateMonitor() {
+        async function updateMonitor() {
             const feed = document.getElementById('monitorFeed');
             if(!feed) return;
 
             let pendingCount = 0;
             let fraudCount = 0;
-            let onlineCount = Math.floor(Math.random() * 5) + 1; // Mock online users for now
+            // Mock online users for now, or implement heartbeat later
+            let onlineCount = Math.floor(Math.random() * 5) + 1; 
 
             let allAlerts = [];
 
-            // 1. Pending Transactions
-            const trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            trans.forEach(t => {
-                if(t.status === 'pending') {
-                    pendingCount++;
-                    allAlerts.push({
-                        type: 'trans',
-                        data: t,
-                        time: t.timestamp || t.date || Date.now(),
-                        priority: 'high'
-                    });
-                }
-            });
+            try {
+                const [resTrans, resUsers] = await Promise.all([
+                    fetch('/api/admin/transactions'),
+                    fetch('/api/admin/users')
+                ]);
+                const trans = await resTrans.json();
+                const users = await resUsers.json();
+                
+                const usersArray = Object.values(users);
 
-            // 2. Pending Referrals
-            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            const ipCounts = {};
-            const deviceCounts = {};
-            
-            // Build fraud maps first
-            Object.keys(users).forEach(referrer => {
-                const refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
-                refs.forEach(r => {
-                     if(r.ip && r.ip !== 'Unknown') ipCounts[r.ip] = (ipCounts[r.ip] || 0) + 1;
-                     if(r.deviceId) deviceCounts[r.deviceId] = (deviceCounts[r.deviceId] || 0) + 1;
+                // 1. Pending Transactions
+                trans.forEach(t => {
+                    if(t.status === 'pending') {
+                        pendingCount++;
+                        allAlerts.push({
+                            type: 'trans',
+                            data: t,
+                            time: t.timestamp || t.date || Date.now(),
+                            priority: 'high'
+                        });
+                    }
                 });
-            });
 
-            Object.keys(users).forEach(referrer => {
-                const refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
-                refs.forEach(r => {
-                    if(r.status === 'pending') {
+                // 2. Pending Referrals & Fraud Check
+                const ipCounts = {};
+                const deviceCounts = {};
+                
+                // Build fraud maps from ALL users
+                usersArray.forEach(u => {
+                    if(u.ip && u.ip !== 'Unknown') ipCounts[u.ip] = (ipCounts[u.ip] || 0) + 1;
+                    if(u.deviceId && u.deviceId !== 'Unknown') deviceCounts[u.deviceId] = (deviceCounts[u.deviceId] || 0) + 1;
+                });
+
+                usersArray.forEach(u => {
+                    if(u.status === 'pending') {
                         pendingCount++;
                         
                         // Check fraud
                         let isFraud = false;
-                        if(ipCounts[r.ip] > 1) isFraud = true;
-                        if(deviceCounts[r.deviceId] > 1) isFraud = true;
+                        if(ipCounts[u.ip] > 1) isFraud = true;
+                        if(deviceCounts[u.deviceId] > 1) isFraud = true;
                         if(isFraud) fraudCount++;
 
                         allAlerts.push({
                             type: 'referral',
-                            data: { ...r, referrer },
-                            time: new Date(r.date).getTime(),
+                            data: { ...u, referrer: u.referrer_id },
+                            time: u.regDate ? new Date(u.regDate).getTime() : Date.now(),
                             priority: isFraud ? 'critical' : 'medium',
                             isFraud: isFraud
                         });
                     }
                 });
-            });
 
-            // Sort by time desc
-            allAlerts.sort((a, b) => b.time - a.time);
+                // Sort by time desc
+                allAlerts.sort((a, b) => b.time - a.time);
 
-            // Update Counts
-            document.getElementById('monitorPendingCount').innerText = pendingCount;
-            document.getElementById('monitorFraudCount').innerText = fraudCount;
-            document.getElementById('monitorOnlineCount').innerText = onlineCount;
+                // Update Counters
+                if(document.getElementById('monitorPendingCount')) 
+                    document.getElementById('monitorPendingCount').innerText = pendingCount;
+                if(document.getElementById('monitorFraudCount'))
+                    document.getElementById('monitorFraudCount').innerText = fraudCount;
+                
+                // Render Feed
+                feed.innerHTML = '';
+                if(allAlerts.length === 0) {
+                    feed.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px;">ระบบปกติ ไม่มีรายการแจ้งเตือน</div>';
+                } else {
+                    allAlerts.forEach(alert => {
+                        const item = document.createElement('div');
+                        item.className = 'monitor-item';
+                        if(alert.priority === 'critical') item.style.borderLeft = '4px solid var(--danger)';
+                        else if(alert.priority === 'high') item.style.borderLeft = '4px solid var(--warning)';
+                        else item.style.borderLeft = '4px solid var(--primary)';
 
-            // Badge
-            const navBadge = document.getElementById('navMonitorBadge');
-            if(navBadge) {
-                navBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
-                navBadge.innerText = pendingCount;
-            }
+                        let icon = '';
+                        let title = '';
+                        let desc = '';
+                        let time = new Date(alert.time).toLocaleTimeString('th-TH');
 
-            // Render Feed
-            feed.innerHTML = '';
-            if(allAlerts.length === 0) {
-                feed.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--text-muted);">ไม่มีการแจ้งเตือนใหม่</div>';
-            } else {
-                allAlerts.forEach(alert => {
-                    const div = document.createElement('div');
-                    div.className = 'monitor-item';
-                    div.style.background = 'rgba(255,255,255,0.03)';
-                    div.style.padding = '15px';
-                    div.style.borderRadius = '8px';
-                    
-                    let borderColor = '#3b82f6';
-                    if(alert.type === 'trans') borderColor = '#f59e0b';
-                    if(alert.isFraud) borderColor = '#ef4444';
-                    
-                    div.style.borderLeft = `4px solid ${borderColor}`;
-                    div.style.marginBottom = '10px';
-                    div.style.display = 'flex';
-                    div.style.justifyContent = 'space-between';
-                    div.style.alignItems = 'center';
-                    div.style.animation = 'fadeIn 0.3s';
-                    
-                    let content = '';
-                    let actions = '';
+                        if(alert.type === 'trans') {
+                            icon = '<i class="fas fa-exchange-alt" style="color:var(--warning)"></i>';
+                            title = `แจ้งฝาก/ถอน: ${alert.data.user}`;
+                            desc = `${alert.data.type === 'deposit' ? 'ฝาก' : 'ถอน'} ฿${parseFloat(alert.data.amount).toLocaleString()}`;
+                        } else if(alert.type === 'referral') {
+                            icon = alert.isFraud ? '<i class="fas fa-exclamation-triangle" style="color:var(--danger)"></i>' : '<i class="fas fa-user-plus" style="color:var(--primary)"></i>';
+                            title = `สมัครสมาชิกใหม่: ${alert.data.username}`;
+                            desc = `Ref: ${alert.data.referrer || '-'} ${alert.isFraud ? '<span style="color:var(--danger)">(เสี่ยงทุจริต)</span>' : ''}`;
+                        }
 
-                    if(alert.type === 'trans') {
-                        const t = alert.data;
-                        content = `
-                            <div>
-                                <div style="font-weight:bold; color:${borderColor};">
-                                    <i class="fas fa-exchange-alt"></i> ธุรกรรมใหม่ (${t.type === 'deposit'?'ฝาก':'ถอน'})
+                        item.innerHTML = `
+                            <div style="display:flex; gap:15px; align-items:center;">
+                                <div style="width:40px; height:40px; background:rgba(255,255,255,0.05); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                    ${icon}
                                 </div>
-                                <div style="font-size:0.85rem; color:#ccc;">
-                                    User: ${t.user} | Amount: ฿${parseFloat(t.amount).toLocaleString()}
+                                <div>
+                                    <div style="font-weight:bold; font-size:0.9rem;">${title}</div>
+                                    <div style="font-size:0.8rem; color:var(--text-muted);">${desc}</div>
                                 </div>
-                                <div style="font-size:0.75rem; color:#aaa;">${new Date(alert.time).toLocaleTimeString()}</div>
+                                <div style="margin-left:auto; font-size:0.75rem; color:var(--text-muted);">${time}</div>
                             </div>
                         `;
-                        actions = `
-                            <button onclick="approveTrans(${t.id}, 'approved'); setTimeout(updateMonitor, 100);" class="btn-sm btn-green">อนุมัติ</button>
-                            <button onclick="approveTrans(${t.id}, 'rejected'); setTimeout(updateMonitor, 100);" class="btn-sm btn-red">ปฏิเสธ</button>
-                        `;
-                    } else if(alert.type === 'referral') {
-                         const r = alert.data;
-                         const fraudBadge = alert.isFraud ? '<span class="badge badge-danger" style="font-size:0.6rem; margin-left:5px;">Fraud Risk</span>' : '';
-                         content = `
-                            <div>
-                                <div style="font-weight:bold; color:${borderColor};">
-                                    <i class="fas fa-user-plus"></i> แนะนำเพื่อนใหม่ ${fraudBadge}
-                                </div>
-                                <div style="font-size:0.85rem; color:#ccc;">
-                                    Ref: ${r.name} (by ${r.referrer})
-                                </div>
-                                <div style="font-size:0.75rem; color:#aaa;">${new Date(alert.time).toLocaleTimeString()}</div>
-                            </div>
-                         `;
-                         actions = `
-                            <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'approved'); setTimeout(updateMonitor, 100);" class="btn-sm btn-green">อนุมัติ</button>
-                            <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'rejected'); setTimeout(updateMonitor, 100);" class="btn-sm btn-red">ปฏิเสธ</button>
-                         `;
-                    }
+                        
+                        if(alert.priority === 'critical' && soundEnabled) playBeep(); 
 
-                    div.innerHTML = content + `<div style="display:flex; gap:5px;">${actions}</div>`;
-                    feed.appendChild(div);
-                });
+                        feed.appendChild(item);
+                    });
+                }
+
+            } catch(e) {
+                console.error('Monitor Error:', e);
             }
-        }
+                }
+
+
 
         function clearAllAlerts() {
              updateMonitor();
@@ -1657,14 +1736,18 @@
         });
 
         // Initial Load
-        // Initialize payment settings fields
-        document.getElementById('adminPPNumber').value = localStorage.getItem('admin_pp_number') || '';
-        document.getElementById('adminPPName').value = localStorage.getItem('admin_pp_name') || '';
+        loadPaymentSettings();
 
         renderDashboard();
         renderTrans(); // to set badge
         renderReferrals(); // to set badge
         updateMonitor(); // Init monitor
+        
+        // Poll for updates
+        setInterval(() => {
+            updateMonitor();
+            // renderDashboard(); // Optional: refresh dashboard stats too
+        }, 10000);
         
         // Additional Pulse Animation for Monitor
         setInterval(() => {

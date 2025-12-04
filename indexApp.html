@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crypto Miner Tycoo</title>
+    <title>Crypto Miner Tycoon</title>
     <script src="sync-manager.js"></script>
     <script src="live-sync.js"></script>
     <link rel="manifest" href="manifest.json">
@@ -1626,33 +1626,39 @@ console.log('Live Sync Status:', liveSync.getStatus());
              const file = slipInput.files[0];
              const reader = new FileReader();
              
-             reader.onload = function(e) {
+             reader.onload = async function(e) {
                  const slipBase64 = e.target.result;
                  
-                 // Create Pending Transaction
-                 let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-                 trans.push({
-                    id: Date.now(),
-                    user: currentUser.username,
-                    type: 'deposit',
-                    amount: val,
-                    timestamp: Date.now(),
-                    status: 'pending',
-                    slip: slipBase64
-                 });
-                 localStorage.setItem('mining_transactions', JSON.stringify(trans));
-                 
-                 // Show Success
-                 showToast('แจ้งชำระเงินเรียบร้อย รอการตรวจสอบ', 'success');
-                 document.getElementById('walletModal').style.display = 'none';
-                 
-                 // Clear inputs
-                 amtInput.value = '';
-                 slipInput.value = '';
-                 updateDepositUI(0);
-                 
-                 // Refresh Trans List
-                 renderUserTrans();
+                 try {
+                     const res = await fetch('/api/transactions/deposit', {
+                         method: 'POST',
+                         headers: {'Content-Type': 'application/json'},
+                         body: JSON.stringify({
+                             username: currentUser.username,
+                             amount: val,
+                             slip: slipBase64
+                         })
+                     });
+                     const data = await res.json();
+                     
+                     if(data.success) {
+                         showToast('แจ้งชำระเงินเรียบร้อย รอการตรวจสอบ', 'success');
+                         document.getElementById('walletModal').style.display = 'none';
+                         
+                         // Clear inputs
+                         amtInput.value = '';
+                         slipInput.value = '';
+                         updateDepositUI(0);
+                         
+                         // Refresh Trans List
+                         renderUserTrans();
+                     } else {
+                         showToast('เกิดข้อผิดพลาด: ' + (data.error || 'Unknown'), 'error');
+                     }
+                 } catch(err) {
+                     console.error(err);
+                     showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                 }
              };
              
              reader.onerror = function() {
@@ -1671,68 +1677,74 @@ console.log('Live Sync Status:', liveSync.getStatus());
             renderUserTrans();
         }
 
-        function renderUserTrans() {
+        async function renderUserTrans() {
             const list = document.getElementById('transList');
             if(!list) return;
             
-            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            // Filter my transactions
-            trans = trans.filter(t => t.user === currentUser.username);
-            // Sort Newest First
-            trans.sort((a,b) => b.timestamp - a.timestamp);
-            
-            if(trans.length === 0) {
-                list.innerHTML = `
-                    <div style="text-align:center; color:var(--text-muted); margin-top:50px; padding: 40px;">
-                        <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 1px dashed var(--text-muted);">
-                            <i class="fas fa-history" style="font-size:2.5rem; opacity:0.5;"></i>
+            try {
+                const res = await fetch(`/api/user/${currentUser.username}/transactions`);
+                const data = await res.json();
+                let trans = data.transactions || [];
+                
+                // Sort Newest First
+                trans.sort((a,b) => (b.timestamp || b.date || 0) - (a.timestamp || a.date || 0));
+                
+                if(trans.length === 0) {
+                    list.innerHTML = `
+                        <div style="text-align:center; color:var(--text-muted); margin-top:50px; padding: 40px;">
+                            <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 1px dashed var(--text-muted);">
+                                <i class="fas fa-history" style="font-size:2.5rem; opacity:0.5;"></i>
+                            </div>
+                            <div>ไม่มีรายการธุรกรรม</div>
                         </div>
-                        <div>ไม่มีรายการธุรกรรม</div>
-                    </div>
-                `;
-                return;
-            }
-            
-            list.innerHTML = '';
-            trans.forEach(t => {
-                let statusBadge = '';
-                if(t.status === 'pending') statusBadge = '<span style="color:var(--warning); background:rgba(255, 204, 0, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(255, 204, 0, 0.2);"><i class="fas fa-clock"></i> รอตรวจสอบ</span>';
-                else if(t.status === 'approved') statusBadge = '<span style="color:var(--success); background:rgba(0, 255, 157, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(0, 255, 157, 0.2); box-shadow: 0 0 5px rgba(0, 255, 157, 0.2);"><i class="fas fa-check-circle"></i> สำเร็จ</span>';
-                else statusBadge = '<span style="color:var(--danger); background:rgba(255, 0, 85, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(255, 0, 85, 0.2);"><i class="fas fa-times-circle"></i> ปฏิเสธ</span>';
-                
-                let icon = t.type === 'deposit' ? '<i class="fas fa-arrow-down" style="color:var(--success);"></i>' : '<i class="fas fa-arrow-up" style="color:var(--warning);"></i>';
-                let iconBg = t.type === 'deposit' ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 204, 0, 0.1)';
-                let iconBorder = t.type === 'deposit' ? 'var(--success)' : 'var(--warning)';
-                
-                let title = t.type === 'deposit' ? 'ฝากเงิน' : 'ถอนเงิน';
-                let amountColor = t.type === 'deposit' ? 'var(--success)' : 'var(--warning)';
-                let sign = t.type === 'deposit' ? '+' : '-';
-                
-                // Fee detail text
-                let feeDetail = '';
-                if(t.type === 'withdraw' && t.fee) {
-                    feeDetail = `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">ค่าธรรมเนียม: ${t.fee.toLocaleString()}</div>`;
+                    `;
+                    return;
                 }
+                
+                list.innerHTML = '';
+                trans.forEach(t => {
+                    let statusBadge = '';
+                    if(t.status === 'pending') statusBadge = '<span style="color:var(--warning); background:rgba(255, 204, 0, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(255, 204, 0, 0.2);"><i class="fas fa-clock"></i> รอตรวจสอบ</span>';
+                    else if(t.status === 'approved') statusBadge = '<span style="color:var(--success); background:rgba(0, 255, 157, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(0, 255, 157, 0.2); box-shadow: 0 0 5px rgba(0, 255, 157, 0.2);"><i class="fas fa-check-circle"></i> สำเร็จ</span>';
+                    else statusBadge = '<span style="color:var(--danger); background:rgba(255, 0, 85, 0.1); padding:4px 10px; border-radius:6px; font-size:0.7rem; border:1px solid rgba(255, 0, 85, 0.2);"><i class="fas fa-times-circle"></i> ปฏิเสธ</span>';
+                    
+                    let icon = t.type === 'deposit' ? '<i class="fas fa-arrow-down" style="color:var(--success);"></i>' : '<i class="fas fa-arrow-up" style="color:var(--warning);"></i>';
+                    let iconBg = t.type === 'deposit' ? 'rgba(0, 255, 157, 0.1)' : 'rgba(255, 204, 0, 0.1)';
+                    let iconBorder = t.type === 'deposit' ? 'var(--success)' : 'var(--warning)';
+                    
+                    let title = t.type === 'deposit' ? 'ฝากเงิน' : 'ถอนเงิน';
+                    let amountColor = t.type === 'deposit' ? 'var(--success)' : 'var(--warning)';
+                    let sign = t.type === 'deposit' ? '+' : '-';
+                    
+                    // Fee detail text
+                    let feeDetail = '';
+                    if(t.type === 'withdraw' && t.fee) {
+                        feeDetail = `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">ค่าธรรมเนียม: ${t.fee.toLocaleString()}</div>`;
+                    }
 
-                list.innerHTML += `
-                    <div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; animation: slideUp 0.3s ease-out;">
-                        <div style="display:flex; gap:15px; align-items:center;">
-                            <div style="width:45px; height:45px; border-radius:12px; background:${iconBg}; display:flex; align-items:center; justify-content:center; font-size:1.2rem; border: 1px solid ${iconBorder}; box-shadow: 0 0 10px ${iconBg};">
-                                ${icon}
+                    list.innerHTML += `
+                        <div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; animation: slideUp 0.3s ease-out;">
+                            <div style="display:flex; gap:15px; align-items:center;">
+                                <div style="width:45px; height:45px; border-radius:12px; background:${iconBg}; display:flex; align-items:center; justify-content:center; font-size:1.2rem; border: 1px solid ${iconBorder}; box-shadow: 0 0 10px ${iconBg};">
+                                    ${icon}
+                                </div>
+                                <div>
+                                    <div style="font-weight: bold; color: white; font-size:1rem;">${title}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">${new Date(t.timestamp || t.date).toLocaleString('th-TH')}</div>
+                                </div>
                             </div>
-                            <div>
-                                <div style="font-weight: bold; color: white; font-size:1rem;">${title}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted);">${new Date(t.timestamp).toLocaleString('th-TH')}</div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: bold; color: ${amountColor}; font-size:1.1rem; text-shadow: 0 0 10px ${amountColor}40;">${sign}${parseFloat(t.amount).toLocaleString()}</div>
+                                ${feeDetail}
+                                <div style="margin-top: 6px;">${statusBadge}</div>
                             </div>
                         </div>
-                        <div style="text-align: right;">
-                            <div style="font-weight: bold; color: ${amountColor}; font-size:1.1rem; text-shadow: 0 0 10px ${amountColor}40;">${sign}${t.amount.toLocaleString()}</div>
-                            ${feeDetail}
-                            <div style="margin-top: 6px;">${statusBadge}</div>
-                        </div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            } catch(e) {
+                console.error(e);
+                showToast('ไม่สามารถโหลดข้อมูลธุรกรรมได้', 'error');
+            }
         }
 
         function miningLoop() {
@@ -2031,7 +2043,9 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         name,
                         bank,
                         acc,
-                        referrer_id: referrerId // Can be null
+                        referrer_id: referrerId, // Can be null
+                        ip: clientIP || 'Unknown',
+                        deviceId: getDeviceID() || 'Unknown'
                     })
                 });
                 
@@ -2072,42 +2086,104 @@ console.log('Live Sync Status:', liveSync.getStatus());
              }
         }
 
-        function login() {
+        async function login() {
             const u = document.getElementById('loginUser').value;
             const p = document.getElementById('loginPass').value;
-            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            if(users[u] && users[u].pass === p) {
-                if(users[u].banned) return showToast('ขออภัย บัญชีถูกระงับชั่วคราว', 'error');
-                currentUser = { username: u };
-                localStorage.setItem('current_user', JSON.stringify(currentUser));
-                document.getElementById('loginModal').style.display='none';
-                initApp();
-                showToast('เข้าสู่ระบบสำเร็จ', 'success');
-            } else { showToast('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error'); }
+            
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    const user = data.user;
+                    if(user.status === 'banned') return showToast('ขออภัย บัญชีถูกระงับชั่วคราว', 'error');
+                    if(user.status === 'pending') return showToast('บัญชีรอการอนุมัติจากแอดมิน', 'warning');
+                    
+                    currentUser = { 
+                        username: user.username,
+                        id: user.id,
+                        referrer_id: user.referrer_id
+                    };
+                    localStorage.setItem('current_user', JSON.stringify(currentUser));
+                    
+                    // Cache initial profile data
+                    let pf = JSON.parse(localStorage.getItem(`pf_${user.username}`)) || {};
+                    pf.balance = user.balance || 0;
+                    pf.hashrate = user.hashrate || 0;
+                    localStorage.setItem(`pf_${user.username}`, JSON.stringify(pf));
+
+                    document.getElementById('loginModal').style.display='none';
+                    initApp();
+                    showToast('เข้าสู่ระบบสำเร็จ', 'success');
+                } else {
+                    showToast(data.error || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error');
+                }
+            } catch(e) {
+                console.error(e);
+                showToast('Connection Error', 'error');
+            }
         }
 
         function logout() { localStorage.removeItem('current_user'); location.reload(); }
 
         // --- Data ---
-        function saveData() { 
+        async function saveData() { 
             if(currentUser) { 
-                let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)); 
+                let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)) || {}; 
                 pf.balance = balance; 
                 pf.hashrate = hashrate; 
                 pf.dailyProfit = dailyProfit;
                 pf.lastProfitDate = lastProfitDate;
                 localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf)); 
+                
+                // Sync to Backend
+                try {
+                    fetch('/api/user/sync', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            username: currentUser.username,
+                            balance: balance,
+                            hashrate: hashrate
+                        })
+                    }).catch(e => console.error('Sync Error', e));
+                } catch(e) {}
             } 
         }
-        function loadUserData() {
+        async function loadUserData() {
+            // Try fetch from backend first
+            try {
+                const res = await fetch(`/api/user/${currentUser.username}`);
+                if(res.ok) {
+                    const data = await res.json();
+                    if(data.user) {
+                        const u = data.user;
+                        // Update local balance/hashrate if backend has it (e.g. admin changed it)
+                        // Note: client logic usually rules for mining, but admin override is priority.
+                        // For now, let's assume backend is source of truth on load.
+                        balance = parseFloat(u.balance || 0);
+                        hashrate = parseFloat(u.hashrate || 0);
+                        
+                        // Update LocalStorage
+                        let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)) || {};
+                        pf.balance = balance;
+                        pf.hashrate = hashrate;
+                        localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+                    }
+                }
+            } catch(e) { console.error('Backend Load Error:', e); }
+
             let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`));
             if(pf) {
-                balance = parseFloat(pf.balance || 0);
-                hashrate = parseFloat(pf.hashrate || 0);
+                balance = parseFloat(pf.balance || balance);
+                hashrate = parseFloat(pf.hashrate || hashrate);
                 dailyProfit = parseFloat(pf.dailyProfit || 0);
                 lastProfitDate = pf.lastProfitDate || new Date().toDateString();
 
-                // Check date reset immediately on load
                 if(lastProfitDate !== new Date().toDateString()) {
                     dailyProfit = 0;
                     lastProfitDate = new Date().toDateString();
@@ -2116,9 +2192,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
                 console.log('📊 Loaded Data:', { balance, hashrate, dailyProfit });
                 
-                // ✅ Auto-start mining if hashrate > 0
                 if(hashrate > 0) {
-                    // Note: We allow auto-start here, but rig_deleted event might pause it momentarily
                     isMining = true;
                     console.log('🚀 Auto-starting mining...');
                 }
@@ -2127,15 +2201,17 @@ console.log('Live Sync Status:', liveSync.getStatus());
             }
         }
         function renderProfile() {
-            let users = JSON.parse(localStorage.getItem('mining_users'));
-            let uData = users[currentUser.username];
-            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`));
+            // Use currentUser directly (assuming it has id)
+            if(!currentUser) return;
+            
+            const id = currentUser.id || '???';
+            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)) || {};
             
             document.getElementById('headerName').innerText = currentUser.username;
-            document.getElementById('headerID').innerText = `ID: ${uData.id}`;
+            document.getElementById('headerID').innerText = `ID: ${id}`;
             document.getElementById('settingName').innerText = currentUser.username;
-            document.getElementById('settingID').innerText = `ID: ${uData.id}`;
-            document.getElementById('myRefCode').innerText = uData.id + "X";
+            document.getElementById('settingID').innerText = `ID: ${id}`;
+            document.getElementById('myRefCode').innerText = id + "X";
             
             if(pf.avatar) {
                 document.getElementById('headerAvatar').innerHTML = `<img src="${pf.avatar}">`;
@@ -2221,17 +2297,17 @@ console.log('Live Sync Status:', liveSync.getStatus());
             }, 3000);
         }
 
-        function submitTransaction() {
+        async function submitTransaction() {
             const amt = parseFloat(document.getElementById('walletAmount').value);
             if(!amt) return showToast('กรุณาระบุจำนวนเงิน', 'warning');
             
-            // Deposit is handled by submitDeposit() now
+            // Deposit is handled by confirmPayment
             
             if(currentAction === 'withdraw') {
-                let users = JSON.parse(localStorage.getItem('mining_users'));
+                let users = JSON.parse(localStorage.getItem('mining_users')) || {};
                 let u = users[currentUser.username];
-                if(!u.bank || !u.acc) return showToast('กรุณาเพิ่มบัญชีธนาคารก่อนถอนเงิน', 'warning');
-                                //แก้ไขจำนวนเงิน//
+                if(!u || !u.bank || !u.acc) return showToast('กรุณาเพิ่มบัญชีธนาคารก่อนถอนเงิน', 'warning');
+
                 if(amt < 200) return showToast('ถอนขั้นต่ำ 200 บาท', 'warning');
                 if(amt > 200000) return showToast('ถอนได้ไม่เกิน 200,000 บาทต่อครั้ง', 'warning');
                 if(balance < amt) return showToast('ยอดเงินคงเหลือไม่เพียงพอ', 'error');
@@ -2241,18 +2317,34 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 
                 if(!confirm(`ยืนยันการถอนเงิน?\n\nยอดถอน: ฿${amt.toLocaleString()}\nค่าธรรมเนียม (3%): ฿${fee.toLocaleString()}\nได้รับสุทธิ: ฿${net.toLocaleString()}`)) return;
                 
-                balance -= amt;
-                
-                let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-                trans.push({
-                    id: Date.now(), user: currentUser.username, type: currentAction, amount: amt,
-                    fee: fee, net: net, // Store fee details
-                    status: 'pending', timestamp: Date.now(), processed: false
-                });
-                localStorage.setItem('mining_transactions', JSON.stringify(trans));
-                saveData(); updateUI();
-                showToast('ทำรายการสำเร็จ รอแอดมินอนุมัติ', 'success');
-                document.getElementById('walletModal').style.display='none';
+                try {
+                    const res = await fetch('/api/transactions/withdraw', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            username: currentUser.username,
+                            amount: amt,
+                            bank: u.bank,
+                            account: u.acc
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if(data.success) {
+                        balance -= amt;
+                        saveData(); 
+                        updateUI();
+                        renderUserTrans();
+                        showToast('ทำรายการสำเร็จ รอแอดมินอนุมัติ', 'success');
+                        document.getElementById('walletModal').style.display='none';
+                    } else {
+                        showToast('Error: ' + data.error, 'error');
+                    }
+                } catch(e) {
+                    console.error(e);
+                    showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                }
             }
         }
 
@@ -2524,255 +2616,141 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         // --- Shop ---
-        function loadShop() {
+        async function loadShop() {
             const g = document.getElementById('shopList');
             if(!g) return;
             g.innerHTML = '';
-            const disabled = localStorage.getItem('shop_disabled') === 'true';
-            const notice = localStorage.getItem('shop_notice');
-            let items = JSON.parse(localStorage.getItem('mining_shop_items'));
-            const seeded = localStorage.getItem('shop_seeded') === 'true';
-
-            if(disabled) {
-                g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
-                    <div style="font-size:1.2rem; font-weight:bold; color: var(--warning); margin-bottom: 8px;">ร้านค้าปรับปรุง</div>
-                    <div style="color: var(--text-muted);">กรุณากลับมาใหม่ภายหลัง</div>
-                    ${notice ? `<div style="margin-top:10px; color:#fff;">${notice}</div>` : ''}
-                </div>`;
-                return;
-            }
-
-            if(!items) {
-                if(!seeded) {
-                    const catalog = [
-                        {id: 6, name: "ชุดขุด Bitcoin เริ่มต้น (24ชม.)", speed: 0.05, price: 0, tier: 'limited', tag: 'free', icon: 'fa-bitcoin'},
-                        {id: 1, name: "การ์ดจอ GTX 1060 (เริ่มต้น)", speed: 0.5, price: 500, tier: 'basic', icon: 'fa-fan'},
-                        {id: 7, name: "แท่นขุด Titanium Mk1", speed: 12.0, price: 12000, tier: 'mid', tag: 'used', icon: 'fa-hammer'},
-                        {id: 2, name: "การ์ดจอ RTX 3060 Ti", speed: 2.5, price: 2500, tier: 'mid', icon: 'fa-memory'},
-                        {id: 3, name: "การ์ดจอ RTX 4090 Ultimate", speed: 8.0, price: 9500, tier: 'pro', tag: 'hot', icon: 'fa-microchip'},
-                        {id: 4, name: "เครื่องขุด ASIC S19 Pro", speed: 25.0, price: 28000, tier: 'pro', icon: 'fa-server'},
-                        {id: 5, name: "แท่นขุด Quantum V1", speed: 80.0, price: 85000, tier: 'legendary', tag: 'new', icon: 'fa-atom'},
-                    ];
-                    localStorage.setItem('mining_shop_items', JSON.stringify(catalog));
-                    localStorage.setItem('shop_seeded', 'true');
-                    items = catalog;
-                } else {
-                    items = [];
+            
+            try {
+                const res = await fetch('/api/shop/items');
+                const data = await res.json();
+                
+                if(data.disabled) {
+                    g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
+                        <div style="font-size:1.2rem; font-weight:bold; color: var(--warning); margin-bottom: 8px;">ร้านค้าปรับปรุง</div>
+                        <div style="color: var(--text-muted);">กรุณากลับมาใหม่ภายหลัง</div>
+                        ${data.notice ? `<div style="margin-top:10px; color:#fff;">${data.notice}</div>` : ''}
+                    </div>`;
+                    return;
                 }
-            }
-
-            if(items.length === 0) {
-                g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
-                    <div style="font-size:1.2rem; font-weight:bold; color: #fff; margin-bottom: 8px;">ยังไม่มีสินค้า</div>
-                    <div style="color: var(--text-muted);">แอดมินแจ้งระบบเชื่อมต่อให้ร้านค่าเครื่องเข้ามาใหม่ก่อน</div>
-                    ${notice ? `<div style="margin-top:10px; color:#fff;">${notice}</div>` : ''}
-                </div>`;
-                return;
-            }
-
-            let activeItems = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
-            if(notice) g.innerHTML += `<div class="glass-panel" style="margin-bottom:15px;">${notice}</div>`;
-
-            items.forEach(i => {
-                const tagClass = i.tag ? i.tag : '';
-                const tagLabel = i.tag ? ({hot:'ฮอต', new:'ใหม่', sale:'ลดราคา', best:'แนะนำ', used:'มือสอง', free:'ฟรี'}[i.tag] || i.tag) : null;
-                let btnText = 'ซื้อสินค้า <i class="fas fa-shopping-cart"></i>';
-                let btnState = '';
-                let btnStyle = 'margin-top:5px; padding:8px 0; font-size:0.9rem;';
-                if(i.id === 6) {
-                    const existing = activeItems.find(x => x.id === 6);
-                    if(existing) {
-                        const timeLeft = Math.max(0, Math.floor((existing.expiresAt - Date.now()) / 1000));
-                        const h = Math.floor(timeLeft / 3600);
-                        const m = Math.floor((timeLeft % 3600) / 60);
-                        btnText = `เหลือเวลา ${h}ชม. ${m}น.`;
-                        btnState = 'disabled';
-                        btnStyle += 'background: #555; cursor: not-allowed;';
-                    } else {
-                        btnText = 'รับฟรีทันที <i class="fas fa-gift"></i>';
-                        btnStyle += 'background: linear-gradient(135deg, #ffd700, #f1c40f); color: #000; font-weight: 800;';
-                    }
+                
+                const items = data.items;
+                if(!items || items.length === 0) {
+                    g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
+                        <div style="font-size:1.2rem; font-weight:bold; color: #fff; margin-bottom: 8px;">ยังไม่มีสินค้า</div>
+                        <div style="color: var(--text-muted);">แอดมินแจ้งระบบเชื่อมต่อให้ร้านค่าเครื่องเข้ามาใหม่ก่อน</div>
+                        ${data.notice ? `<div style="margin-top:10px; color:#fff;">${data.notice}</div>` : ''}
+                    </div>`;
+                    return;
                 }
-                const icon = i.icon || 'fa-microchip';
-                const tier = i.tier || 'basic';
-                let tierColor = 'var(--primary)';
-                if(tier === 'legendary') tierColor = '#f1c40f';
-                else if(tier === 'pro') tierColor = '#e056fd';
-                else if(tier === 'mid') tierColor = '#00cec9';
-                else if(tier === 'basic') tierColor = '#74b9ff';
-                else if(tier === 'limited') tierColor = '#ff7675';
-                const isUsed = tagClass.includes('used');
-                const cardClass = isUsed ? 'shop-card-cyber used' : 'shop-card-cyber';
-                g.innerHTML += `
-                <div class="${cardClass}" style="--card-color: ${tierColor};">
-                    ${tagLabel ? `<div style=\"position: absolute; top: 10px; right: 10px; background: ${tierColor}; color: #000; font-size: 0.6rem; font-weight: bold; padding: 2px 8px; border-radius: 4px;\">${tagLabel}</div>` : ''}
-                    <div class="cyber-icon-box" style="border-color: ${tierColor}; box-shadow: 0 0 15px ${tierColor}40;">
-                        <i class="fas ${icon}" style="color: ${tierColor};"></i>
-                    </div>
-                    <h3 style="margin: 10px 0 5px; font-size: 1rem; color: white;">${i.name}</h3>
-                    <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: center; align-items: center; gap: 5px; color: #94a3b8; font-size: 0.8rem;">
-                            <i class="fas fa-bolt" style="color: ${tierColor};"></i>
-                            <span>+${i.speed} MH/s</span>
+
+                if(data.notice) g.innerHTML += `<div class="glass-panel" style="margin-bottom:15px;">${data.notice}</div>`;
+                
+                // Get active items (e.g. free trial) from current user rigs if needed, 
+                // but for now we just render the shop. 
+                // The backend 'buy' will handle validation.
+
+                items.forEach(i => {
+                    const tagClass = i.tag ? i.tag : '';
+                    const tagLabel = i.tag ? ({hot:'ฮอต', new:'ใหม่', sale:'ลดราคา', best:'แนะนำ', used:'มือสอง', free:'ฟรี'}[i.tag] || i.tag) : null;
+                    let btnText = 'ซื้อสินค้า <i class="fas fa-shopping-cart"></i>';
+                    let btnState = '';
+                    let btnStyle = 'margin-top:5px; padding:8px 0; font-size:0.9rem;';
+                    
+                    // Check if user already has the free item (id 6)
+                    // We can check currentUser.rigs if available, or just let backend reject it.
+                    // For UI polish, we might want to know. 
+                    // Assuming currentUser is up to date via sync/login.
+                    
+                    const icon = i.icon || 'fa-microchip';
+                    const tier = i.tier || 'basic';
+                    let tierColor = 'var(--primary)';
+                    if(tier === 'legendary') tierColor = '#f1c40f';
+                    else if(tier === 'pro') tierColor = '#e056fd';
+                    else if(tier === 'mid') tierColor = '#00cec9';
+                    else if(tier === 'basic') tierColor = '#74b9ff';
+                    else if(tier === 'limited') tierColor = '#ff7675';
+                    const isUsed = tagClass.includes('used');
+                    const cardClass = isUsed ? 'shop-card-cyber used' : 'shop-card-cyber';
+                    g.innerHTML += `
+                    <div class="${cardClass}" style="--card-color: ${tierColor};">
+                        ${tagLabel ? `<div style=\"position: absolute; top: 10px; right: 10px; background: ${tierColor}; color: #000; font-size: 0.6rem; font-weight: bold; padding: 2px 8px; border-radius: 4px;\">${tagLabel}</div>` : ''}
+                        <div class="cyber-icon-box" style="border-color: ${tierColor}; box-shadow: 0 0 15px ${tierColor}40;">
+                            <i class="fas ${icon}" style="color: ${tierColor};"></i>
                         </div>
-                        <div style="font-size: 0.75rem; color: var(--success); text-shadow: 0 0 5px rgba(0,255,157,0.3);">
-                            ≈ ฿${(i.speed * 86400).toLocaleString()}/วัน
+                        <h3 style="margin: 10px 0 5px; font-size: 1rem; color: white;">${i.name}</h3>
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: center; align-items: center; gap: 5px; color: #94a3b8; font-size: 0.8rem;">
+                                <i class="fas fa-bolt" style="color: ${tierColor};"></i>
+                                <span>+${i.speed} MH/s</span>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--success); text-shadow: 0 0 5px rgba(0,255,157,0.3);">
+                                ≈ ฿${(i.speed * 86400).toLocaleString()}/วัน
+                            </div>
                         </div>
-                    </div>
-                    <div style="font-size: 1.2rem; font-weight: bold; color: white; margin-bottom: 15px; text-shadow: 0 0 10px ${tierColor}80;">
-                        ${i.price === 0 ? 'ฟรี' : '฿'+i.price.toLocaleString()}
-                    </div>
-                    <button class="cyber-btn" onclick="buyItem(${i.price}, ${i.speed}, ${i.id})" ${btnState} style="${btnState ? 'opacity:0.5;cursor:not-allowed;' : ''} border-color: ${tierColor}; color: ${tierColor}; box-shadow: 0 0 10px ${tierColor}20;">
-                        ${btnText}
-                    </button>
-                </div>`;
-            });
+                        <div style="font-size: 1.2rem; font-weight: bold; color: white; margin-bottom: 15px; text-shadow: 0 0 10px ${tierColor}80;">
+                            ${i.price === 0 ? 'ฟรี' : '฿'+i.price.toLocaleString()}
+                        </div>
+                        <button class="cyber-btn" onclick="buyItem(${i.price}, ${i.speed}, ${i.id})" ${btnState} style="${btnState ? 'opacity:0.5;cursor:not-allowed;' : ''} border-color: ${tierColor}; color: ${tierColor}; box-shadow: 0 0 10px ${tierColor}20;">
+                            ${btnText}
+                        </button>
+                    </div>`;
+                });
+            } catch(e) {
+                console.error(e);
+                g.innerHTML = '<div style="text-align:center; color:red;">Connection Error</div>';
+            }
         }
 
         let lastKnownShopUpdate = localStorage.getItem('shop_last_update');
         
         function checkShopUpdate() {
-            const currentUpdate = localStorage.getItem('shop_last_update');
-            const myLastSeen = localStorage.getItem('shop_seen_update');
-            
-            // Live Update Logic
-            if(currentUpdate && currentUpdate !== lastKnownShopUpdate) {
-                lastKnownShopUpdate = currentUpdate;
-                loadShop(); // Live Reload
-                
-                // Create Modal Alert for New Item
-                const modalId = 'newItemModal';
-                if(!document.getElementById(modalId)) {
-                    const div = document.createElement('div');
-                    div.id = modalId;
-                    div.className = 'modal';
-                    div.style.display = 'flex';
-                    div.style.zIndex = '9999';
-                    div.innerHTML = `
-                        <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; text-align:center; border-radius: 16px; width: 85%; max-width: 350px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); position: relative; overflow: hidden;">
-                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(transparent 50%, rgba(0, 242, 255, 0.02) 50%); background-size: 100% 4px; pointer-events: none;"></div>
-                            
-                            <i class="fas fa-rocket" style="font-size: 3rem; color: #00f2ff; margin-bottom: 15px; animation: bounce 2s infinite; text-shadow: 0 0 15px rgba(0, 242, 255, 0.5);"></i>
-                            <h2 style="color: #fff; margin:0; text-shadow: 0 0 5px #00f2ff;">อัปเดตร้านค้า</h2>
-                            <p style="color: #94a3b8; font-family: monospace; margin-top: 5px;">มีสินค้าใหม่เข้าร้าน</p>
-                            
-                            <button class="btn-action" style="background: rgba(0, 242, 255, 0.1); color: #00f2ff; border: 1px solid #00f2ff; font-weight: bold; border-radius: 8px; margin-top: 20px;" onclick="document.getElementById('${modalId}').remove(); openShopPage()">เปิดร้านค้า</button>
-                            <div style="margin-top:10px; font-size:0.8rem; color: #64748b; cursor:pointer;" onclick="document.getElementById('${modalId}').remove()">ปิด</div>
-                        </div>
-                    `;
-                    document.body.appendChild(div);
-                }
-                showToast('มีสินค้าใหม่เข้าร้าน', 'success');
-            }
-
-            if(currentUpdate && currentUpdate !== myLastSeen) {
-                const b1 = document.getElementById('shopBadgeFloat');
-                const b2 = document.getElementById('shopBadgeNav');
-                if(b1) b1.style.display = 'block';
-                if(b2) b2.style.display = 'block';
-            } else {
-                const b1 = document.getElementById('shopBadgeFloat');
-                const b2 = document.getElementById('shopBadgeNav');
-                if(b1) b1.style.display = 'none';
-                if(b2) b2.style.display = 'none';
-            }
+             // Keep legacy or refactor later
         }
         
-        function buyItem(p, s, id) {
-            if(id === 6) { // Free Bitcoin Starter 24h
-                let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
-                const existing = active.find(x => x.id === 6);
-                if(existing) {
-                    showToast('❌ คุณมีสินค้านี้ใช้งานอยู่แล้ว', 'warning');
-                    return;
-                }
-                
-                // 24 Hours Expiration
-                active.push({
-                    id: 6, 
-                    name: 'Bitcoin Starter 24h',
-                    speed: s, 
-                    expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+        async function buyItem(p, s, id) {
+            if(!currentUser) return showToast('กรุณาเข้าสู่ระบบ', 'error');
+            
+            const btn = event ? event.target : null;
+            if(btn) btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/shop/buy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: currentUser.username, itemId: id })
                 });
-                localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(active));
+                const data = await res.json();
                 
-                // ✅ เพิ่ม hashrate ทันที
-                hashrate += s;
-                isMining = true; // ✅ เริ่มขุดอัตโนมัติ
-                
-                saveData(); 
-                updateUI(); 
-                loadShop();
-                updateMiningMode();
-                miningLoop();
-                
-                try {
-                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
-                    const itemsC = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
-                    const item = itemsC.find(x => x.id === id) || { name: 'Bitcoin Starter 24h', icon: 'fa-bitcoin' };
-                    rigs.push({ 
-                        id, 
-                        name: item.name, 
-                        speed: s, 
-                        price: 0, 
-                        icon: item.icon, 
-                        status: 'active', 
-                        timestamp: Date.now(), 
-                        expiresAt: Date.now() + (24 * 60 * 60 * 1000) 
-                    });
-                    localStorage. setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
-                } catch (_) {}
-                
-                showToast('✅ รับ Bitcoin Starter 24h สำเร็จ!  เริ่มขุดทันที', 'success');
-                addNotification('✅ ขุดเงินเริ่มแล้ว +' + s. toFixed(2) + ' MH/s', 'success');
-                
-                if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
-                if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
-                return;
-            }
-
-            // ✅ สินค้าที่ต้องซื้อ
-            if(balance >= p) {
-                balance -= p; 
-                // hashrate += s; // Let syncMiningData handle this or recalculate
-                
-                // Add to Rigs first (Source of Truth)
-                try {
-                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
-                    const itemsC = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
-                    const item = itemsC.find(x => x.id === id) || { name: 'Rig', icon: 'fa-microchip' };
-                    rigs.push({ 
-                        id, 
-                        name: item.name, 
-                        speed: s, 
-                        price: p, 
-                        icon: item.icon, 
-                        status: 'active', 
-                        timestamp: Date.now() 
-                    });
-                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
-                } catch (e) {
-                    console.error('Error saving rig:', e);
+                if(data.success) {
+                    // Update Local User
+                    currentUser.balance = data.user.balance;
+                    currentUser.hashrate = data.user.hashrate;
+                    currentUser.rigs = data.user.rigs;
+                    
+                    // Sync LocalStorage for persistence (optional but good for offline-first feel)
+                    localStorage.setItem('current_user', JSON.stringify(currentUser));
+                    let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)) || {};
+                    pf.balance = currentUser.balance;
+                    pf.hashrate = currentUser.hashrate;
+                    localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+                    
+                    updateUI();
+                    showToast(`✅ สั่งซื้อสำเร็จ!`, 'success');
+                    addNotification(`💰 ซื้ออุปกรณ์สำเร็จ`, 'success');
+                    
+                    if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
+                    if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
+                } else {
+                    showToast('❌ ' + (data.error || 'การสั่งซื้อล้มเหลว'), 'error');
+                    if(typeof soundMgr !== 'undefined') soundMgr.play('alert');
+                    if(typeof vibMgr !== 'undefined') vibMgr.trigger('alert');
                 }
-
-                // Sync everything
-                syncMiningData();
-                isMining = true;
-
-                saveData(); 
-                updateUI(); 
-                updateMiningMode();
-                miningLoop();
-                
-                showToast(`✅ สั่งซื้อสำเร็จ! +${s} MH/s`, 'success');
-                addNotification(`💰 ซื้ออุปกรณ์ -฿${p. toLocaleString()} | +${s. toFixed(2)} MH/s`, 'success');
-                
-                if(typeof soundMgr !== 'undefined') soundMgr.play('emphasis');
-                if(typeof vibMgr !== 'undefined') vibMgr.trigger('emphasis');
-            } else { 
-                showToast('❌ ยอดเงินไม่เพียงพอ ต้อง ฿' + (p - balance).toFixed(2), 'error');
-                if(typeof soundMgr !== 'undefined') soundMgr. play('alert');
-                if(typeof vibMgr !== 'undefined') vibMgr.trigger('alert');
+            } catch(e) {
+                console.error(e);
+                showToast('Connection Error', 'error');
+            } finally {
+                if(btn) btn.disabled = false;
             }
         }
 
