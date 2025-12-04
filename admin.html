@@ -1756,6 +1756,13 @@
                 dot.style.opacity = (dot.style.opacity === '0.5' ? '1' : '0.5');
             }
         }, 800);
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.overlay');
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+
     </script>
 </body>
 </html>
