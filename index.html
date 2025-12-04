@@ -1096,7 +1096,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             console.log('Sync Manager Debug:', syncManager.debugInfo());
         }
 
-        function syncAdmin() {
+        async function syncAdmin() {
     if(!currentUser) return;
     
     // 1. Check Ban Status
@@ -1111,17 +1111,25 @@ console.log('Live Sync Status:', liveSync.getStatus());
     // 4.  Check Shop Update
     checkShopUpdate();
 
-    // 5. Check Maintenance
-    const maint = localStorage.getItem('mining_maintenance') === 'true';
-    const maintMsg = localStorage.getItem('mining_maintenance_msg') || 'กำลังอัปเกรดเซิร์ฟเวอร์... ';
-    const overlay = document.getElementById('maintenanceOverlay');
-    const bypass = sessionStorage.getItem('maintenance_bypass');
-    
-    if(maint && bypass !== 'true') {
-        overlay.style.display = 'flex';
-        document.getElementById('maintMessage').innerText = maintMsg;
-    } else {
-        overlay.style.display = 'none';
+    // 5. Check Maintenance (Updated to use backend API)
+    try {
+        const res = await fetch('/api/admin/settings');
+        if (res.ok) {
+            const settings = await res.json();
+            const maint = settings.maintenance === true;
+            const maintMsg = settings.maintenance_msg || 'กำลังอัปเกรดเซิร์ฟเวอร์... ';
+            const overlay = document.getElementById('maintenanceOverlay');
+            const bypass = sessionStorage.getItem('maintenance_bypass');
+            
+            if(maint && bypass !== 'true') {
+                overlay.style.display = 'flex';
+                document.getElementById('maintMessage').innerText = maintMsg;
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.error('Maintenance check failed', e);
     }
 
     // 6.  Sync Transactions (ตรวจสอบการเปลี่ยนแปลง)
@@ -3261,6 +3269,36 @@ console.log('Live Sync Status:', liveSync.getStatus());
             }
         }
 
+        async function checkMaintenance() {
+            try {
+                const res = await fetch('/api/admin/settings');
+                if(res.ok) {
+                    const settings = await res.json();
+                    const maint = settings.maintenance === true;
+                    const maintMsg = settings.maintenance_msg || 'กำลังอัปเกรดเซิร์ฟเวอร์... ';
+                    const overlay = document.getElementById('maintenanceOverlay');
+                    const bypass = sessionStorage.getItem('maintenance_bypass');
+                    
+                    if(maint && bypass !== 'true') {
+                        if(overlay) {
+                             overlay.style.display = 'flex';
+                             const msgEl = document.getElementById('maintMessage');
+                             if(msgEl) msgEl.innerText = maintMsg;
+                        }
+                    } else {
+                        if(overlay) overlay.style.display = 'none';
+                    }
+                }
+            } catch(e) { 
+                // Silent fail
+            }
+        }
+        
+        // Poll maintenance status every 10 seconds
+        setInterval(checkMaintenance, 10000);
+        // Initial check
+        checkMaintenance();
+
         // --- System Sync Loop ---
         function updateConnectionStatus() {
             // 1. Update Last Active (Heartbeat)
@@ -3268,19 +3306,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 localStorage.setItem(`last_active_${currentUser.username}`, Date.now());
             }
 
-            // 2. Check Maintenance Mode
-            const bypass = sessionStorage.getItem('maintenance_bypass');
-            const maint = localStorage.getItem('mining_maintenance');
-            const overlay = document.getElementById('maintenanceOverlay');
-            
-            if (maint === 'true' && bypass !== 'true') {
-                const msg = localStorage.getItem('mining_maintenance_msg') || 'กำลังอัปเกรดระบบ...';
-                const msgEl = document.getElementById('maintMessage');
-                if(msgEl) msgEl.innerHTML = msg.replace(/\n/g, '<br>');
-                if(overlay) overlay.style.display = 'flex';
-            } else {
-                if(overlay) overlay.style.display = 'none';
-            }
+            // 2. Check Maintenance Mode (Moved to dedicated poller)
+            // This block removed to prevent conflict with API-based check
 
             // 3. Update Connection Status
             const statusEl = document.getElementById('miningStatus');
@@ -3341,6 +3368,36 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 }
             }
         }
+
+        // --- Global Maintenance Check (Polls API) ---
+        async function checkGlobalMaintenance() {
+            try {
+                const res = await fetch('/api/admin/settings');
+                if(res.ok) {
+                    const settings = await res.json();
+                    const maint = settings.maintenance === true;
+                    const maintMsg = settings.maintenance_msg || 'กำลังอัปเกรดเซิร์ฟเวอร์... ';
+                    const overlay = document.getElementById('maintenanceOverlay');
+                    const bypass = sessionStorage.getItem('maintenance_bypass');
+                    
+                    if(maint && bypass !== 'true') {
+                        if(overlay) {
+                             overlay.style.display = 'flex';
+                             const msgEl = document.getElementById('maintMessage');
+                             if(msgEl) msgEl.innerText = maintMsg;
+                        }
+                    } else {
+                        if(overlay) overlay.style.display = 'none';
+                    }
+                }
+            } catch(e) { 
+                // Silent fail on connection error
+            }
+        }
+        
+        // Check immediately and every 10 seconds
+        checkGlobalMaintenance();
+        setInterval(checkGlobalMaintenance, 10000);
 
         // Start Loop (Fast 500ms)
         updateConnectionStatus();
