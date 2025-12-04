@@ -12,9 +12,9 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(__dirname)); // Serve frontend files
 
-// Serve indexApp.html on root
+// Serve index.html on root
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'indexApp.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // --- API Endpoints ---

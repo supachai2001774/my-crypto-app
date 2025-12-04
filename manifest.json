@@ -1,7 +1,7 @@
 {
   "name": "Crypto Miner Tycoon",
   "short_name": "MinerTycoon",
-  "start_url": "./indexApp.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f0c29",
   "theme_color": "#4e54c8",
