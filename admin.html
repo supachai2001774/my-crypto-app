@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Cyber Command</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="shortcut icon" type="image/png" href="favicon.png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -266,6 +268,10 @@
             <i class="fas fa-robot"></i> ผู้ดูแลระบบ
         </div>
         <div class="menu-item active" onclick="nav('dashboard', this)"><i class="fas fa-chart-pie"></i> แดชบอร์ด</div>
+        <div class="menu-item" onclick="nav('monitor', this)">
+            <i class="fas fa-satellite-dish"></i> ระบบเชื่อมสด
+            <span id="navMonitorBadge" class="nav-badge" style="display:none;">0</span>
+        </div>
         <div class="menu-item" onclick="nav('users', this)"><i class="fas fa-users"></i> ผู้ใช้</div>
         <div class="menu-item" onclick="nav('mining', this)"><i class="fas fa-microchip"></i> เครื่องขุด</div>
         <div class="menu-item" onclick="nav('shop', this)"><i class="fas fa-shopping-cart"></i> ร้านค้า</div>
@@ -339,6 +345,51 @@
                     <button onclick="saveMaintMsg()" class="btn-sm btn-green" style="width: 100%; padding: 12px; margin-top: 10px;">
                         <i class="fas fa-save"></i> บันทึกข้อความ
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monitor (Live Alert System) -->
+        <div id="monitor" class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="border: none; margin: 0;"><i class="fas fa-satellite-dish"></i> ศูนย์ควบคุมสด (Live Command)</h2>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div id="liveIndicator" style="display: flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <div class="pulse-dot" style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
+                        <span style="color: #10b981; font-size: 0.8rem; font-weight: bold;">LIVE</span>
+                    </div>
+                    <button onclick="toggleSound()" id="btnSound" class="btn-sm btn-gray" style="margin: 0;"><i class="fas fa-volume-mute"></i></button>
+                </div>
+            </div>
+
+            <!-- Alerts Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                <div class="card" style="margin: 0; border-left: 4px solid #f59e0b; background: linear-gradient(45deg, rgba(245, 158, 11, 0.05), transparent);">
+                    <div style="color: #f59e0b; font-size: 0.9rem; font-weight: bold;">รอตรวจสอบ (Pending)</div>
+                    <div style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;" id="monitorPendingCount">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">รายการที่ต้องอนุมัติ</div>
+                </div>
+                <div class="card" style="margin: 0; border-left: 4px solid #ef4444; background: linear-gradient(45deg, rgba(239, 68, 68, 0.05), transparent);">
+                    <div style="color: #ef4444; font-size: 0.9rem; font-weight: bold;">แจ้งเตือนความเสี่ยง (Fraud)</div>
+                    <div style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;" id="monitorFraudCount">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">IP ซ้ำ / สแปม</div>
+                </div>
+                <div class="card" style="margin: 0; border-left: 4px solid #3b82f6; background: linear-gradient(45deg, rgba(59, 130, 246, 0.05), transparent);">
+                    <div style="color: #3b82f6; font-size: 0.9rem; font-weight: bold;">ผู้ใช้ออนไลน์ (Online)</div>
+                    <div style="font-size: 2.5rem; font-weight: bold; margin-top: 5px;" id="monitorOnlineCount">1</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">เชื่อมต่ออยู่ในขณะนี้</div>
+                </div>
+            </div>
+
+            <!-- Live Feed -->
+            <div class="card">
+                <h3 style="color: var(--primary); margin-top: 0; display: flex; justify-content: space-between;">
+                    <span><i class="fas fa-stream"></i> รายการแจ้งเตือนล่าสุด</span>
+                    <button onclick="clearAllAlerts()" class="btn-sm btn-gray" style="font-size: 0.7rem;">ล้างทั้งหมด</button>
+                </h3>
+                <div id="monitorFeed" style="max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Dynamic Content -->
+                    <div style="text-align: center; padding: 30px; color: var(--text-muted);">ไม่มีการแจ้งเตือนใหม่</div>
                 </div>
             </div>
         </div>
@@ -467,9 +518,11 @@
                     <table id="referralTable">
                         <thead>
                             <tr>
-                                <th>ผู้ใช้</th>
-                                <th>ผู้แนะนำ</th>
-                                <th>วันที่</th>
+                                <th>วันที่/เวลา</th>
+                                <th>ผู้แนะนำ (Upline)</th>
+                                <th>ผู้สมัคร (Downline)</th>
+                                <th>สถานะ</th>
+                                <th>ข้อมูลตรวจสอบ (IP/Device)</th>
                                 <th>การดำเนินการ</th>
                             </tr>
                         </thead>
@@ -484,19 +537,34 @@
             <h2><i class="fas fa-exchange-alt"></i> ธุรกรรม</h2>
             
             <div class="card">
-                <h3 style="color: var(--primary); margin-top: 0;"><i class="fas fa-cog"></i> ตั้งค่าการชำระเงิน (QR Code)</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <h3 style="color: var(--primary); margin-top: 0;"><i class="fas fa-university"></i> ตั้งค่าบัญชีรับเงิน (Admin Bank)</h3>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                     <div>
-                        <label style="color: var(--text-muted); font-size: 0.9rem;">หมายเลข PromptPay</label>
-                        <input type="text" id="adminPPNumber" class="cyber-input" placeholder="08x-xxx-xxxx">
+                        <label style="color: var(--text-muted); font-size: 0.9rem;">ธนาคาร</label>
+                        <select id="adminBankName" class="cyber-input">
+                            <option value="kbank">กสิกรไทย (KBANK)</option>
+                            <option value="scb">ไทยพาณิชย์ (SCB)</option>
+                            <option value="ktb">กรุงไทย (KTB)</option>
+                            <option value="bbl">กรุงเทพ (BBL)</option>
+                            <option value="gsb">ออมสิน (GSB)</option>
+                            <option value="ttb">ทีทีบี (ttb)</option>
+                            <option value="promptpay">พร้อมเพย์ (PromptPay)</option>
+                        </select>
                     </div>
                     <div>
-                         <label style="color: var(--text-muted); font-size: 0.9rem;">ชื่อบัญชี</label>
-                        <input type="text" id="adminPPName" class="cyber-input" placeholder="ชื่อบัญชี">
+                        <label style="color: var(--text-muted); font-size: 0.9rem;">เลขบัญชี / เบอร์โทร</label>
+                        <input type="text" id="adminBankNumber" class="cyber-input" placeholder="xxx-x-xxxxx-x">
                     </div>
                 </div>
-                <button onclick="savePaymentSettings()" class="btn-sm btn-green" style="width: 100%; padding: 12px; margin-top: 10px;">
-                    <i class="fas fa-save"></i> บันทึกการตั้งค่า
+
+                <div style="margin-bottom: 15px;">
+                     <label style="color: var(--text-muted); font-size: 0.9rem;">ชื่อบัญชี</label>
+                    <input type="text" id="adminAccName" class="cyber-input" placeholder="ชื่อบัญชีที่ใช้รับเงิน">
+                </div>
+
+                <button onclick="savePaymentSettings()" class="btn-sm btn-green" style="width: 100%; padding: 12px;">
+                    <i class="fas fa-save"></i> บันทึกข้อมูลบัญชี
                 </button>
             </div>
 
@@ -563,7 +631,18 @@
 
     <!-- Image Modal -->
     <div id="imgModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; flex-direction: column;">
-        <img id="modalImg" src="" style="max-width: 90%; max-height: 80vh; border: 2px solid var(--primary); box-shadow: 0 0 30px var(--primary); border-radius: 8px;">
+        <img id="modalImg" src="" style="max-width: 90%; max-height: 60vh; border: 2px solid var(--primary); box-shadow: 0 0 30px var(--primary); border-radius: 8px;">
+        
+        <!-- User Bank Details -->
+        <div id="modalBankInfo" style="margin-top: 20px; background: rgba(15, 23, 42, 0.95); border: 1px solid var(--border); padding: 20px; border-radius: 10px; width: 90%; max-width: 500px;">
+             <h4 style="color: var(--primary); margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                 <i class="fas fa-info-circle"></i> ข้อมูลบัญชีผู้ใช้
+             </h4>
+             <div id="modalBankContent" style="font-size: 0.9rem; color: #e2e8f0; display: grid; gap: 8px;">
+                 <!-- Dynamic Content -->
+             </div>
+        </div>
+
         <button onclick="document.getElementById('imgModal').style.display='none'" class="btn-sm btn-red" style="margin-top: 20px; padding: 10px 30px; font-size: 1.2rem;">ปิด</button>
     </div>
 
@@ -642,309 +721,208 @@
             
             if(el) {
                 el.classList.add('active');
-            } else if(typeof event !== 'undefined' && event.currentTarget) {
-                event.currentTarget.classList.add('active');
             }
             
-            if(window.innerWidth <= 768) toggleSidebar();
+            // Refresh specific sections
+            if(id === 'dashboard') renderDashboard();
+            if(id === 'users') renderUsers();
+            if(id === 'mining') renderMining();
+            if(id === 'shop') renderShop();
+            if(id === 'trans') renderTrans();
+            if(id === 'referrals') renderReferrals();
+            if(id === 'monitor') updateMonitor();
         }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('show');
-            document.querySelector('.overlay').classList.toggle('show');
-        }
-
-        // Toast Notification
-        function showToast(msg, type='info') {
-            const c = document.getElementById('toastContainer');
-            const t = document.createElement('div');
-            t.className = `ai-toast ${type}`;
+        // Toast
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `ai-toast ${type}`;
+            toast.innerHTML = `
+                <div style="flex-shrink: 0;">
+                    ${type === 'success' ? '<i class="fas fa-check-circle" style="color:var(--success); font-size:1.5rem;"></i>' : 
+                      type === 'error' ? '<i class="fas fa-exclamation-circle" style="color:var(--danger); font-size:1.5rem;"></i>' :
+                      '<i class="fas fa-info-circle" style="color:var(--primary); font-size:1.5rem;"></i>'}
+                </div>
+                <div>
+                    <div style="font-weight: bold; margin-bottom: 2px;">ระบบแจ้งเตือน</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">${msg}</div>
+                </div>
+            `;
+            container.appendChild(toast);
             
-            let icon = 'info-circle';
-            if(type === 'success') icon = 'check-circle';
-            if(type === 'error') icon = 'times-circle';
-            if(type === 'warning') icon = 'exclamation-triangle';
+            // Sound effect
+            if(type === 'error') {
+                // Error sound
+            }
             
-            t.innerHTML = `<i class="fas fa-${icon}" style="font-size: 1.2rem;"></i> <span>${msg}</span>`;
-            c.appendChild(t);
             setTimeout(() => {
-                t.style.animation = 'fadeOut 0.3s forwards';
-                setTimeout(() => t.remove(), 300);
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // --- LOGIC ---
-
-        function getUsersList() {
-            const raw = JSON.parse(localStorage.getItem('mining_users')) || {};
-            if (Array.isArray(raw)) return raw;
-            return Object.keys(raw).map(k => ({ username: k, ...raw[k] }));
-        }
-
-        function saveUsersRaw(raw) { localStorage.setItem('mining_users', JSON.stringify(raw)); }
-
-        function getUserProfile(username) {
-            return JSON.parse(localStorage.getItem(`pf_${username}`)) || { balance: 0, hashrate: 0.0 };
-        }
-        function saveUserProfile(username, pf) { localStorage.setItem(`pf_${username}`, JSON.stringify(pf)); }
+        // --- CORE FUNCTIONS ---
 
         // Dashboard
         function renderDashboard() {
-            const users = getUsersList();
-            const trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-            
-            let deposit = 0;
-            let withdraw = 0;
-            
-            trans.forEach(t => {
-                if(t.status === 'approved') {
-                    if(t.type === 'deposit') deposit += parseFloat(t.amount);
-                    if(t.type === 'withdraw') withdraw += parseFloat(t.amount);
-                }
-            });
+            // Calculate stats
+            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            let userCount = Object.keys(users).length;
+            document.getElementById('dashUsers').innerText = userCount;
 
+            let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+            let deposit = trans.filter(t => t.type === 'deposit' && t.status === 'approved').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            let withdraw = trans.filter(t => t.type === 'withdraw' && t.status === 'approved').reduce((sum, t) => sum + parseFloat(t.amount), 0);
+            
             document.getElementById('dashDeposit').innerText = '฿' + deposit.toLocaleString();
             document.getElementById('dashWithdraw').innerText = '฿' + withdraw.toLocaleString();
             document.getElementById('dashNet').innerText = '฿' + (deposit - withdraw).toLocaleString();
-            document.getElementById('dashUsers').innerText = users.length;
+            
+            // Maint Status
+            const maint = localStorage.getItem('mining_maintenance') === 'true';
+            document.getElementById('maintSwitch').checked = maint;
+            document.getElementById('maintMsg').value = localStorage.getItem('mining_maintenance_msg') || '';
+        }
+
+        // Maintenance
+        function toggleMaint() {
+            const status = document.getElementById('maintSwitch').checked;
+            localStorage.setItem('mining_maintenance', status);
+            showToast(status ? 'เปิดโหมดบำรุงรักษาแล้ว' : 'ปิดโหมดบำรุงรักษาแล้ว', 'warning');
+        }
+        
+        function saveMaintMsg() {
+            const msg = document.getElementById('maintMsg').value;
+            localStorage.setItem('mining_maintenance_msg', msg);
+            showToast('บันทึกข้อความบำรุงรักษาแล้ว', 'success');
         }
 
         // Users
-        function renderUsers() {
-            const users = getUsersList();
+        function filterUsers() {
+            const term = document.getElementById('searchUser').value.toLowerCase();
+            renderUsers(term);
+        }
+
+        function renderUsers(filter = '') {
+            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
             const tb = document.querySelector('#usersTable tbody');
             tb.innerHTML = '';
             
-            users.forEach((u, index) => {
-                // Count rigs
-                let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${u.username}`)) || [];
+            Object.keys(users).forEach(username => {
+                if(filter && !username.toLowerCase().includes(filter)) return;
+                
+                const u = users[username];
+                const pf = JSON.parse(localStorage.getItem(`pf_${username}`)) || {};
+                const rigs = JSON.parse(localStorage.getItem(`mining_rigs_${username}`)) || [];
                 
                 let tr = document.createElement('tr');
-                const pf = getUserProfile(u.username);
-                
-                // ID & Avatar Logic
-                const userId = u.id || (index + 1).toString().padStart(3, '0');
-                const avatarUrl = u.avatar || pf.avatar;
-                let profileHtml = '';
-                
-                if(avatarUrl) {
-                    profileHtml = `<img src="${avatarUrl}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; cursor: pointer;" onclick="viewSlip('${avatarUrl}')">`;
-                } else {
-                    profileHtml = `<div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(0, 242, 255, 0.1); border: 2px solid var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto;"><i class="fas fa-user" style="color: var(--primary);"></i></div>`;
-                }
-
                 tr.innerHTML = `
-                    <td style="color: #94a3b8; font-family: monospace;">#${userId}</td>
-                    <td style="text-align: center;">${profileHtml}</td>
+                    <td>${u.id.toString().substr(-6)}</td>
+                    <td><img src="${pf.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+username}" style="width:30px; height:30px; border-radius:50%;"></td>
+                    <td style="font-weight: bold; color: var(--primary);">${username}</td>
+                    <td>฿${parseFloat(pf.balance || 0).toLocaleString()}</td>
+                    <td>${rigs.length} เครื่อง</td>
+                    <td><span class="badge badge-success">ปกติ</span></td>
                     <td>
-                        <div style="font-weight:bold; color: white;">${u.username}</div>
-                        <div style="font-size:0.8rem; color: #94a3b8;">${u.email || '-'}</div>
-                    </td>
-                    <td style="color: #10b981; font-weight: bold;">฿${parseFloat(pf.balance || 0).toLocaleString()}</td>
-                    <td>${rigs.length}</td>
-                    <td><span class="badge badge-success">ใช้งานอยู่</span></td>
-                    <td>
-                        <button onclick="deleteUser('${u.username}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
-                        <button onclick="resetPass('${u.username}')" class="btn-sm btn-warning" style="background: #f59e0b;"><i class="fas fa-key"></i></button>
+                        <button onclick="resetUserPass('${username}')" class="btn-sm btn-warning"><i class="fas fa-key"></i></button>
+                        <button onclick="deleteUser('${username}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
                     </td>
                 `;
                 tb.appendChild(tr);
             });
         }
-
-        function deleteUser(username) {
-            if(confirm('ลบผู้ใช้ ' + username + ' หรือไม่?')) {
-                let raw = JSON.parse(localStorage.getItem('mining_users')) || {};
-                if (Array.isArray(raw)) { raw = raw.filter(u => u.username !== username); }
-                else { delete raw[username]; }
-                saveUsersRaw(raw);
-                localStorage.removeItem(`mining_rigs_${username}`);
-                localStorage.removeItem(`notifications_${username}`);
+        
+        function resetUserPass(user) {
+            if(confirm(`รีเซ็ตรหัสผ่านของ ${user} เป็น '123456'?`)) {
+                let users = JSON.parse(localStorage.getItem('mining_users'));
+                users[user].password = '123456'; // In real app, hash this
+                localStorage.setItem('mining_users', JSON.stringify(users));
+                showToast('รีเซ็ตรหัสผ่านแล้ว', 'success');
+            }
+        }
+        
+        function deleteUser(user) {
+            if(confirm(`ยืนยันการลบผู้ใช้ ${user}? ข้อมูลทั้งหมดจะหายไป!`)) {
+                let users = JSON.parse(localStorage.getItem('mining_users'));
+                delete users[user];
+                localStorage.setItem('mining_users', JSON.stringify(users));
+                
+                // Clean up other data
+                localStorage.removeItem(`pf_${user}`);
+                localStorage.removeItem(`mining_rigs_${user}`);
+                localStorage.removeItem(`active_items_${user}`);
+                localStorage.removeItem(`notifications_${user}`);
+                
                 renderUsers();
                 renderDashboard();
                 showToast('ลบผู้ใช้แล้ว', 'success');
             }
         }
-        
-        function resetPass(username) {
-             let newPass = prompt('ระบุรหัสผ่านใหม่สำหรับ ' + username + ':');
-             if(newPass) {
-                 let raw = JSON.parse(localStorage.getItem('mining_users')) || {};
-                 if (Array.isArray(raw)) {
-                     let idx = raw.findIndex(u => u.username === username);
-                     if(idx !== -1) { raw[idx].password = newPass; raw[idx].pass = newPass; }
-                 } else {
-                     if (!raw[username]) raw[username] = {};
-                     raw[username].password = newPass;
-                     raw[username].pass = newPass;
-                 }
-                 saveUsersRaw(raw);
-                 showToast('อัปเดตรหัสผ่านแล้ว', 'success');
-             }
-        }
 
-        // User Rigs (View Only)
+        // Mining Management (All Users Rigs)
         function renderMining() {
-            const users = getUsersList();
             const tb = document.querySelector('#miningTable tbody');
             tb.innerHTML = '';
             
-            users.forEach(u => {
-                let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${u.username}`)) || [];
-                const lastActive = parseInt(localStorage.getItem(`last_active_${u.username}`) || '0');
-                const online = (Date.now() - lastActive) < 60000;
+            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            
+            Object.keys(users).forEach(username => {
+                const rigs = JSON.parse(localStorage.getItem(`mining_rigs_${username}`)) || [];
                 
-                rigs.forEach((r, idx) => {
+                rigs.forEach(r => {
                     let tr = document.createElement('tr');
                     
-                    // Time Remaining Logic
-                    const now = Date.now();
-                    const expiresAt = r.expiresAt || (r.timestamp + 24 * 60 * 60 * 1000);
-                    const diff = expiresAt - now;
-                    
-                    let timeLabel = '';
-                    if(diff <= 0) {
-                        timeLabel = '<span style="color: #ef4444;">หมดเวลา</span>';
+                    // Calculate Time Left
+                    let timeLeft = '-';
+                    if(r.expiresAt) {
+                        const diff = r.expiresAt - Date.now();
+                        if(diff > 0) {
+                            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                            timeLeft = `${days} วัน`;
+                        } else {
+                            timeLeft = 'หมดอายุ';
+                        }
                     } else {
-                        const h = Math.floor(diff / (1000 * 60 * 60));
-                        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                        timeLabel = `${h} ชม. ${m} น.`;
+                        timeLeft = 'ถาวร';
                     }
 
-                    const statusLabel = (r.status === 'expired' || diff <= 0) ? '<span class="badge badge-danger">หมดอายุ</span>' : 
-                                        '<span class="badge badge-success">ใช้งาน</span>';
-                    const connDot = online ? '<span class="badge badge-success">ออนไลน์</span>' : '<span class="badge badge-warning">ออฟไลน์</span>';
-                    
                     tr.innerHTML = `
-                        <td>${u.username}</td>
-                        <td>${r.name}</td>
+                        <td style="color: var(--primary);">${username}</td>
+                        <td><i class="fas ${r.icon}"></i> ${r.name}</td>
                         <td>${r.speed} MH/s</td>
-                        <td>${timeLabel}</td>
-                        <td>${statusLabel}</td>
-                        <td>${connDot}</td>
+                        <td>${timeLeft}</td>
+                        <td><span class="badge badge-success">Active</span></td>
+                        <td><div style="width:8px;height:8px;background:#00ff9d;border-radius:50%;box-shadow:0 0 5px #00ff9d;"></div></td>
                         <td>
-                            <button class="btn-sm ${r.status === 'paused' ? 'btn-green' : 'btn-warning'}" onclick="toggleRigPause('${u.username}', ${idx})">
-                                ${r.status === 'paused' ? 'เริ่ม' : 'หยุด'}
-                            </button>
-                            <button class="btn-sm btn-green" onclick="renewRig('${u.username}', ${idx})">ต่ออายุ</button>
-                            <button class="btn-sm btn-red" onclick="deleteRig('${u.username}', ${r.id}, '${r.name}')">ลบ</button>
+                            <button onclick="deleteUserRig('${username}', '${r.name}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
                         </td>
                     `;
                     tb.appendChild(tr);
                 });
             });
         }
-
-        function renewRig(username, idx) {
-            if(!confirm('ต่ออายุเครื่องนี้ 24 ชั่วโมง?')) return;
-            
-            let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${username}`)) || [];
-            if(rigs[idx]) {
-                const now = Date.now();
-                rigs[idx].timestamp = now;
-                rigs[idx].expiresAt = now + (24 * 60 * 60 * 1000);
-                rigs[idx].status = 'active';
-                localStorage.setItem(`mining_rigs_${username}`, JSON.stringify(rigs));
-                
-                // Also try to update active_items for logic consistency
-                let active = JSON.parse(localStorage.getItem(`active_items_${username}`)) || [];
-                let activeIdx = active.findIndex(a => a.id === rigs[idx].id);
-                if(activeIdx !== -1) {
-                    active[activeIdx].expiresAt = now + (24 * 60 * 60 * 1000);
-                    localStorage.setItem(`active_items_${username}`, JSON.stringify(active));
-                }
-
-                showToast('ต่ออายุสำเร็จ', 'success');
-                renderMining();
-            }
-        }
-
-
         
-        function toggleRigPause(username, idx) {
-            let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${username}`)) || [];
-            if(!rigs[idx]) return;
-
-            const r = rigs[idx];
-            const isPaused = r.status === 'paused';
-            
-            // Toggle Status
-            r.status = isPaused ? 'active' : 'paused';
-            rigs[idx] = r;
-            localStorage.setItem(`mining_rigs_${username}`, JSON.stringify(rigs));
-            
-            // Update Active Items
-            let active = JSON.parse(localStorage.getItem(`active_items_${username}`)) || [];
-            
-            // Find corresponding active item
-            let activeIdx = -1;
-            if(!isPaused) { // Switching to PAUSED
-                activeIdx = active.findIndex(a => a.id === r.id && a.speed === r.speed && !a.paused);
-            } else { // Switching to ACTIVE
-                activeIdx = active.findIndex(a => a.id === r.id && a.speed === r.speed && a.paused);
-            }
-
-            if(activeIdx !== -1) {
-                if(!isPaused) {
-                    active[activeIdx].paused = true;
-                } else {
-                    delete active[activeIdx].paused;
-                }
-                localStorage.setItem(`active_items_${username}`, JSON.stringify(active));
-            }
-
-            // Recalculate Hashrate
-            let pf = JSON.parse(localStorage.getItem(`pf_${username}`)) || {};
-            pf.hashrate = active.reduce((sum, item) => {
-                if(item.paused) return sum;
-                return sum + (item.speed || 0);
-            }, 0);
-            localStorage.setItem(`pf_${username}`, JSON.stringify(pf));
-
-            // Notify User
-            const msg = !isPaused ? `⚠️ เครื่องขุด "${r.name}" ถูกพักการใช้งานโดยแอดมิน` : `✅ เครื่องขุด "${r.name}" กลับมาทำงานแล้ว`;
-            const type = !isPaused ? 'rig_paused' : 'rig_resumed';
-            
-            // Update notification history
-            let notifs = JSON.parse(localStorage.getItem(`notifications_${username}`)) || [];
-            notifs.push({
-                msg: msg,
-                type: !isPaused ? 'warning' : 'success',
-                read: false,
-                timestamp: Date.now()
-            });
-            localStorage.setItem(`notifications_${username}`, JSON.stringify(notifs));
-
-            liveSync.broadcast('force_update', { username: username, type: type, rigName: r.name, msg: msg });
-            
-            renderMining();
-            showToast(msg, 'success');
-        }
-
-        function deleteRig(user, id, rigName) {
-            if(confirm(`⚠️ ยืนยันการลบเครื่องขุด "${rigName}" ของผู้ใช้ ${user}?\n- การกระทำนี้ไม่สามารถเรียกคืนได้\n- ผู้ใช้จะได้รับการแจ้งเตือนทันที`)) {
-                // 1. Remove from storage
+        function deleteUserRig(user, rigName) {
+            if(confirm(`ลบเครื่องขุด ${rigName} ของ ${user}?`)) {
                 let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${user}`)) || [];
-                rigs = rigs.filter(r => r.id !== id);
+                rigs = rigs.filter(r => r.name !== rigName);
                 localStorage.setItem(`mining_rigs_${user}`, JSON.stringify(rigs));
                 
-                // 2. Remove from active items (if exists)
+                // 2. Sync active_items
                 let active = JSON.parse(localStorage.getItem(`active_items_${user}`)) || [];
-                active = active.filter(r => r.id !== id);
+                active = active.filter(r => r.name !== rigName);
                 localStorage.setItem(`active_items_${user}`, JSON.stringify(active));
 
-                // 2.5 Update User Hashrate
-                let pf = JSON.parse(localStorage.getItem(`pf_${user}`)) || {};
-                pf.hashrate = active.reduce((sum, item) => sum + (item.paused ? 0 : (item.speed || 0)), 0);
-                localStorage.setItem(`pf_${user}`, JSON.stringify(pf));
-
-                // 3. Send Notification to User
+                // 3. Notify User
                 let notifs = JSON.parse(localStorage.getItem(`notifications_${user}`)) || [];
                 notifs.push({
-                    msg: `⚠️ เครื่องขุด "${rigName}" ของคุณถูกลบโดยผู้ดูแลระบบ`,
+                    id: Date.now(),
+                    msg: `เครื่องขุด ${rigName} ถูกลบโดยผู้ดูแลระบบ (หมดอายุหรือผิดกฎ)`,
                     type: 'error',
-                    read: false,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    read: false
                 });
                 localStorage.setItem(`notifications_${user}`, JSON.stringify(notifs));
 
@@ -1017,41 +995,148 @@
 
         // Referrals
         function renderReferrals() {
-            const refs = JSON.parse(localStorage.getItem('mining_referrals_pending')) || [];
             const tb = document.querySelector('#referralTable tbody');
             tb.innerHTML = '';
             
-            document.getElementById('navReferralBadge').style.display = refs.length > 0 ? 'inline-block' : 'none';
-            document.getElementById('navReferralBadge').innerText = refs.length;
+            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            let allRefs = [];
+            
+            // Aggregate
+            Object.keys(users).forEach(referrer => {
+                let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
+                refs.forEach(r => {
+                    allRefs.push({
+                        ...r,
+                        referrer: referrer
+                    });
+                });
+            });
 
-            refs.forEach(r => {
+            // Sort by Date Descending
+            allRefs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Fraud Detection Map
+            const ipCounts = {};
+            const deviceCounts = {};
+            allRefs.forEach(r => {
+                if(r.ip && r.ip !== 'Unknown') ipCounts[r.ip] = (ipCounts[r.ip] || 0) + 1;
+                if(r.deviceId) deviceCounts[r.deviceId] = (deviceCounts[r.deviceId] || 0) + 1;
+            });
+
+            let pendingCount = allRefs.filter(r => r.status === 'pending').length;
+            const badge = document.getElementById('navReferralBadge');
+            if(badge) {
+                badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+                badge.innerText = pendingCount;
+            }
+
+            if(allRefs.length === 0) {
+                tb.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">ไม่พบข้อมูลการแนะนำ</td></tr>';
+                return;
+            }
+
+            allRefs.forEach(r => {
                 let tr = document.createElement('tr');
+                
+                // Fraud Check
+                let isFraudIP = (ipCounts[r.ip] > 1);
+                let isFraudDev = (deviceCounts[r.deviceId] > 1);
+                
+                // Check against Referrer's IP/Device
+                let refUser = users[r.referrer];
+                let sameAsUpline = false;
+                if(refUser && refUser.ip && r.ip && r.ip !== 'Unknown' && refUser.ip === r.ip) sameAsUpline = true;
+                if(refUser && refUser.deviceId && r.deviceId && refUser.deviceId === r.deviceId) sameAsUpline = true;
+
+                let fraudAlert = '';
+                if(isFraudIP || isFraudDev || sameAsUpline) {
+                    fraudAlert = '<div style="color:#ff4444; font-size:0.8rem; margin-top:5px;"><i class="fas fa-exclamation-triangle"></i> พบความผิดปกติ!</div>';
+                    if(sameAsUpline) fraudAlert += '<div style="font-size:0.75rem; color:orange;">IP/Device ตรงกับ Upline</div>';
+                    else if(isFraudIP) fraudAlert += '<div style="font-size:0.75rem; color:orange;">IP ซ้ำกันหลายบัญชี</div>';
+                }
+
+                let statusBadge = '';
+                if(r.status === 'pending') statusBadge = '<span class="badge badge-warning">รอตรวจสอบ</span>';
+                else if(r.status === 'approved') statusBadge = '<span class="badge badge-success">อนุมัติแล้ว</span>';
+                else if(r.status === 'rejected') statusBadge = '<span class="badge badge-danger">ปฏิเสธ</span>';
+                else if(r.status === 'fraud') statusBadge = '<span class="badge badge-danger" style="background:darkred;">ทุจริต</span>';
+                else statusBadge = `<span class="badge">${r.status}</span>`;
+
+                let actionBtns = '';
+                if(r.status === 'pending') {
+                    actionBtns = `
+                        <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'approved')" class="btn-sm btn-green" title="อนุมัติ"><i class="fas fa-check"></i></button>
+                        <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'rejected')" class="btn-sm btn-red" title="ปฏิเสธ"><i class="fas fa-times"></i></button>
+                        <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'fraud')" class="btn-sm" style="background:black; border:1px solid red;" title="ระบุว่าทุจริต"><i class="fas fa-ban"></i></button>
+                    `;
+                } else {
+                    actionBtns = '<span style="color:#aaa;">-</span>';
+                }
+
                 tr.innerHTML = `
-                    <td>${r.user}</td>
-                    <td>${r.referrer}</td>
-                    <td>${new Date(r.date).toLocaleDateString()}</td>
-                    <td>
-                        <button onclick="approveRef('${r.id}', true)" class="btn-sm btn-green">อนุมัติ</button>
-                        <button onclick="approveRef('${r.id}', false)" class="btn-sm btn-red">ปฏิเสธ</button>
+                    <td>${new Date(r.date).toLocaleString()}</td>
+                    <td style="font-weight:bold; color:var(--primary);">${r.referrer}</td>
+                    <td style="font-weight:bold;">${r.name}</td>
+                    <td>${statusBadge}</td>
+                    <td style="font-size:0.85rem; color:#aaa;">
+                        IP: ${r.ip || 'N/A'}<br>
+                        Dev: ${r.deviceId ? r.deviceId.substr(0,8)+'...' : 'N/A'}
+                        ${fraudAlert}
                     </td>
+                    <td>${actionBtns}</td>
                 `;
                 tb.appendChild(tr);
             });
         }
-        
-        function approveRef(id, approved) {
-            let refs = JSON.parse(localStorage.getItem('mining_referrals_pending')) || [];
-            let idx = refs.findIndex(r => r.id === id);
+
+        function updateRefStatus(referrer, referee, status) {
+            if(!confirm(`ยืนยันเปลี่ยนสถานะเป็น ${status}?`)) return;
+            
+            let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
+            let idx = refs.findIndex(r => r.name === referee);
             if(idx !== -1) {
-                let ref = refs[idx];
-                if(approved) {
-                    // Logic to reward referrer
-                    // For now just mark accepted
+                refs[idx].status = status;
+                localStorage.setItem(`mining_referrals_${referrer}`, JSON.stringify(refs));
+                
+                // Logic for Approval
+                if(status === 'approved') {
+                    let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+                    
+                    // 1. Bonus for New User (100 THB)
+                    trans.push({
+                        id: Date.now(), user: referee, type: 'deposit', amount: 100,
+                        status: 'approved', timestamp: Date.now(), processed: true,
+                        method: 'referral_bonus', fee: 0, net: 100
+                    });
+                    
+                    // 2. Commission for Referrer (50 THB)
+                    trans.push({
+                        id: Date.now() + 1, user: referrer, type: 'deposit', amount: 50,
+                        status: 'approved', timestamp: Date.now(), processed: true,
+                        method: 'referral_commission', fee: 0, net: 50
+                    });
+                    
+                    localStorage.setItem('mining_transactions', JSON.stringify(trans));
+                    
+                    // Update Balances
+                    // Referee
+                    let pfRef = JSON.parse(localStorage.getItem(`pf_${referee}`)) || {balance: 0};
+                    pfRef.balance = parseFloat(pfRef.balance || 0) + 100;
+                    localStorage.setItem(`pf_${referee}`, JSON.stringify(pfRef));
+                    
+                    // Referrer
+                    let pfUpline = JSON.parse(localStorage.getItem(`pf_${referrer}`)) || {balance: 0};
+                    pfUpline.balance = parseFloat(pfUpline.balance || 0) + 50;
+                    localStorage.setItem(`pf_${referrer}`, JSON.stringify(pfUpline));
+                    
+                    // Notify Referee
+                    let notifs = JSON.parse(localStorage.getItem(`notifications_${referee}`)) || [];
+                    notifs.push({ msg: 'ยินดีด้วย! บัญชีของคุณได้รับการอนุมัติ รับโบนัส ฿100', date: new Date().toISOString(), read: false });
+                    localStorage.setItem(`notifications_${referee}`, JSON.stringify(notifs));
                 }
-                refs.splice(idx, 1);
-                localStorage.setItem('mining_referrals_pending', JSON.stringify(refs));
+                
                 renderReferrals();
-                showToast(approved ? 'อนุมัติคำแนะนำแล้ว' : 'ปฏิเสธคำแนะนำแล้ว', approved ? 'success' : 'info');
+                showToast(`อัปเดตสถานะเป็น ${status} แล้ว`, 'success');
             }
         }
 
@@ -1094,6 +1179,7 @@
         }
 
         function renderTrans() {
+            loadPaymentSettings(); // Load settings into inputs
             let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
             // Sort by timestamp (support both date and timestamp fields)
             trans.sort((a, b) => (b.timestamp || b.date || 0) - (a.timestamp || a.date || 0));
@@ -1205,11 +1291,54 @@
         function viewSlip(id) {
             let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
             let t = trans.find(item => item.id === id);
-            if(t && t.slip) {
-                document.getElementById('modalImg').src = t.slip;
+            if(t) {
+                if(t.slip) {
+                    document.getElementById('modalImg').src = t.slip;
+                    document.getElementById('modalImg').style.display = 'block';
+                } else {
+                    document.getElementById('modalImg').style.display = 'none';
+                }
+
+                // Show User Bank Info
+                const users = JSON.parse(localStorage.getItem('mining_users')) || {};
+                const u = users[t.user] || {};
+                
+                const content = document.getElementById('modalBankContent');
+                let bankHtml = '';
+                
+                if(t.type === 'deposit') {
+                     bankHtml = `
+                        <div style="color: var(--success); font-weight: bold; font-size: 1rem;">ฝากเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
+                        <div><span style="color: #94a3b8;">ผู้ทำรายการ:</span> <span style="color: white; font-weight: bold;">${t.user}</span></div>
+                        <div style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="color: var(--warning); margin-bottom: 3px;">ข้อมูลบัญชีที่ลงทะเบียนไว้:</div>
+                            ${u.bank ? `
+                                <div>ธนาคาร: ${u.bank.toUpperCase()}</div>
+                                <div>เลขบัญชี: ${u.acc}</div>
+                                <div>ชื่อบัญชี: ${u.name}</div>
+                            ` : '<div style="color: var(--danger);">ยังไม่ได้ลงทะเบียนบัญชีธนาคาร</div>'}
+                        </div>
+                     `;
+                } else {
+                    // Withdraw
+                     bankHtml = `
+                        <div style="color: var(--danger); font-weight: bold; font-size: 1rem;">ถอนเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
+                        <div><span style="color: #94a3b8;">ผู้ทำรายการ:</span> <span style="color: white; font-weight: bold;">${t.user}</span></div>
+                        <div style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                            <div style="color: var(--warning); margin-bottom: 3px;">โอนไปยังบัญชี:</div>
+                            ${u.bank ? `
+                                <div style="font-size: 1.1rem; font-weight: bold; color: var(--secondary);">${u.bank.toUpperCase()}</div>
+                                <div style="font-size: 1.2rem; font-weight: bold; color: white; letter-spacing: 1px;">${u.acc}</div>
+                                <div style="color: #ccc;">${u.name}</div>
+                            ` : '<div style="color: var(--danger);">ไม่พบข้อมูลบัญชีธนาคาร!</div>'}
+                        </div>
+                     `;
+                }
+                
+                content.innerHTML = bankHtml;
                 document.getElementById('imgModal').style.display = 'flex';
             } else {
-                showToast('ไม่พบรูปสลิป', 'error');
+                showToast('ไม่พบข้อมูลธุรกรรม', 'error');
             }
         }
 
@@ -1228,77 +1357,290 @@
         function clearAnnounce() {
             localStorage.removeItem('mining_announcement');
             document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
-            showToast('ล้างประกาศแล้ว', 'info');
+            showToast('ล้างประกาศแล้ว', 'success');
         }
 
-        function toggleMaint() {
-            const isMaint = document.getElementById('maintSwitch').checked;
-            localStorage.setItem('mining_maintenance', isMaint);
-            showToast(isMaint ? 'เปิดโหมดบำรุงรักษา' : 'ปิดโหมดบำรุงรักษา', isMaint ? 'warning' : 'info');
-        }
-        
-        function saveMaintMsg() {
-            const msg = document.getElementById('maintMsg').value;
-            localStorage.setItem('mining_maintenance_msg', msg);
-            showToast('บันทึกข้อความบำรุงรักษาแล้ว', 'success');
-        }
-        
         function resetSystem() {
-            if(confirm('คำเตือน: การกระทำนี้จะลบข้อมูลทั้งหมด! แน่ใจหรือไม่?')) {
+            if(confirm('⚠️ อันตราย! คุณแน่ใจหรือไม่ที่จะล้างข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถกู้คืนได้!')) {
                 localStorage.clear();
+                alert('ระบบถูกรีเซ็ตแล้ว');
                 location.reload();
             }
         }
 
+        // Payment Settings
         function savePaymentSettings() {
-            const pp = document.getElementById('adminPPNumber').value;
-            const name = document.getElementById('adminPPName').value;
+            const bank = document.getElementById('adminBankName').value;
+            const number = document.getElementById('adminBankNumber').value;
+            const name = document.getElementById('adminAccName').value;
             
-            if(pp) {
-                const settings = { pp_number: pp, pp_name: name };
-                localStorage.setItem('admin_payment_settings', JSON.stringify(settings));
-                showToast('บันทึกการตั้งค่าการชำระเงินแล้ว', 'success');
+            if(!number || !name) {
+                showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                return;
+            }
+
+            localStorage.setItem('admin_bank_name', bank);
+            localStorage.setItem('admin_bank_number', number);
+            localStorage.setItem('admin_acc_name', name);
+            
+            // Sync legacy keys if PromptPay
+            if(bank === 'promptpay') {
+                localStorage.setItem('admin_pp_number', number);
+            }
+            
+            showToast('บันทึกข้อมูลบัญชีธนาคารแล้ว', 'success');
+        }
+
+        function loadPaymentSettings() {
+            const bank = localStorage.getItem('admin_bank_name') || 'promptpay';
+            const number = localStorage.getItem('admin_bank_number') || localStorage.getItem('admin_pp_number') || '';
+            const name = localStorage.getItem('admin_acc_name') || localStorage.getItem('admin_pp_name') || '';
+            
+            const elBank = document.getElementById('adminBankName');
+            const elNum = document.getElementById('adminBankNumber');
+            const elName = document.getElementById('adminAccName');
+            
+            if(elBank) elBank.value = bank;
+            if(elNum) elNum.value = number;
+            if(elName) elName.value = name;
+        }
+
+        // Helper to get user profile safely
+        function getUserProfile(username) {
+            return JSON.parse(localStorage.getItem(`pf_${username}`)) || { balance: 0, mining_power: 0 };
+        }
+        
+        function saveUserProfile(username, data) {
+            localStorage.setItem(`pf_${username}`, JSON.stringify(data));
+        }
+
+        // --- Live Monitor System ---
+        let soundEnabled = false;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btnSound');
+            if(soundEnabled) {
+                btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                btn.classList.remove('btn-gray');
+                btn.classList.add('btn-primary');
+                playBeep(); // Test sound
             } else {
-                showToast('กรุณากรอกเบอร์ PromptPay', 'error');
+                btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-gray');
             }
         }
 
-        // Init
-        window.onload = function() {
-            renderDashboard();
-            renderUsers();
-            renderMining();
-            renderShop();
-            renderReferrals();
-            renderTrans();
-            
-            // Load Payment Settings
-            const paySet = JSON.parse(localStorage.getItem('admin_payment_settings')) || {};
-            if(paySet.pp_number) document.getElementById('adminPPNumber').value = paySet.pp_number;
-            if(paySet.pp_name) document.getElementById('adminPPName').value = paySet.pp_name;
-            
-            const ann = localStorage.getItem('mining_announcement');
-            if(ann) {
-                try {
-                    const annObj = JSON.parse(ann);
-                    document.getElementById('currentAnnounce').innerText = annObj.msg || ann;
-                } catch(e) {
-                    document.getElementById('currentAnnounce').innerText = ann;
-                }
+        function playBeep() {
+            if(!soundEnabled || audioCtx.state === 'suspended') {
+                if(soundEnabled) audioCtx.resume();
+                return;
             }
-            
-            const maint = localStorage.getItem('mining_maintenance') === 'true';
-            document.getElementById('maintSwitch').checked = maint;
-            
-            const maintMsg = localStorage.getItem('mining_maintenance_msg');
-            if(maintMsg) document.getElementById('maintMsg').value = maintMsg;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 880; // A5
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
 
-            // Auto refresh trans
-            setInterval(() => {
-                renderTrans();
-                renderReferrals();
-            }, 5000);
-        };
+        function updateMonitor() {
+            const feed = document.getElementById('monitorFeed');
+            if(!feed) return;
+
+            let pendingCount = 0;
+            let fraudCount = 0;
+            let onlineCount = Math.floor(Math.random() * 5) + 1; // Mock online users for now
+
+            let allAlerts = [];
+
+            // 1. Pending Transactions
+            const trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
+            trans.forEach(t => {
+                if(t.status === 'pending') {
+                    pendingCount++;
+                    allAlerts.push({
+                        type: 'trans',
+                        data: t,
+                        time: t.timestamp || t.date || Date.now(),
+                        priority: 'high'
+                    });
+                }
+            });
+
+            // 2. Pending Referrals
+            const users = JSON.parse(localStorage.getItem('mining_users')) || {};
+            const ipCounts = {};
+            const deviceCounts = {};
+            
+            // Build fraud maps first
+            Object.keys(users).forEach(referrer => {
+                const refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
+                refs.forEach(r => {
+                     if(r.ip && r.ip !== 'Unknown') ipCounts[r.ip] = (ipCounts[r.ip] || 0) + 1;
+                     if(r.deviceId) deviceCounts[r.deviceId] = (deviceCounts[r.deviceId] || 0) + 1;
+                });
+            });
+
+            Object.keys(users).forEach(referrer => {
+                const refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrer}`)) || [];
+                refs.forEach(r => {
+                    if(r.status === 'pending') {
+                        pendingCount++;
+                        
+                        // Check fraud
+                        let isFraud = false;
+                        if(ipCounts[r.ip] > 1) isFraud = true;
+                        if(deviceCounts[r.deviceId] > 1) isFraud = true;
+                        if(isFraud) fraudCount++;
+
+                        allAlerts.push({
+                            type: 'referral',
+                            data: { ...r, referrer },
+                            time: new Date(r.date).getTime(),
+                            priority: isFraud ? 'critical' : 'medium',
+                            isFraud: isFraud
+                        });
+                    }
+                });
+            });
+
+            // Sort by time desc
+            allAlerts.sort((a, b) => b.time - a.time);
+
+            // Update Counts
+            document.getElementById('monitorPendingCount').innerText = pendingCount;
+            document.getElementById('monitorFraudCount').innerText = fraudCount;
+            document.getElementById('monitorOnlineCount').innerText = onlineCount;
+
+            // Badge
+            const navBadge = document.getElementById('navMonitorBadge');
+            if(navBadge) {
+                navBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+                navBadge.innerText = pendingCount;
+            }
+
+            // Render Feed
+            feed.innerHTML = '';
+            if(allAlerts.length === 0) {
+                feed.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--text-muted);">ไม่มีการแจ้งเตือนใหม่</div>';
+            } else {
+                allAlerts.forEach(alert => {
+                    const div = document.createElement('div');
+                    div.className = 'monitor-item';
+                    div.style.background = 'rgba(255,255,255,0.03)';
+                    div.style.padding = '15px';
+                    div.style.borderRadius = '8px';
+                    
+                    let borderColor = '#3b82f6';
+                    if(alert.type === 'trans') borderColor = '#f59e0b';
+                    if(alert.isFraud) borderColor = '#ef4444';
+                    
+                    div.style.borderLeft = `4px solid ${borderColor}`;
+                    div.style.marginBottom = '10px';
+                    div.style.display = 'flex';
+                    div.style.justifyContent = 'space-between';
+                    div.style.alignItems = 'center';
+                    div.style.animation = 'fadeIn 0.3s';
+                    
+                    let content = '';
+                    let actions = '';
+
+                    if(alert.type === 'trans') {
+                        const t = alert.data;
+                        content = `
+                            <div>
+                                <div style="font-weight:bold; color:${borderColor};">
+                                    <i class="fas fa-exchange-alt"></i> ธุรกรรมใหม่ (${t.type === 'deposit'?'ฝาก':'ถอน'})
+                                </div>
+                                <div style="font-size:0.85rem; color:#ccc;">
+                                    User: ${t.user} | Amount: ฿${parseFloat(t.amount).toLocaleString()}
+                                </div>
+                                <div style="font-size:0.75rem; color:#aaa;">${new Date(alert.time).toLocaleTimeString()}</div>
+                            </div>
+                        `;
+                        actions = `
+                            <button onclick="approveTrans(${t.id}, 'approved'); setTimeout(updateMonitor, 100);" class="btn-sm btn-green">อนุมัติ</button>
+                            <button onclick="approveTrans(${t.id}, 'rejected'); setTimeout(updateMonitor, 100);" class="btn-sm btn-red">ปฏิเสธ</button>
+                        `;
+                    } else if(alert.type === 'referral') {
+                         const r = alert.data;
+                         const fraudBadge = alert.isFraud ? '<span class="badge badge-danger" style="font-size:0.6rem; margin-left:5px;">Fraud Risk</span>' : '';
+                         content = `
+                            <div>
+                                <div style="font-weight:bold; color:${borderColor};">
+                                    <i class="fas fa-user-plus"></i> แนะนำเพื่อนใหม่ ${fraudBadge}
+                                </div>
+                                <div style="font-size:0.85rem; color:#ccc;">
+                                    Ref: ${r.name} (by ${r.referrer})
+                                </div>
+                                <div style="font-size:0.75rem; color:#aaa;">${new Date(alert.time).toLocaleTimeString()}</div>
+                            </div>
+                         `;
+                         actions = `
+                            <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'approved'); setTimeout(updateMonitor, 100);" class="btn-sm btn-green">อนุมัติ</button>
+                            <button onclick="updateRefStatus('${r.referrer}', '${r.name}', 'rejected'); setTimeout(updateMonitor, 100);" class="btn-sm btn-red">ปฏิเสธ</button>
+                         `;
+                    }
+
+                    div.innerHTML = content + `<div style="display:flex; gap:5px;">${actions}</div>`;
+                    feed.appendChild(div);
+                });
+            }
+        }
+
+        function clearAllAlerts() {
+             updateMonitor();
+             showToast('รีเฟรชข้อมูลแล้ว', 'success');
+        }
+
+        // Hook into LiveSync
+        liveSync.on('transactions', (data) => {
+            if(data && data.length > 0) {
+                 const hasPending = data.some(t => t.status === 'pending');
+                 if(hasPending) {
+                     playBeep();
+                     showToast('มีธุรกรรมใหม่เข้ามา!', 'info');
+                 }
+            }
+            updateMonitor();
+            renderTrans();
+            renderDashboard();
+        });
+
+        liveSync.on('referrals_updated', (data) => {
+             // Check if pending in the update data
+             const hasPending = data.data.some(r => r.status === 'pending');
+             if(hasPending) {
+                 playBeep();
+                 showToast('มีคำขอแนะนำเพื่อนใหม่!', 'info');
+             }
+             updateMonitor();
+             renderReferrals();
+        });
+
+        // Initial Load
+        // Initialize payment settings fields
+        document.getElementById('adminPPNumber').value = localStorage.getItem('admin_pp_number') || '';
+        document.getElementById('adminPPName').value = localStorage.getItem('admin_pp_name') || '';
+
+        renderDashboard();
+        renderTrans(); // to set badge
+        renderReferrals(); // to set badge
+        updateMonitor(); // Init monitor
+        
+        // Additional Pulse Animation for Monitor
+        setInterval(() => {
+            const dot = document.querySelector('.pulse-dot');
+            if(dot) {
+                dot.style.opacity = (dot.style.opacity === '0.5' ? '1' : '0.5');
+            }
+        }, 800);
     </script>
 </body>
 </html>

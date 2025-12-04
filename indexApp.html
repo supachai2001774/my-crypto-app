@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Crypto Miner Tycoo123</title>
+    <title>Crypto Miner Tycoo</title>
     <script src="sync-manager.js"></script>
     <script src="live-sync.js"></script>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3067/3067789.png">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="shortcut icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
     <meta name="theme-color" content="#4e54c8">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -148,20 +150,8 @@
                 </div>
             </div>
 
-            <!-- Active Contracts Section -->
-            <div style="margin: 20px 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px;">
-                    <div style="font-size: 0.9rem; color: #fff; font-weight: bold; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-file-contract" style="color: var(--primary);"></i>
-                        สัญญาการขุด
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="activeContractCount">0 รายการ</div>
-                </div>
-                <div id="activeContractsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
-            </div>
-
             <div class="menu-grid">
-                    <div class="menu-item" onclick="openShopPage()">
+                <div class="menu-item" onclick="openShopPage()">
                     <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem;"><i class="fas fa-shopping-cart"></i></div>
                     <div class="menu-label">ร้านค้า</div>
                     <div id="shopBadgeFloat" class="badge-float" style="display: none;">ใหม่</div>
@@ -189,6 +179,18 @@
                     <div class="cyber-icon-box" style="width: 50px; height: 50px; font-size: 1.2rem; border-color: #a0aec0;"><i class="fas fa-cog" style="color: #a0aec0;"></i></div>
                     <div class="menu-label">ตั้งค่า</div>
                 </div>
+            </div>
+
+            <!-- Active Contracts Section -->
+            <div style="margin: 20px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px;">
+                    <div style="font-size: 0.9rem; color: #fff; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-file-contract" style="color: var(--primary);"></i>
+                        สัญญาการขุด
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);" id="activeContractCount">0 รายการ</div>
+                </div>
+                <div id="activeContractsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
         </div>
 
@@ -609,6 +611,22 @@
         let lastProfitDate = new Date().toDateString();
         let currentAction = '';
         let isMining = true;
+        let clientIP = 'Unknown';
+        
+        // Fetch IP
+        fetch('https://api.ipify.org?format=json')
+            .then(r => r.json())
+            .then(d => clientIP = d.ip)
+            .catch(e => console.log('IP Fetch Error:', e));
+
+        function getDeviceID() {
+            let did = localStorage.getItem('device_id');
+            if(!did) {
+                did = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+                localStorage.setItem('device_id', did);
+            }
+            return did;
+        }
 
         window.onload = function() {
             // ตรวจสอบ Referral Code
@@ -800,7 +818,73 @@ document.addEventListener('keydown', (e) => {
 
 console.log('✅ App Live Sync listeners registered');
 console.log('Live Sync Status:', liveSync.getStatus());
-                function initApp() {
+
+        function syncMiningData() {
+            if(!currentUser) return;
+            
+            let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
+            let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
+            let shopItems = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
+            let changed = false;
+
+            // 1. Recover Rigs from Active Items (if Rigs lost)
+            if(rigs.length === 0 && active.length > 0) {
+                console.log('♻️ Recovering mining_rigs from active_items');
+                rigs = active.map(a => {
+                    const shopItem = shopItems.find(i => i.id === a.id) || { icon: 'fa-server', price: 0 };
+                    return {
+                        id: a.id,
+                        name: a.name,
+                        speed: a.speed,
+                        price: shopItem.price || 0,
+                        icon: shopItem.icon || 'fa-server',
+                        status: 'active',
+                        timestamp: Date.now(), // Estimated
+                        expiresAt: a.expiresAt
+                    };
+                });
+                localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                changed = true;
+            }
+
+            // 2. Sync Active Items from Rigs (Source of Truth)
+            // This fixes the issue where paid items weren't added to active_items
+            if(rigs.length > 0) {
+                const now = Date.now();
+                const calculatedActive = rigs
+                    .filter(r => !r.expiresAt || r.expiresAt > now)
+                    .map(r => ({
+                        id: r.id,
+                        name: r.name,
+                        speed: r.speed,
+                        expiresAt: r.expiresAt
+                    }));
+                
+                // Compare arrays (simple stringify check)
+                if(JSON.stringify(calculatedActive) !== JSON.stringify(active)) {
+                    console.log('♻️ Syncing active_items from mining_rigs');
+                    localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(calculatedActive));
+                    active = calculatedActive;
+                    changed = true;
+                }
+            }
+
+            // 3. Verify Hashrate
+            const realHashrate = active.reduce((sum, item) => sum + (item.speed || 0), 0);
+            if(Math.abs(hashrate - realHashrate) > 0.1) {
+                console.log(`♻️ Correcting hashrate: ${hashrate} -> ${realHashrate}`);
+                hashrate = realHashrate;
+                saveData();
+                changed = true;
+            }
+
+            if(changed) {
+                updateUI();
+                renderActiveContracts();
+            }
+        }
+
+        function initApp() {
             // Default Announcement
             if(! localStorage.getItem('mining_announcement')) {
                 const defaultAnn = { msg: 'ยินดีต้อนรับสู่ Crypto Miner Tycoon! ', date: new Date().toISOString() };
@@ -809,6 +893,10 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
             loadUserData();
             loadSystemSettings();
+            
+            // Sync Data Integrity
+            syncMiningData();
+
             // Auto start if possible
             autoMiningController();
             checkExpiration();
@@ -1123,13 +1211,35 @@ console.log('Live Sync Status:', liveSync.getStatus());
                                 <div style="font-size: 0.9rem; color: white; margin-bottom: 5px;">ข้อมูลการชำระเงิน</div>
                                 <div style="font-size: 1.2rem; color: var(--success); font-weight: bold;">ยอดชำระเงินทั้งหมด <span id="qrAmountDisplay">0.00</span> บาท</div>
                                 <div style="font-size: 0.9rem; color: var(--danger); margin-top: 5px; font-weight: bold;" id="qrTimer">กรุณาชำระภายใน 01:00:00</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" id="qrExpiry">หมดเวลาวันที่ --/--/--</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;" id="qrExpiry">QR Code นี้ใช้ได้ถึง วันที่ --/--/-- เวลา --:--</div>
                             </div>
 
-                            <!-- QR Code -->
+                            <!-- QR Code & Bank Info -->
                             <div style="text-align: center; margin-bottom: 20px;">
-                                <div style="background: white; padding: 10px; display: inline-block; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                                <div id="qrContainer" style="background: white; padding: 10px; display: inline-block; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); margin-bottom: 15px;">
                                     <img id="qrImage" src="" style="width: 180px; height: 180px; display: block;">
+                                </div>
+
+                                <!-- Warning -->
+                                <div style="color: var(--warning); font-size: 0.85rem; font-weight: bold; margin-bottom: 10px; padding: 0 10px; line-height: 1.4;">
+                                    <i class="fas fa-exclamation-triangle"></i> โปรดฝากเงินจากบัญชีธนาคาร ที่เป็นชื่อของคุณเท่านั้น
+                                </div>
+
+                                <!-- Transfer Route Info -->
+                                <div style="margin-top: 15px;">
+                                    <!-- From User -->
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: left; margin-bottom: 5px; padding-left: 5px;">จากบัญชีธนาคาร (ของคุณ)</div>
+                                    <div id="userBankInfoDisplay" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px; text-align: left;">
+                                        <!-- Populated by JS -->
+                                    </div>
+
+                                    <div style="color: var(--primary); margin: 5px 0; font-size: 1rem;"><i class="fas fa-arrow-circle-down"></i> โอนไปยัง</div>
+
+                                    <!-- To Admin -->
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: left; margin-bottom: 5px; padding-left: 5px;">บัญชีธนาคาร (ปลายทาง)</div>
+                                    <div id="adminBankInfoDisplay" style="background: rgba(46, 204, 113, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--success); text-align: left;">
+                                        <!-- Populated by JS -->
+                                    </div>
                                 </div>
                             </div>
 
@@ -1269,7 +1379,10 @@ console.log('Live Sync Status:', liveSync.getStatus());
         function updateDepositUI(val) {
             const qrSec = document.getElementById('qrSection');
             const qrImg = document.getElementById('qrImage');
+            const qrContainer = document.getElementById('qrContainer');
             const qrAmtDisp = document.getElementById('qrAmountDisplay');
+            const bankInfoDisp = document.getElementById('adminBankInfoDisplay');
+            const userBankDisp = document.getElementById('userBankInfoDisplay');
             
             if(val && parseFloat(val) >= 1) {
                 if(qrSec) {
@@ -1278,12 +1391,55 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     const amt = parseFloat(val).toFixed(2);
                     if(qrAmtDisp) qrAmtDisp.innerText = amt;
                     
-                    // Get PromptPay Number from Admin Settings
-                    const adminSettings = JSON.parse(localStorage.getItem('admin_payment_settings')) || {};
-                    const ppNumber = adminSettings.pp_number || '0812345678'; 
+                    // Get Admin Bank Settings
+                    const bankName = localStorage.getItem('admin_bank_name') || 'promptpay';
+                    const bankNum = localStorage.getItem('admin_bank_number') || localStorage.getItem('admin_pp_number') || '0812345678';
+                    const accName = localStorage.getItem('admin_acc_name') || 'System Account';
                     
-                    // Generate QR (PromptPay)
-                    qrImg.src = `https://promptpay.io/${ppNumber}/${val}`;
+                    // Check if we are using PromptPay (QR) or Bank Transfer
+                    if(bankName === 'promptpay') {
+                        if(qrContainer) qrContainer.style.display = 'inline-block';
+                        if(qrImg) {
+                            qrImg.style.display = 'block';
+                            qrImg.src = `https://promptpay.io/${bankNum}/${val}`;
+                        }
+                    } else {
+                        // Bank Transfer Mode - Hide QR, show bank info prominently
+                        if(qrContainer) qrContainer.style.display = 'none';
+                    }
+
+                    // Show User Bank Info (Source)
+                    if(userBankDisp) {
+                        const users = JSON.parse(localStorage.getItem('mining_users')) || {};
+                        // Ensure currentUser is available (it is a global variable in this scope)
+                        const u = (typeof currentUser !== 'undefined' && currentUser) ? (users[currentUser.username] || {}) : {};
+                        
+                        if(u.bank && u.acc) {
+                            userBankDisp.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="font-weight:bold; font-size:1rem; color: var(--warning); text-transform:uppercase;">${u.bank.toUpperCase()}</div>
+                                    <div style="font-size:0.8rem; color:#aaa;">บัญชีของคุณ</div>
+                                </div>
+                                <div style="font-size:1.1rem; font-weight:bold; color:white; letter-spacing:1px; margin: 2px 0;">${u.acc}</div>
+                                <div style="font-size:0.85rem; color:#ccc;">${u.name}</div>
+                            `;
+                        } else {
+                             userBankDisp.innerHTML = `
+                                <div style="color: var(--danger); font-size: 0.9rem; text-align: center; padding: 10px;">
+                                    <i class="fas fa-exclamation-circle"></i> กรุณาเพิ่มบัญชีธนาคารของคุณก่อนทำรายการ
+                                </div>
+                            `;
+                        }
+                    }
+
+                    // Show Admin Bank Info (Destination)
+                    if(bankInfoDisp) {
+                         bankInfoDisp.innerHTML = `
+                            <div style="font-weight:bold; font-size:1.1rem; color: var(--secondary); text-transform:uppercase;">${bankName.toUpperCase()}</div>
+                            <div style="font-size:1.2rem; font-weight:bold; color:white; letter-spacing:1px; margin: 2px 0;">${bankNum}</div>
+                            <div style="font-size:0.9rem; color:#eee;">${accName}</div>
+                        `;
+                    }
                     
                     // Start Timer if not running
                     startQRTimer();
@@ -1306,7 +1462,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             if(expiryEl) {
                 const dateStr = expireTime.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
                 const timeStr = expireTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                expiryEl.innerText = `หมดเวลาวันที่ ${dateStr} ${timeStr}`;
+                expiryEl.innerText = `QR Code นี้ใช้ได้ถึง วันที่ ${dateStr} เวลา ${timeStr}`;
             }
 
             const timerEl = document.getElementById('qrTimer');
@@ -1631,6 +1787,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 }
 
                 const daily = r.speed * 86400;
+                const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('th-TH') : '';
 
                 html += `
                 <div style="background: rgba(20, 25, 40, 0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 15px;">
@@ -1644,7 +1801,10 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.75rem; color: var(--text-muted);">
                             <div>Speed: <span style="color: #fff;">${r.speed} MH/s</span></div>
-                            <div>≈ ฿${daily.toLocaleString()}/วัน</div>
+                            <div>${dateStr}</div>
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--success); margin-top: 2px;">
+                            ≈ ฿${daily.toLocaleString()}/วัน
                         </div>
                     </div>
                 </div>
@@ -1710,7 +1870,9 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 pass: p, id: Math.floor(100000+Math.random()*900000),
                 name: name, bank: bank, acc: acc,
                 regDate: new Date().toISOString(), banned: false,
-                referrer: null
+                referrer: null,
+                ip: clientIP,
+                deviceId: getDeviceID()
             };
             localStorage.setItem('mining_users', JSON.stringify(users));
             
@@ -1731,29 +1893,21 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         refs.push({
                             name: u,
                             date: new Date().toISOString(),
-                            status: 'completed',
-                            claimed: false
+                            status: 'pending',
+                            claimed: false,
+                            ip: clientIP,
+                            deviceId: getDeviceID()
                         });
                         localStorage.setItem(`mining_referrals_${referrerName}`, JSON.stringify(refs));
                         
                         // Notify Referrer (Mock Notification Logic)
                         let refNotifications = JSON.parse(localStorage.getItem(`notifications_${referrerName}`)) || [];
                         refNotifications.push({
-                            msg: `เพื่อนใหม่! ${u} สมัครผ่านลิงก์แนะนำของคุณ`,
+                            msg: `เพื่อนใหม่! ${u} สมัครผ่านลิงก์แนะนำของคุณ (รอตรวจสอบ)`,
                             date: new Date().toISOString(),
                             read: false
                         });
                         localStorage.setItem(`notifications_${referrerName}`, JSON.stringify(refNotifications));
-
-                        // Bonus for New User
-                        startBalance = 100;
-                        let trans = JSON.parse(localStorage.getItem('mining_transactions')) || [];
-                        trans.push({
-                            id: Date.now(), user: u, type: 'deposit', amount: 100,
-                            status: 'approved', timestamp: Date.now(), processed: true,
-                            method: 'referral_bonus', fee: 0, net: 100
-                        });
-                        localStorage.setItem('mining_transactions', JSON.stringify(trans));
                     }
                 }
                 localStorage.removeItem('pending_ref');
@@ -2442,13 +2596,9 @@ console.log('Live Sync Status:', liveSync.getStatus());
             // ✅ สินค้าที่ต้องซื้อ
             if(balance >= p) {
                 balance -= p; 
-                hashrate += s; 
-                isMining = true; // ✅ เริ่มขุดอัตโนมัติ
+                // hashrate += s; // Let syncMiningData handle this or recalculate
                 
-                saveData(); 
-                updateUI(); 
-                updateMiningMode();
-                
+                // Add to Rigs first (Source of Truth)
                 try {
                     let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
                     const itemsC = JSON.parse(localStorage.getItem('mining_shop_items')) || [];
@@ -2460,11 +2610,20 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         price: p, 
                         icon: item.icon, 
                         status: 'active', 
-                        timestamp: Date. now() 
+                        timestamp: Date.now() 
                     });
-                    localStorage. setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
-                } catch (_) {}
-                
+                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                } catch (e) {
+                    console.error('Error saving rig:', e);
+                }
+
+                // Sync everything
+                syncMiningData();
+                isMining = true;
+
+                saveData(); 
+                updateUI(); 
+                updateMiningMode();
                 miningLoop();
                 
                 showToast(`✅ สั่งซื้อสำเร็จ! +${s} MH/s`, 'success');
