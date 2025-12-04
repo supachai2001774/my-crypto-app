@@ -1938,11 +1938,41 @@ console.log('Live Sync Status:', liveSync.getStatus());
             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
             if(users[u]) return showToast('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว', 'error');
 
+            // --- Referral Logic ---
+            let validReferrerName = null;
+            let refId = null;
+
+            // 1. Resolve ID
+            if(manualRef && manualRef.trim().length > 0) {
+                refId = manualRef.trim().replace(/x/i, ''); 
+            } else {
+                const pendingRef = localStorage.getItem('pending_ref');
+                if(pendingRef) refId = pendingRef.replace(/x/i, '');
+            }
+
+            // 2. Validate
+            if(refId) {
+                const foundReferrer = Object.keys(users).find(k => users[k].id == refId);
+                if(foundReferrer) {
+                    validReferrerName = foundReferrer;
+                } else {
+                    // Invalid ID
+                    if(manualRef && manualRef.trim().length > 0) {
+                        // Confirm with user
+                        if(!confirm("ไม่พบรหัสแนะนำเพื่อนนี้ ต้องการสมัครต่อโดยไม่มีผู้แนะนำหรือไม่?")) {
+                            return; // Cancel registration
+                        }
+                        // Proceed without referrer
+                    }
+                }
+            }
+
+            // 3. Create User
             users[u] = {
                 pass: p, id: Math.floor(100000+Math.random()*900000),
                 name: name, bank: bank, acc: acc,
                 regDate: new Date().toISOString(), banned: false,
-                referrer: null,
+                referrer: validReferrerName,
                 ip: clientIP,
                 deviceId: getDeviceID()
             };
@@ -1950,52 +1980,31 @@ console.log('Live Sync Status:', liveSync.getStatus());
             
             let startBalance = 0;
 
-            // Process Referral (Manual Code or Link)
-            let refId = null;
-            
-            // 1. Priority: Manual Input
-            if(manualRef && manualRef.trim().length > 0) {
-                refId = manualRef.trim().replace(/x/i, ''); // Remove 'X' or 'x'
-            } 
-            // 2. Fallback: URL Link
-            else {
-                const pendingRef = localStorage.getItem('pending_ref');
-                if(pendingRef) refId = pendingRef.replace(/x/i, '');
-            }
-
-            if(refId) {
-                const referrerName = Object.keys(users).find(k => users[k].id == refId);
-                if(referrerName) {
-                    // Save Referrer Link
-                    users[u].referrer = referrerName;
-                    localStorage.setItem('mining_users', JSON.stringify(users));
-
-                    let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrerName}`)) || [];
-                    if(!refs.find(r => r.name === u)) {
-                        refs.push({
-                            name: u,
-                            date: new Date().toISOString(),
-                            status: 'pending',
-                            claimed: false,
-                            ip: clientIP,
-                            deviceId: getDeviceID()
-                        });
-                        localStorage.setItem(`mining_referrals_${referrerName}`, JSON.stringify(refs));
-                        
-                        // Notify Referrer
-                        let refNotifications = JSON.parse(localStorage.getItem(`notifications_${referrerName}`)) || [];
-                        refNotifications.push({
-                            msg: `เพื่อนใหม่! ${u} สมัครผ่านรหัสแนะนำ (รอตรวจสอบ)`,
-                            date: new Date().toISOString(),
-                            read: false
-                        });
-                        localStorage.setItem(`notifications_${referrerName}`, JSON.stringify(refNotifications));
-                    }
-                } else if(manualRef) {
-                    showToast('ไม่พบรหัสแนะนำเพื่อนนี้ (สมัครต่อโดยไม่มีผู้แนะนำ)', 'warning');
+            // 4. Process Referrer Data
+            if(validReferrerName) {
+                let refs = JSON.parse(localStorage.getItem(`mining_referrals_${validReferrerName}`)) || [];
+                if(!refs.find(r => r.name === u)) {
+                    refs.push({
+                        name: u,
+                        date: new Date().toISOString(),
+                        status: 'pending',
+                        claimed: false,
+                        ip: clientIP,
+                        deviceId: getDeviceID()
+                    });
+                    localStorage.setItem(`mining_referrals_${validReferrerName}`, JSON.stringify(refs));
+                    
+                    // Notify Referrer
+                    let refNotifications = JSON.parse(localStorage.getItem(`notifications_${validReferrerName}`)) || [];
+                    refNotifications.push({
+                        msg: `เพื่อนใหม่! ${u} สมัครผ่านรหัสแนะนำ (รอตรวจสอบ)`,
+                        date: new Date().toISOString(),
+                        read: false
+                    });
+                    localStorage.setItem(`notifications_${validReferrerName}`, JSON.stringify(refNotifications));
                 }
-                localStorage.removeItem('pending_ref');
             }
+            localStorage.removeItem('pending_ref');
 
             // Init Profile
             const pf = { username: u, balance: startBalance, hashrate: 0.0, avatar: null };
