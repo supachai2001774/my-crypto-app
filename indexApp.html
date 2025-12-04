@@ -1914,7 +1914,16 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         // --- Auth ---
-        function toSignup() { document.getElementById('loginModal').style.display='none'; document.getElementById('signupModal').style.display='flex'; }
+        function toSignup() { 
+            document.getElementById('loginModal').style.display='none'; 
+            document.getElementById('signupModal').style.display='flex'; 
+            
+            // Auto-fill Referral Code
+            const pendingRef = localStorage.getItem('pending_ref');
+            if(pendingRef) {
+                document.getElementById('regRefCode').value = pendingRef;
+            }
+        }
         function toLogin() { document.getElementById('signupModal').style.display='none'; document.getElementById('loginModal').style.display='flex'; }
         
         function signup() {
@@ -1946,12 +1955,12 @@ console.log('Live Sync Status:', liveSync.getStatus());
             
             // 1. Priority: Manual Input
             if(manualRef && manualRef.trim().length > 0) {
-                refId = manualRef.trim();
+                refId = manualRef.trim().replace(/x/i, ''); // Remove 'X' or 'x'
             } 
             // 2. Fallback: URL Link
             else {
                 const pendingRef = localStorage.getItem('pending_ref');
-                if(pendingRef) refId = pendingRef.replace('X','');
+                if(pendingRef) refId = pendingRef.replace(/x/i, '');
             }
 
             if(refId) {
