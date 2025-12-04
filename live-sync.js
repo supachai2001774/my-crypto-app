@@ -143,7 +143,7 @@ class LiveSync {
                     this.lastUpdate[key] = hash;
                     this.emit('referrals_updated', { 
                         username, 
-                        data: JSON.parse(current || '[]') 
+                        refs: JSON.parse(current || '[]') 
                     });
                 }
             });

@@ -1646,10 +1646,11 @@
 
         liveSync.on('referrals_updated', (data) => {
              // Check if pending in the update data
-             const hasPending = data.data.some(r => r.status === 'pending');
-             if(hasPending) {
+             // data structure: { username: referrerName, refs: [...] }
+             const pendingRef = data.refs.find(r => r.status === 'pending');
+             if(pendingRef) {
                  playBeep();
-                 showToast('มีคำขอแนะนำเพื่อนใหม่!', 'info');
+                 showToast(`เพื่อนใหม่! ${pendingRef.name} สมัครผ่านรหัสแนะนำ (รอตรวจสอบ)`, 'info');
              }
              updateMonitor();
              renderReferrals();
