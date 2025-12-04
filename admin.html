@@ -1109,25 +1109,16 @@
                         method: 'referral_bonus', fee: 0, net: 100
                     });
                     
-                    // 2. Commission for Referrer (50 THB)
-                    trans.push({
-                        id: Date.now() + 1, user: referrer, type: 'deposit', amount: 50,
-                        status: 'approved', timestamp: Date.now(), processed: true,
-                        method: 'referral_commission', fee: 0, net: 50
-                    });
+                    // Note: Referrer Commission is handled via "Claim" button in App
+                    // We do not auto-credit Referrer here to avoid double counting
                     
                     localStorage.setItem('mining_transactions', JSON.stringify(trans));
                     
                     // Update Balances
-                    // Referee
+                    // Referee (Auto-credit)
                     let pfRef = JSON.parse(localStorage.getItem(`pf_${referee}`)) || {balance: 0};
                     pfRef.balance = parseFloat(pfRef.balance || 0) + 100;
                     localStorage.setItem(`pf_${referee}`, JSON.stringify(pfRef));
-                    
-                    // Referrer
-                    let pfUpline = JSON.parse(localStorage.getItem(`pf_${referrer}`)) || {balance: 0};
-                    pfUpline.balance = parseFloat(pfUpline.balance || 0) + 50;
-                    localStorage.setItem(`pf_${referrer}`, JSON.stringify(pfUpline));
                     
                     // Notify Referee
                     let notifs = JSON.parse(localStorage.getItem(`notifications_${referee}`)) || [];
@@ -1135,6 +1126,7 @@
                     localStorage.setItem(`notifications_${referee}`, JSON.stringify(notifs));
                 }
                 
+                updateMonitor();
                 renderReferrals();
                 showToast(`อัปเดตสถานะเป็น ${status} แล้ว`, 'success');
             }
@@ -1308,28 +1300,47 @@
                 
                 if(t.type === 'deposit') {
                      bankHtml = `
-                        <div style="color: var(--success); font-weight: bold; font-size: 1rem;">ฝากเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
-                        <div><span style="color: #94a3b8;">ผู้ทำรายการ:</span> <span style="color: white; font-weight: bold;">${t.user}</span></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div style="color: var(--success); font-weight: bold; font-size: 1.1rem;">ฝากเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">${new Date(t.timestamp || t.date).toLocaleString('th-TH')}</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="color: #94a3b8;">ผู้ทำรายการ:</span>
+                            <span style="color: white; font-weight: bold;">${t.user}</span>
+                        </div>
                         <div style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1);">
-                            <div style="color: var(--warning); margin-bottom: 3px;">ข้อมูลบัญชีที่ลงทะเบียนไว้:</div>
+                            <div style="color: var(--warning); margin-bottom: 3px; font-size: 0.9rem;">บัญชีที่โอนเข้ามา (ข้อมูลผู้ใช้):</div>
                             ${u.bank ? `
-                                <div>ธนาคาร: ${u.bank.toUpperCase()}</div>
-                                <div>เลขบัญชี: ${u.acc}</div>
-                                <div>ชื่อบัญชี: ${u.name}</div>
+                                <div style="display: grid; grid-template-columns: auto 1fr; gap: 5px 15px; font-size: 0.9rem;">
+                                    <div style="color: #94a3b8;">ธนาคาร:</div>
+                                    <div style="color: var(--secondary); font-weight: bold;">${u.bank.toUpperCase()}</div>
+                                    <div style="color: #94a3b8;">เลขบัญชี:</div>
+                                    <div style="color: white; letter-spacing: 0.5px;">${u.acc}</div>
+                                    <div style="color: #94a3b8;">ชื่อบัญชี:</div>
+                                    <div style="color: white;">${u.name}</div>
+                                </div>
                             ` : '<div style="color: var(--danger);">ยังไม่ได้ลงทะเบียนบัญชีธนาคาร</div>'}
                         </div>
                      `;
                 } else {
                     // Withdraw
                      bankHtml = `
-                        <div style="color: var(--danger); font-weight: bold; font-size: 1rem;">ถอนเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
-                        <div><span style="color: #94a3b8;">ผู้ทำรายการ:</span> <span style="color: white; font-weight: bold;">${t.user}</span></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">
+                            <div style="color: var(--danger); font-weight: bold; font-size: 1.1rem;">ถอนเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
+                            <div style="font-size: 0.8rem; color: #94a3b8;">${new Date(t.timestamp || t.date).toLocaleString('th-TH')}</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span style="color: #94a3b8;">ผู้ทำรายการ:</span>
+                            <span style="color: white; font-weight: bold;">${t.user}</span>
+                        </div>
                         <div style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1);">
-                            <div style="color: var(--warning); margin-bottom: 3px;">โอนไปยังบัญชี:</div>
+                            <div style="color: var(--warning); margin-bottom: 3px; font-size: 0.9rem;">โอนไปยังบัญชี:</div>
                             ${u.bank ? `
-                                <div style="font-size: 1.1rem; font-weight: bold; color: var(--secondary);">${u.bank.toUpperCase()}</div>
-                                <div style="font-size: 1.2rem; font-weight: bold; color: white; letter-spacing: 1px;">${u.acc}</div>
-                                <div style="color: #ccc;">${u.name}</div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; text-align: center;">
+                                    <div style="font-size: 1.1rem; font-weight: bold; color: var(--secondary);">${u.bank.toUpperCase()}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: white; letter-spacing: 1px;">${u.acc}</div>
+                                    <div style="color: #ccc;">${u.name}</div>
+                                </div>
                             ` : '<div style="color: var(--danger);">ไม่พบข้อมูลบัญชีธนาคาร!</div>'}
                         </div>
                      `;

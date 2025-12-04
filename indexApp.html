@@ -124,6 +124,22 @@
                 </div>
             </div>
 
+            <!-- Mining Connection Alert (Hidden by default) -->
+            <div id="miningConnectionStatus" style="display: none; background: rgba(255, 0, 85, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 0, 85, 0.3); margin: 15px 0; animation: slideIn 0.3s ease-out;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 40px; height: 40px; background: rgba(255, 0, 85, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-wifi-slash" style="color: var(--danger); font-size: 1.2rem; animation: pulse 1s infinite;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: bold; color: var(--danger); font-size: 0.95rem;">ขาดการเชื่อมต่อเครื่องขุด</div>
+                        <div style="font-size: 0.8rem; color: #cbd5e1;">ระบบกำลังพยายามเชื่อมต่อใหม่...</div>
+                    </div>
+                    <button onclick="reconnectMining()" class="cyber-btn" style="padding: 8px 15px; font-size: 0.8rem; white-space: nowrap; background: var(--danger); border: none; box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);">
+                        <i class="fas fa-sync"></i> เชื่อมต่อ
+                    </button>
+                </div>
+            </div>
+
             <!-- AI Announcement Board -->
             <div class="ai-announce-card" onclick="openAnnounceModal()" style="cursor: pointer; margin: 20px 0; position: relative; overflow: hidden; border-radius: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 255, 0.2); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);">
                 <!-- Scanline effect -->
@@ -727,6 +743,22 @@ liveSync.on('maintenance', (data) => {
     }
 });
 
+// เมื่อ Admin เปลี่ยนข้อมูลการแนะนำเพื่อน
+liveSync.on('referrals_updated', (data) => {
+    console.log('📡 Referrals updated');
+    if(currentUser && data.username === currentUser.username) {
+        renderReferralUI();
+        showToast('👥 ข้อมูลการแนะนำเพื่อนมีการเปลี่ยนแปลง', 'info');
+        
+        // Optional: Check for approved referrals to play success sound
+        const refs = data.data || [];
+        if(refs.some(r => (r.status === 'approved' || r.status === 'completed') && !r.claimed)) {
+             if(typeof soundMgr !== 'undefined') soundMgr.play('success');
+             showToast('✅ การแนะนำเพื่อนได้รับการอนุมัติแล้ว!', 'success');
+        }
+    }
+});
+
 // เมื่อ Admin โพสต์ประกาศใหม่
 liveSync. on('announcement', (data) => {
     console.log('📡 New announcement');
@@ -1228,15 +1260,13 @@ console.log('Live Sync Status:', liveSync.getStatus());
                                 <!-- Transfer Route Info -->
                                 <div style="margin-top: 15px;">
                                     <!-- From User -->
-                                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: left; margin-bottom: 5px; padding-left: 5px;">จากบัญชีธนาคาร (ของคุณ)</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: left; margin-bottom: 5px; padding-left: 5px;">ฝากเงินจากบัญชีธนาคาร</div>
                                     <div id="userBankInfoDisplay" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px; text-align: left;">
                                         <!-- Populated by JS -->
                                     </div>
 
-                                    <div style="color: var(--primary); margin: 5px 0; font-size: 1rem;"><i class="fas fa-arrow-circle-down"></i> โอนไปยัง</div>
-
                                     <!-- To Admin -->
-                                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: left; margin-bottom: 5px; padding-left: 5px;">บัญชีธนาคาร (ปลายทาง)</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: left; margin-bottom: 5px; padding-left: 5px;">ไปยังบัญชีธนาคาร</div>
                                     <div id="adminBankInfoDisplay" style="background: rgba(46, 204, 113, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--success); text-align: left;">
                                         <!-- Populated by JS -->
                                     </div>
@@ -1259,11 +1289,15 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
                             <!-- Slip Upload -->
                             <div style="margin-bottom: 20px;">
-                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">แนบหลักฐานการโอนเงิน (สลิป)</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">1. อัปโหลด</div>
+                                <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 8px;">รองรับไฟล์ jpg, jpeg และ .png ขนาดไม่เกิน 5 MB</div>
                                 <input type="file" id="slipUpload" accept="image/*" class="cyber-input" style="padding: 10px; font-size: 0.9rem; height: auto;" onchange="handleSlipSelect(this)">
                                 <div id="slipPreview" style="margin-top:10px; text-align:center; display:none;">
                                     <img id="slipPreviewImg" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid var(--text-muted);">
                                     <div style="font-size:0.7rem; color:var(--success); margin-top:5px;"><i class="fas fa-check-circle"></i> แนบสลิปแล้ว</div>
+                                </div>
+                                <div style="text-align: center; font-size: 0.8rem; color: var(--primary); margin-top: 10px; opacity: 0.8;">
+                                    แอดมินดูตรวจสอบสลิป/ข้อมูล
                                 </div>
                             </div>
 
@@ -1434,11 +1468,18 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
                     // Show Admin Bank Info (Destination)
                     if(bankInfoDisp) {
-                         bankInfoDisp.innerHTML = `
-                            <div style="font-weight:bold; font-size:1.1rem; color: var(--secondary); text-transform:uppercase;">${bankName.toUpperCase()}</div>
-                            <div style="font-size:1.2rem; font-weight:bold; color:white; letter-spacing:1px; margin: 2px 0;">${bankNum}</div>
-                            <div style="font-size:0.9rem; color:#eee;">${accName}</div>
-                        `;
+                        if(bankName !== 'promptpay') {
+                            bankInfoDisp.style.display = 'block';
+                            bankInfoDisp.innerHTML = `
+                                <div style="font-weight:bold; font-size:1.1rem; color: var(--secondary); text-transform:uppercase;">${bankName.toUpperCase()}</div>
+                                <div style="font-size:1.2rem; font-weight:bold; color:white; letter-spacing:1px; margin: 2px 0;">${bankNum}</div>
+                                <div style="font-size:0.9rem; color:#eee;">${accName}</div>
+                                <div style="font-size:0.8rem; color:#aaa; margin-top:5px;">ประเภทบัญชี: ออมทรัพย์</div>
+                                <div style="font-size:0.8rem; color:#aaa;">สาขา: สำนักงานใหญ่</div>
+                            `;
+                        } else {
+                            bankInfoDisp.style.display = 'none';
+                        }
                     }
                     
                     // Start Timer if not running
@@ -2331,7 +2372,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             balance += amount;
             
             let refs = JSON.parse(localStorage.getItem(`mining_referrals_${currentUser.username}`)) || [];
-            refs.forEach(r => { if(r.status === 'completed') r.claimed = true; });
+            refs.forEach(r => { if(r.status === 'completed' || r.status === 'approved') r.claimed = true; });
             localStorage.setItem(`mining_referrals_${currentUser.username}`, JSON.stringify(refs));
             
             // Record Transaction
@@ -2343,18 +2384,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
             localStorage.setItem('mining_transactions', JSON.stringify(trans));
                     
-                    function saveData() {
-            if(currentUser) {
-                let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`) || '{}');
-                pf.username = currentUser.username;
-                pf.balance = parseFloat(balance. toFixed(2));
-                pf.hashrate = parseFloat(hashrate.toFixed(2));
-                pf.lastUpdate = Date.now();
-                
-                console.log('💾 Saving:', pf);
-                localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
-            }
-        }
+            saveData();
             updateUI();
             renderReferralUI();
             
@@ -3121,8 +3151,32 @@ console.log('Live Sync Status:', liveSync.getStatus());
             }
         }
 
+        function reconnectMining() {
+            const btn = document.querySelector('#miningConnectionStatus button');
+            if(btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> เชื่อมต่อ...';
+                btn.disabled = true;
+                
+                setTimeout(() => {
+                    manualRefresh(); // Use existing refresh function
+                    
+                    // Force check connection immediately
+                    if(navigator.onLine) {
+                        document.getElementById('miningConnectionStatus').style.display = 'none';
+                        showToast('เชื่อมต่อระบบสำเร็จ', 'success');
+                    } else {
+                        showToast('ไม่สามารถเชื่อมต่อได้ กรุณาตรวจสอบอินเทอร์เน็ต', 'error');
+                    }
+                    
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 800);
+            }
+        }
+
         // --- System Sync Loop ---
-        setInterval(() => {
+        function updateConnectionStatus() {
             // 1. Update Last Active (Heartbeat)
             if(currentUser) {
                 localStorage.setItem(`last_active_${currentUser.username}`, Date.now());
@@ -3144,15 +3198,19 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
             // 3. Update Connection Status
             const statusEl = document.getElementById('miningStatus');
+            const alertEl = document.getElementById('miningConnectionStatus');
+            
             if(statusEl) {
                 if(navigator.onLine) {
-                    statusEl.innerHTML = '<i class="fas fa-wifi"></i> เชื่อมต่อแล้ว';
+                    statusEl.innerHTML = '<i class="fas fa-wifi"></i> เชื่อมต่อแล้ว (สด)';
                     statusEl.style.color = '#00f2ff';
                     statusEl.style.textShadow = '0 0 10px #00f2ff';
+                    if(alertEl) alertEl.style.display = 'none';
                 } else {
                     statusEl.innerHTML = '<i class="fas fa-wifi-slash"></i> ขาดการเชื่อมต่อ';
                     statusEl.style.color = '#ff7675';
                     statusEl.style.textShadow = 'none';
+                    if(alertEl) alertEl.style.display = 'block';
                 }
             }
 
@@ -3196,7 +3254,11 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     }
                 }
             }
-        }, 2000);
+        }
+
+        // Start Loop (Fast 500ms)
+        updateConnectionStatus();
+        setInterval(updateConnectionStatus, 500);
 
         // Real-time Force Update Listener
         liveSync.on('force_update', (data) => {
