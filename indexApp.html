@@ -1950,7 +1950,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
         function toLogin() { document.getElementById('signupModal').style.display='none'; document.getElementById('loginModal').style.display='flex'; }
         
-        function signup() {
+        async function signup() {
             const u = document.getElementById('regUser').value;
             const p = document.getElementById('regPass').value;
             const name = document.getElementById('regName').value;
@@ -1959,9 +1959,9 @@ console.log('Live Sync Status:', liveSync.getStatus());
             const manualRef = document.getElementById('regRefCode').value;
             
             if(!u || !p || !name || !acc) return showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
-            let users = JSON.parse(localStorage.getItem('mining_users')) || {};
-            if(users[u]) return showToast('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว', 'error');
-
+            
+            // Note: Backend will check for duplicate username
+            
             const userData = { u, p, name, bank, acc };
 
             // --- Referral Logic ---
@@ -1975,21 +1975,31 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 if(pendingRef) refId = pendingRef.replace(/x/i, '');
             }
 
-            // 2. Validate
+            // 2. Validate via API
             if(refId) {
-                const foundReferrer = Object.keys(users).find(k => users[k].id == refId);
-                if(foundReferrer) {
-                    completeRegistration(userData, foundReferrer);
-                } else {
-                    // Invalid ID
-                    if(manualRef && manualRef.trim().length > 0) {
-                        // SHOW CUSTOM MODAL
-                        pendingSignupData = userData;
-                        document.getElementById('referralConfirmModal').style.display = 'flex';
+                try {
+                    const res = await fetch(`/api/check-referral/${refId}`);
+                    const json = await res.json();
+                    
+                    if(json.valid) {
+                        // Pass the referrer's username or ID. 
+                        // For consistency with legacy code, we might use username, 
+                        // but 'referrer_id' implies ID. Let's use the ID from the response.
+                        completeRegistration(userData, json.referrer.id);
                     } else {
-                        // URL ref invalid -> ignore and register
-                         completeRegistration(userData, null);
+                        // Invalid ID
+                        if(manualRef && manualRef.trim().length > 0) {
+                            // SHOW CUSTOM MODAL
+                            pendingSignupData = userData;
+                            document.getElementById('referralConfirmModal').style.display = 'flex';
+                        } else {
+                            // URL ref invalid -> ignore and register
+                             completeRegistration(userData, null);
+                        }
                     }
+                } catch(err) {
+                    console.error(err);
+                    showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
                 }
             } else {
                  completeRegistration(userData, null);
@@ -2008,57 +2018,58 @@ console.log('Live Sync Status:', liveSync.getStatus());
             }
         }
 
-        function completeRegistration(data, referrerName) {
+        async function completeRegistration(data, referrerId) {
              const { u, p, name, bank, acc } = data;
-             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
              
-             // 3. Create User
-            users[u] = {
-                pass: p, id: Math.floor(100000+Math.random()*900000),
-                name: name, bank: bank, acc: acc,
-                regDate: new Date().toISOString(), banned: false,
-                referrer: referrerName,
-                ip: clientIP,
-                deviceId: getDeviceID()
-            };
-            localStorage.setItem('mining_users', JSON.stringify(users));
-            
-            let startBalance = 0;
-
-            // 4. Process Referrer Data
-            if(referrerName) {
-                let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrerName}`)) || [];
-                if(!refs.find(r => r.name === u)) {
-                    refs.push({
-                        name: u,
-                        date: new Date().toISOString(),
-                        status: 'pending',
-                        claimed: false,
-                        ip: clientIP,
-                        deviceId: getDeviceID()
-                    });
-                    localStorage.setItem(`mining_referrals_${referrerName}`, JSON.stringify(refs));
-                    
-                    // Notify Referrer
-                    let refNotifications = JSON.parse(localStorage.getItem(`notifications_${referrerName}`)) || [];
-                    refNotifications.push({
-                        msg: `เพื่อนใหม่! ${u} สมัครผ่านรหัสแนะนำ (รอตรวจสอบ)`,
-                        date: new Date().toISOString(),
-                        read: false
-                    });
-                    localStorage.setItem(`notifications_${referrerName}`, JSON.stringify(refNotifications));
+             try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: u,
+                        password: p,
+                        name,
+                        bank,
+                        acc,
+                        referrer_id: referrerId // Can be null
+                    })
+                });
+                
+                const json = await res.json();
+                
+                if(!json.success) {
+                    return showToast(json.error || 'การสมัครสมาชิกส้มเหลว', 'error');
                 }
-            }
-            localStorage.removeItem('pending_ref');
 
-            // Init Profile
-            const pf = { username: u, balance: startBalance, hashrate: 0.0, avatar: null };
-            localStorage.setItem(`pf_${u}`, JSON.stringify(pf));
-            
-            if(startBalance > 0) showToast(`สมัครเสร็จสิ้น! คุณได้รับโบนัสเริ่มต้น ฿${startBalance}`, 'success');
-            else showToast('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ', 'success');
-            
-            toLogin();
+                // --- Sync to LocalStorage (Hybrid Mode) ---
+                // We mirror the backend data to local storage so the rest of the app works
+                let users = JSON.parse(localStorage.getItem('mining_users')) || {};
+                const newUser = json.user;
+                
+                users[u] = {
+                    pass: p, // Note: In real app, don't store plain pass. Backend has it now.
+                    id: newUser.id,
+                    name: name, bank: bank, acc: acc,
+                    regDate: newUser.regDate, banned: false,
+                    referrer: referrerId, // Store ID now
+                    ip: clientIP,
+                    deviceId: getDeviceID()
+                };
+                localStorage.setItem('mining_users', JSON.stringify(users));
+                
+                // Initialize Profile in LocalStorage
+                const pf = { username: u, balance: 0, hashrate: 0.0, avatar: null };
+                localStorage.setItem(`pf_${u}`, JSON.stringify(pf));
+
+                localStorage.removeItem('pending_ref');
+                
+                showToast('สมัครสมาชิกสำเร็จ! ข้อมูลถูกบันทึกในระบบหลังบ้านแล้ว', 'success');
+                toLogin();
+
+             } catch(err) {
+                 console.error(err);
+                 showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ Server', 'error');
+             }
         }
 
         function login() {
