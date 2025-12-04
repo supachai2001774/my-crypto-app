@@ -1461,7 +1461,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
         let depositTimerInterval = null;
 
-        function updateDepositUI(val) {
+        async function updateDepositUI(val) {
             const qrSec = document.getElementById('qrSection');
             const qrImg = document.getElementById('qrImage');
             const qrContainer = document.getElementById('qrContainer');
@@ -1476,10 +1476,13 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     const amt = parseFloat(val).toFixed(2);
                     if(qrAmtDisp) qrAmtDisp.innerText = amt;
                     
-                    // Get Admin Bank Settings
-                    const bankName = localStorage.getItem('admin_bank_name') || 'promptpay';
-                    const bankNum = localStorage.getItem('admin_bank_number') || localStorage.getItem('admin_pp_number') || '0812345678';
-                    const accName = localStorage.getItem('admin_acc_name') || 'System Account';
+                    // Get Admin Bank Settings from API
+                    const settingsRes = await fetch('/api/admin/settings');
+                    const settings = await settingsRes.json();
+
+                    const bankName = settings.admin_bank_name || 'promptpay';
+                    const bankNum = settings.admin_bank_number || '0828307850';
+                    const accName = settings.admin_acc_name || 'System Account';
                     
                     // Check if we are using PromptPay (QR) or Bank Transfer
                     if(bankName === 'promptpay') {
@@ -1519,18 +1522,26 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
                     // Show Admin Bank Info (Destination)
                     if(bankInfoDisp) {
-                        if(bankName !== 'promptpay') {
-                            bankInfoDisp.style.display = 'block';
-                            bankInfoDisp.innerHTML = `
+                        bankInfoDisp.style.display = 'block'; // Always show the container
+                        let infoHtml = '';
+
+                        if(bankName.toLowerCase() === 'promptpay') {
+                            infoHtml = `
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div style="font-weight:bold; font-size:1rem; color: var(--success);">PROMPTPAY</div>
+                                    <img src="https://www.logo.wine/a/logo/PromptPay/PromptPay-Logo.wine.svg" style="width: 60px; height: auto; filter: invert(1) opacity(0.8);">
+                                </div>
+                                <div style="font-size:1.2rem; font-weight:bold; color:white; letter-spacing:1px; margin: 2px 0;">${bankNum}</div>
+                                <div style="font-size:0.9rem; color:#eee;">${accName}</div>
+                            `;
+                        } else {
+                            infoHtml = `
                                 <div style="font-weight:bold; font-size:1.1rem; color: var(--secondary); text-transform:uppercase;">${bankName.toUpperCase()}</div>
                                 <div style="font-size:1.2rem; font-weight:bold; color:white; letter-spacing:1px; margin: 2px 0;">${bankNum}</div>
                                 <div style="font-size:0.9rem; color:#eee;">${accName}</div>
-                                <div style="font-size:0.8rem; color:#aaa; margin-top:5px;">ประเภทบัญชี: ออมทรัพย์</div>
-                                <div style="font-size:0.8rem; color:#aaa;">สาขา: สำนักงานใหญ่</div>
                             `;
-                        } else {
-                            bankInfoDisp.style.display = 'none';
                         }
+                        bankInfoDisp.innerHTML = infoHtml;
                     }
                     
                     // Start Timer if not running
@@ -3294,8 +3305,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
             }
         }
         
-        // Poll maintenance status every 10 seconds
-        setInterval(checkMaintenance, 10000);
+        // Poll maintenance status every 3 seconds
+        setInterval(checkGlobalMaintenance, 3000);
         // Initial check
         checkMaintenance();
 
