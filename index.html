@@ -3369,12 +3369,16 @@ console.log('Live Sync Status:', liveSync.getStatus());
             }
         }
 
-        // --- Global Maintenance Check (Polls API) ---
+        // --- Global Maintenance & Sync Check (Polls API) ---
+        let lastShopUpdate = 0;
+
         async function checkGlobalMaintenance() {
             try {
                 const res = await fetch('/api/admin/settings');
                 if(res.ok) {
                     const settings = await res.json();
+                    
+                    // 1. Maintenance Mode
                     const maint = settings.maintenance === true;
                     const maintMsg = settings.maintenance_msg || 'กำลังอัปเกรดเซิร์ฟเวอร์... ';
                     const overlay = document.getElementById('maintenanceOverlay');
@@ -3389,9 +3393,43 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     } else {
                         if(overlay) overlay.style.display = 'none';
                     }
+
+                    // 2. Shop Sync Check
+                    if(settings.last_shop_update) {
+                        if(lastShopUpdate === 0) {
+                            // First load - Sync immediately to be safe
+                            lastShopUpdate = settings.last_shop_update;
+                            loadShop(); 
+                        } else if(settings.last_shop_update > lastShopUpdate) {
+                            console.log('Shop update detected');
+                            lastShopUpdate = settings.last_shop_update;
+                            loadShop();
+                            showToast('ร้านค้ามีการอัปเดตสินค้าใหม่', 'info');
+                        }
+                    }
+
+                    // 3. Update Connection Status (Server Reachable)
+                    const statusEl = document.getElementById('miningStatus');
+                    const alertEl = document.getElementById('miningConnectionStatus');
+                    if(statusEl) {
+                        statusEl.innerHTML = '<i class="fas fa-wifi"></i> เชื่อมต่อแล้ว (สด)';
+                        statusEl.style.color = '#00f2ff';
+                        statusEl.style.textShadow = '0 0 10px #00f2ff';
+                        if(alertEl) alertEl.style.display = 'none';
+                    }
+
                 }
             } catch(e) { 
-                // Silent fail on connection error
+                // Connection Error
+                console.error('Connection Lost:', e);
+                const statusEl = document.getElementById('miningStatus');
+                const alertEl = document.getElementById('miningConnectionStatus');
+                if(statusEl) {
+                    statusEl.innerHTML = '<i class="fas fa-wifi-slash"></i> ขาดการเชื่อมต่อ';
+                    statusEl.style.color = '#ff7675';
+                    statusEl.style.textShadow = 'none';
+                    if(alertEl) alertEl.style.display = 'block';
+                }
             }
         }
         

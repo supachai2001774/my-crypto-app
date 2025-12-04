@@ -345,6 +345,12 @@
                     <div style="font-size: 2rem; font-weight: bold; margin-top: 5px; color: #f59e0b; text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);" id="dashUsers">0</div>
                     <i class="fas fa-users" style="position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.1; color: #f59e0b;"></i>
                 </div>
+
+                <div class="card" style="border-left: 4px solid #a855f7; margin: 0;">
+                    <div style="font-size: 0.9rem; color: #94a3b8;">สถานะระบบ</div>
+                    <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px; color: #a855f7; text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);" id="dashStatus">Checking...</div>
+                    <i class="fas fa-server" style="position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.1; color: #a855f7;"></i>
+                </div>
             </div>
 
             <div class="card">
@@ -815,7 +821,23 @@
                 document.getElementById('maintSwitch').checked = maint;
                 document.getElementById('maintMsg').value = settings.maintenance_msg || '';
 
-            } catch(err) { console.error('Dashboard Error:', err); }
+                // System Status
+                const statusEl = document.getElementById('dashStatus');
+                if(statusEl) {
+                    statusEl.innerText = 'ONLINE';
+                    statusEl.style.color = '#10b981';
+                    statusEl.style.textShadow = '0 0 10px rgba(16, 185, 129, 0.3)';
+                }
+
+            } catch(err) { 
+                console.error('Dashboard Error:', err);
+                const statusEl = document.getElementById('dashStatus');
+                if(statusEl) {
+                    statusEl.innerText = 'OFFLINE';
+                    statusEl.style.color = '#ef4444';
+                    statusEl.style.textShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+                }
+            }
         }
 
         // Maintenance
