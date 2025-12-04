@@ -449,6 +449,28 @@
         </div>
     </div>
 
+    <div id="referralConfirmModal" class="modal">
+        <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #ff0055; box-shadow: 0 0 30px rgba(255, 0, 85, 0.2); text-align: center; max-width: 350px;">
+            <div style="width: 70px; height: 70px; background: rgba(255, 0, 85, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; border: 1px solid rgba(255, 0, 85, 0.3); box-shadow: 0 0 15px rgba(255, 0, 85, 0.2);">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ff0055;"></i>
+            </div>
+            <h3 style="color: #ff0055; margin: 0 0 10px; font-size: 1.3rem; letter-spacing: 1px;">ไม่พบรหัสแนะนำเพื่อน</h3>
+            <p style="color: #94a3b8; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.6;">
+                รหัสที่คุณระบุไม่ถูกต้อง หรืออาจถูกยกเลิกไปแล้ว<br>
+                <span style="color: #fff; font-weight: bold;">ต้องการสมัครต่อโดยไม่มีผู้แนะนำหรือไม่?</span>
+            </p>
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="cyber-btn" onclick="closeReferralConfirm()" style="flex: 1; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #94a3b8;">
+                    <i class="fas fa-times"></i> ยกเลิก
+                </button>
+                <button class="cyber-btn" onclick="confirmSignupNoRef()" style="flex: 1; background: linear-gradient(45deg, #ff0055, #ff5e00); box-shadow: 0 0 15px rgba(255, 0, 85, 0.4); border: none;">
+                    <i class="fas fa-check"></i> สมัครเลย
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="walletModal" class="modal">
         <div class="modal-content">
             <i class="fas fa-times" style="position: absolute; right: 15px; top: 15px; cursor: pointer;" onclick="document.getElementById('walletModal').style.display='none'"></i>
@@ -1914,6 +1936,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         // --- Auth ---
+        let pendingSignupData = null;
+
         function toSignup() { 
             document.getElementById('loginModal').style.display='none'; 
             document.getElementById('signupModal').style.display='flex'; 
@@ -1938,8 +1962,9 @@ console.log('Live Sync Status:', liveSync.getStatus());
             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
             if(users[u]) return showToast('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว', 'error');
 
+            const userData = { u, p, name, bank, acc };
+
             // --- Referral Logic ---
-            let validReferrerName = null;
             let refId = null;
 
             // 1. Resolve ID
@@ -1954,25 +1979,45 @@ console.log('Live Sync Status:', liveSync.getStatus());
             if(refId) {
                 const foundReferrer = Object.keys(users).find(k => users[k].id == refId);
                 if(foundReferrer) {
-                    validReferrerName = foundReferrer;
+                    completeRegistration(userData, foundReferrer);
                 } else {
                     // Invalid ID
                     if(manualRef && manualRef.trim().length > 0) {
-                        // Confirm with user
-                        if(!confirm("ไม่พบรหัสแนะนำเพื่อนนี้ ต้องการสมัครต่อโดยไม่มีผู้แนะนำหรือไม่?")) {
-                            return; // Cancel registration
-                        }
-                        // Proceed without referrer
+                        // SHOW CUSTOM MODAL
+                        pendingSignupData = userData;
+                        document.getElementById('referralConfirmModal').style.display = 'flex';
+                    } else {
+                        // URL ref invalid -> ignore and register
+                         completeRegistration(userData, null);
                     }
                 }
+            } else {
+                 completeRegistration(userData, null);
             }
+        }
 
-            // 3. Create User
+        function closeReferralConfirm() {
+            document.getElementById('referralConfirmModal').style.display = 'none';
+            pendingSignupData = null;
+        }
+
+        function confirmSignupNoRef() {
+            if(pendingSignupData) {
+                completeRegistration(pendingSignupData, null);
+                closeReferralConfirm();
+            }
+        }
+
+        function completeRegistration(data, referrerName) {
+             const { u, p, name, bank, acc } = data;
+             let users = JSON.parse(localStorage.getItem('mining_users')) || {};
+             
+             // 3. Create User
             users[u] = {
                 pass: p, id: Math.floor(100000+Math.random()*900000),
                 name: name, bank: bank, acc: acc,
                 regDate: new Date().toISOString(), banned: false,
-                referrer: validReferrerName,
+                referrer: referrerName,
                 ip: clientIP,
                 deviceId: getDeviceID()
             };
@@ -1981,8 +2026,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
             let startBalance = 0;
 
             // 4. Process Referrer Data
-            if(validReferrerName) {
-                let refs = JSON.parse(localStorage.getItem(`mining_referrals_${validReferrerName}`)) || [];
+            if(referrerName) {
+                let refs = JSON.parse(localStorage.getItem(`mining_referrals_${referrerName}`)) || [];
                 if(!refs.find(r => r.name === u)) {
                     refs.push({
                         name: u,
@@ -1992,16 +2037,16 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         ip: clientIP,
                         deviceId: getDeviceID()
                     });
-                    localStorage.setItem(`mining_referrals_${validReferrerName}`, JSON.stringify(refs));
+                    localStorage.setItem(`mining_referrals_${referrerName}`, JSON.stringify(refs));
                     
                     // Notify Referrer
-                    let refNotifications = JSON.parse(localStorage.getItem(`notifications_${validReferrerName}`)) || [];
+                    let refNotifications = JSON.parse(localStorage.getItem(`notifications_${referrerName}`)) || [];
                     refNotifications.push({
                         msg: `เพื่อนใหม่! ${u} สมัครผ่านรหัสแนะนำ (รอตรวจสอบ)`,
                         date: new Date().toISOString(),
                         read: false
                     });
-                    localStorage.setItem(`notifications_${validReferrerName}`, JSON.stringify(refNotifications));
+                    localStorage.setItem(`notifications_${referrerName}`, JSON.stringify(refNotifications));
                 }
             }
             localStorage.removeItem('pending_ref');
