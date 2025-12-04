@@ -1,4 +1,4 @@
-    const CACHE_NAME = 'miner-app-v10';
+const CACHE_NAME = 'miner-app-v10';
     const ASSETS = [
       './index.html',
       './admin.html',
@@ -55,4 +55,14 @@
         })
       );
       self.clients.claim();
+    });
+
+    self.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'MAINTENANCE_MODE_CHANGED') {
+            self.clients.matchAll().then(clients => {
+                clients.forEach(client => {
+                    client.postMessage({ type: 'RELOAD_PAGE' });
+                });
+            });
+        }
     });
