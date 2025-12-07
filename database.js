@@ -210,10 +210,20 @@ const db = {
         return true;
     },
     resetSystem: () => {
+        // Preserve critical settings (maintenance, announcement)
+        const currentSettings = readJsonObj(SETTINGS_FILE);
+        const preservedSettings = {
+            maintenance: currentSettings.maintenance,
+            maintenance_msg: currentSettings.maintenance_msg,
+            system_announcement: currentSettings.system_announcement,
+            system_announcement_active: currentSettings.system_announcement_active
+        };
+
         writeJson(USERS_FILE, {});
         writeJson(TRANSACTIONS_FILE, []);
         writeJson(SHOP_FILE, []);
-        writeJson(SETTINGS_FILE, {});
+        writeJson(SETTINGS_FILE, preservedSettings);
+        // Note: Logs are intentionally NOT cleared
         return true;
     },
 
@@ -255,6 +265,10 @@ const db = {
         if(logs.length > 500) logs.shift();
         writeJson(LOGS_FILE, logs);
         return newLog;
+    },
+    clearLogs: () => {
+        writeJson(LOGS_FILE, []);
+        return true;
     }
 };
 

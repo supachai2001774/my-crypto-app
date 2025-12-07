@@ -457,6 +457,16 @@ app.get('/api/admin/logs', (req, res) => {
     res.json(logs);
 });
 
+app.post('/api/admin/logs/clear', (req, res) => {
+    try {
+        db.clearLogs();
+        db.addLog({ type: 'system', action: 'clear_logs', detail: 'Admin cleared system logs' });
+        res.json({ success: true });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Client Logs
 app.post('/api/log', (req, res) => {
     const log = req.body;

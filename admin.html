@@ -768,7 +768,10 @@
             <h2><i class="fas fa-terminal"></i> บันทึกระบบ (System Logs)</h2>
             <div class="card">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <button onclick="renderLogs()" class="btn-sm btn-primary"><i class="fas fa-sync"></i> รีเฟรช</button>
+                    <div>
+                        <button onclick="renderLogs()" class="btn-sm btn-primary"><i class="fas fa-sync"></i> รีเฟรช</button>
+                        <button onclick="clearLogs()" class="btn-sm btn-red"><i class="fas fa-trash"></i> ล้างบันทึก</button>
+                    </div>
                     <div style="color: var(--text-muted); font-size: 0.9rem;">บันทึก 100 รายการล่าสุด</div>
                 </div>
                 <div style="background: #0a0a0a; color: #00ff9d; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; height: 400px; overflow-y: auto; border: 1px solid #333; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);" id="logConsole">
@@ -920,6 +923,18 @@
                 });
             } catch(e) {
                 consoleEl.innerHTML = '<div style="color: red;">> Error fetching logs: ' + e.message + '</div>';
+            }
+        }
+
+        async function clearLogs() {
+            if(confirm('คุณแน่ใจหรือไม่ที่จะล้างบันทึกทั้งหมด?')) {
+                try {
+                    const res = await fetch('/api/admin/logs/clear', { method: 'POST' });
+                    if(res.ok) {
+                        renderLogs();
+                        showToast('ล้างบันทึกเรียบร้อย', 'success');
+                    } else showToast('Error clearing logs', 'error');
+                } catch(e) { showToast('Connection Error', 'error'); }
             }
         }
 
