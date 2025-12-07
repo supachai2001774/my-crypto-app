@@ -42,6 +42,45 @@
         @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
         @keyframes scanline { 0% { top: -10%; } 100% { top: 110%; } }
     </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check maintenance status
+            fetch('/api/maintenance-status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.maintenance) {
+                        // Create and show a maintenance notice
+                        const maintenanceNotice = document.createElement('div');
+                        maintenanceNotice.style.cssText = `
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            background-color: #ffc107;
+                            color: #333;
+                            text-align: center;
+                            padding: 15px;
+                            font-size: 1.2rem;
+                            z-index: 10000;
+                            border-bottom: 2px solid #e0a800;
+                        `;
+                        maintenanceNotice.innerHTML = '<i class="fas fa-tools"></i> <strong>แจ้งเตือน:</strong> ขณะนี้ระบบกำลังอยู่ในช่วงบำรุงรักษา ขออภัยในความไม่สะดวกครับ';
+                        document.body.prepend(maintenanceNotice);
+
+                        // Optional: Disable login/register buttons
+                        const loginButton = document.querySelector('a[href="login.html"]');
+                        if (loginButton) {
+                            loginButton.style.pointerEvents = 'none';
+                            loginButton.style.opacity = '0.6';
+                            loginButton.title = 'ระบบกำลังบำรุงรักษา';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching maintenance status:', error);
+                });
+        });
+    </script>
 </head>
 <body>
 

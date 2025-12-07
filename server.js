@@ -5,7 +5,7 @@ const path = require('path');
 const db = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -16,6 +16,12 @@ app.use(express.static(__dirname)); // Serve frontend files
 // Serve index.html on root
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// API endpoint to check maintenance status
+app.get('/api/maintenance-status', (req, res) => {
+    const settings = db.getSettings();
+    res.json({ maintenance: !!settings.maintenance });
 });
 
 // --- API Endpoints ---
@@ -74,6 +80,15 @@ app.post('/api/register', (req, res) => {
 
 // 3. Login (Basic)
 app.post('/api/login', (req, res) => {
+    const settings = db.getSettings();
+    if (settings.maintenance) {
+        // Allow admin login during maintenance, assuming 'admin' is a specific username
+        const { username } = req.body;
+        if (username !== 'admin') { // You might want a more robust role system
+            return res.status(503).json({ error: 'ระบบกำลังอยู่ในช่วงบำรุงรักษา' });
+        }
+    }
+
     const { username, password } = req.body;
     const user = db.findUserByUsername(username);
 
