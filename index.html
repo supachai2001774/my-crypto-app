@@ -113,13 +113,16 @@
     
     <!-- ✅ เพิ่มปุ่ม Refresh ที่นี่ -->
     <div style="display: flex; gap: 15px; align-items: center;">
+        <div id="netStatus" style="font-size: 1rem; cursor: help;" title="เครือข่ายความเร็วสูง">
+            <i class="fas fa-wifi" style="color: #00ff9d;"></i>
+        </div>
         <div style="font-size: 1rem; cursor: pointer; position: relative;" 
              onclick="manualRefresh()" 
              title="รีเฟรชข้อมูล (Ctrl+R)">
             <i class="fas fa-sync" id="refreshIcon"></i>
             <span id="syncStatus" style="position: absolute; top: -5px; right: -5px; width: 8px; height: 8px; background: #00ff9d; border-radius: 50%; box-shadow: 0 0 5px #00ff9d;"></span>
         </div>
-        <div style="font-size: 1. 2rem;" onclick="logout()">
+        <div style="font-size: 1.2rem;" onclick="logout()">
             <i class="fas fa-sign-out-alt"></i>
         </div>
     </div>
@@ -3677,6 +3680,36 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 }
             }
         });
+
+        // Network Status Monitor
+        function updateNetworkStatus() {
+            const status = document.getElementById('netStatus');
+            if(!status) return;
+            const icon = status.querySelector('i');
+            
+            if(navigator.onLine) {
+                icon.className = 'fas fa-wifi';
+                icon.style.color = '#00ff9d';
+                icon.parentElement.title = "เชื่อมต่อเครือข่ายความเร็วสูง (High Speed Internet)";
+                
+                // Auto reconnect live sync if needed
+                if(typeof liveSync !== 'undefined' && liveSync.status === 'disconnected') {
+                    liveSync.connect();
+                }
+            } else {
+                icon.className = 'fas fa-wifi-slash';
+                icon.style.color = '#ff0055';
+                icon.parentElement.title = "ขาดการเชื่อมต่ออินเทอร์เน็ต (Offline)";
+                showToast('ขาดการเชื่อมต่ออินเทอร์เน็ต', 'error');
+            }
+        }
+        window.addEventListener('online', () => {
+            updateNetworkStatus();
+            showToast('เชื่อมต่ออินเทอร์เน็ตแล้ว', 'success');
+        });
+        window.addEventListener('offline', updateNetworkStatus);
+        // Init check
+        setTimeout(updateNetworkStatus, 1000);
 
         // Manual Refresh
         function manualRefresh() {

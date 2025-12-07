@@ -23,21 +23,35 @@ const CACHE_NAME = 'miner-app-v12';
     });
 
     self.addEventListener('fetch', (e) => {
+      // 1. API Requests: Network Only (Don't cache)
+      if (e.request.url.includes('/api/')) {
+        e.respondWith(
+          fetch(e.request).catch(() => {
+             return new Response(JSON.stringify({ error: 'Network Error' }), { 
+                 headers: { 'Content-Type': 'application/json' }
+             });
+          })
+        );
+        return;
+      }
+
+      // 2. Static Assets: Stale-While-Revalidate (Serve cache, then update)
       e.respondWith(
-        caches.match(e.request). then((response) => {
-          return response || fetch(e.request). then((response) => {
-            if (! response || response.status !== 200 || response.type === 'error') {
-              return response;
+        caches.match(e.request).then((cachedResponse) => {
+          const fetchPromise = fetch(e.request).then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type !== 'error') {
+               const clonedResponse = networkResponse.clone();
+               caches.open(CACHE_NAME).then((cache) => {
+                 cache.put(e.request, clonedResponse);
+               });
             }
-            const clonedResponse = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(e.request, clonedResponse);
-            });
-            return response;
-          }). catch(() => {
-            // Return cached version or offline page
-            return caches.match(e.request).then(r => r || new Response('ออฟไลน์'));
+            return networkResponse;
+          }).catch(() => {
+             // Network failed, nothing to do (we have cache or will fail)
           });
+
+          // Return cached response immediately if available, otherwise wait for network
+          return cachedResponse || fetchPromise;
         })
       );
     });

@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const db = require('./database');
 
@@ -8,6 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 // Middleware
+app.use(compression()); // Compress all routes
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
