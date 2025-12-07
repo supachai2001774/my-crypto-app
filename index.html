@@ -1520,8 +1520,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     const settings = await settingsRes.json();
 
                     const bankName = settings.admin_bank_name || 'promptpay';
-                    const bankNum = settings.admin_bank_number || '0828307850';
-                    const accName = settings.admin_acc_name || 'System Account';
+                    const bankNum = settings.admin_bank_number;
+                    const accName = settings.admin_acc_name;
                     
                     // Check if we are using PromptPay (QR) or Bank Transfer
                     if(bankName === 'promptpay') {
