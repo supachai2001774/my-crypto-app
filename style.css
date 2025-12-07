@@ -14,6 +14,27 @@
     --danger: #ff0055;
 }
 
+/* Light Mode Override */
+[data-theme="light"] {
+    --bg-dark: #f0f2f5;
+    --bg-panel: rgba(255, 255, 255, 0.95);
+    --glass: rgba(0, 0, 0, 0.05);
+    --border: rgba(0, 0, 0, 0.1);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --primary: #2563eb;
+    --primary-dim: rgba(37, 99, 235, 0.1);
+    --secondary: #7c3aed;
+}
+
+[data-theme="light"] body {
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(124, 58, 237, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.05) 0%, transparent 40%),
+        linear-gradient(0deg, rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+}
+
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {

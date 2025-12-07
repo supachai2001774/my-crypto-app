@@ -327,6 +327,18 @@
 
             <div style="margin-top: 20px; margin-bottom: 10px; color: #94a3b8; font-size: 0.8rem; padding-left: 5px;">การตั้งค่าระบบ</div>
 
+            <!-- Theme -->
+            <div class="switch-group">
+                <div>
+                    <div class="switch-label"><i class="fas fa-moon" style="width:20px;"></i> โหมดมืด</div>
+                    <div class="switch-sub">เปิดใช้งานธีมสีเข้ม</div>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="swTheme" onchange="saveSystemSetting('theme_dark', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
             <!-- Sound -->
             <div class="switch-group">
                 <div>
@@ -3310,6 +3322,12 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }, 800);
 
         function loadSystemSettings() {
+            // Theme
+            const swTheme = document.getElementById('swTheme');
+            const isDark = localStorage.getItem('theme_dark') !== 'false'; // Default true
+            if(swTheme) swTheme.checked = isDark;
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
             const swSound = document.getElementById('swSound');
             if(swSound) swSound.checked = soundMgr.enabled;
 
@@ -3373,6 +3391,9 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
         function saveSystemSetting(key, value) {
             localStorage.setItem(key, value);
+            if(key === 'theme_dark') {
+                document.documentElement.setAttribute('data-theme', value ? 'dark' : 'light');
+            }
             if(key === 'sound_enabled') soundMgr.enabled = value;
             if(key === 'sound_type') soundMgr.type = value;
             if(key === 'vib_enabled') vibMgr.enabled = value;
