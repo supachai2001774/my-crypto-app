@@ -8,8 +8,8 @@
   "description": "เริ่มสร้างอาณาจักรการขุดเหรียญคริปโตจำลองของคุณวันนี้! เชื่อมต่อกับเซิร์ฟเวอร์ VPS ความเร็วสูงของเรา",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3067/3067789.png",
-      "sizes": "512x512",
+      "src": "BTC.png",
+      "sizes": "192x192 512x512",
       "type": "image/png"
     }
   ]

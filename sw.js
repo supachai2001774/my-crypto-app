@@ -1,10 +1,11 @@
-const CACHE_NAME = 'miner-app-v10';
+const CACHE_NAME = 'miner-app-v11';
     const ASSETS = [
       './index.html',
       './admin.html',
       './style.css',
       './sync-manager.js',
       './manifest.json',
+      './BTC.png',
       'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
       'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap'
     ];

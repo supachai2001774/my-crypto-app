@@ -87,6 +87,9 @@ class LiveSync {
         
         // Check Maintenance
         this.checkUpdate('mining_maintenance', 'maintenance');
+
+        // Check Maintenance Msg
+        this.checkUpdate('mining_maintenance_msg', 'maintenance_msg');
         
         // Check Announcement
         this.checkUpdate('mining_announcement', 'announcement');
@@ -106,7 +109,7 @@ class LiveSync {
             const current = localStorage.getItem(key);
             const hash = this.hashString(current || '');
             
-            if (! this.lastUpdate[key]) {
+            if (!this.lastUpdate[key]) {
                 this.lastUpdate[key] = hash;
                 return;
             }
@@ -114,11 +117,38 @@ class LiveSync {
             if (this.lastUpdate[key] !== hash) {
                 console.log('📡 Update detected:', key);
                 this.lastUpdate[key] = hash;
-                this.emit(eventName, JSON.parse(current || '{}'));
+                
+                let data;
+                try { 
+                    data = JSON.parse(current || '{}'); 
+                } catch(e) { 
+                    data = current; 
+                }
+                
+                this.emit(eventName, data);
                 this.broadcastUpdate(eventName, current);
+
+                // Extra events for backward compatibility
+                if (eventName === 'announcement') {
+                    if (data && data.msg) {
+                        this.emit('announcement_posted', data);
+                    } else {
+                        this.emit('announcement_cleared', {});
+                    }
+                }
+                else if (eventName === 'maintenance') {
+                    this.emit('maintenance_mode_changed', data);
+                }
+                else if (eventName === 'maintenance_msg') {
+                    this.emit('maintenance_msg_changed', data);
+                }
+                else if (eventName === 'shop') {
+                    this.emit('shop_items_updated', data);
+                    this.emit('shop_updated', data);
+                }
             }
         } catch (e) {
-            console. error('Error checking update:', key, e);
+            console.error('Error checking update:', key, e);
         }
     }
 
@@ -277,6 +307,65 @@ class LiveSync {
             pollInterval: this.pollInterval,
             lastChecked: new Date().toISOString(),
             watchedKeys: Object.keys(this.lastUpdate).length
+        };
+    }
+
+    // --- Helper Methods (Migrated from SyncManager) ---
+
+    isUserBanned(username) {
+        try {
+            const users = JSON.parse(localStorage.getItem('mining_users') || '{}');
+            return users[username] && users[username].banned === true;
+        } catch (err) { return false; }
+    }
+
+    verifyUserData(username) {
+        try {
+            const raw = JSON.parse(localStorage.getItem('mining_users') || '{}');
+            const profile = JSON.parse(localStorage.getItem(`pf_${username}`) || '{}');
+            if (raw[username] && profile.username !== username) {
+                profile.username = username;
+                localStorage.setItem(`pf_${username}`, JSON.stringify(profile));
+            }
+            return { user: raw[username] || {}, profile: profile || {}, isValid: !!raw[username] };
+        } catch (err) { 
+            console.error('Error verifying user data:', err); 
+            return { user: {}, profile: {}, isValid: false }; 
+        }
+    }
+
+    cleanOldData(maxAgeMs = 30 * 24 * 60 * 60 * 1000) {
+        try {
+            const trans = JSON.parse(localStorage.getItem('mining_transactions') || '[]');
+            const now = Date.now();
+            const filtered = trans.filter(t => (now - (t.timestamp || 0)) < maxAgeMs);
+            if (filtered.length < trans.length) {
+                localStorage.setItem('mining_transactions', JSON.stringify(filtered));
+                return trans.length - filtered.length;
+            }
+        } catch (err) { console.error('Error cleaning old data:', err); }
+        return 0;
+    }
+
+    getMaintenanceStatus() {
+        const isMaint = localStorage.getItem('mining_maintenance') === 'true';
+        const msg = localStorage.getItem('mining_maintenance_msg') || '';
+        return { enabled: isMaint, message: msg };
+    }
+
+    getCurrentAnnouncement() {
+        try {
+            const raw = localStorage.getItem('mining_announcement');
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch (err) { return null; }
+    }
+    
+    debugInfo() {
+        return {
+             stats: this.getStatus(),
+             maintenance: this.getMaintenanceStatus(),
+             announcement: this.getCurrentAnnouncement()
         };
     }
 }

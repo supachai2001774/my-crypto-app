@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="shortcut icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" href="BTC.png">
+    <link rel="shortcut icon" type="image/png" href="BTC.png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -347,22 +347,7 @@
         <div class="menu-item" onclick="nav('settings', this)"><i class="fas fa-cogs"></i> ตั้งค่าระบบ</div>
         <div class="menu-item" onclick="nav('updates', this)"><i class="fas fa-history"></i> ประวัติอัปเดต</div>
 
-        <div id="settings" class="section">
-            <h2><i class="fas fa-cogs"></i> ตั้งค่าระบบ</h2>
-            <div class="card">
-                <h3 style="margin-top: 0;">การตั้งค่าทั่วไป</h3>
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--glass); border-radius: 8px;">
-                    <div>
-                        <h4 style="margin: 0; color: var(--warning);"><i class="fas fa-tools"></i> โหมดบำรุงรักษา</h4>
-                        <p style="margin: 5px 0 0; color: var(--text-muted); font-size: 0.9rem;">เมื่อเปิดใช้งาน ผู้ใช้ทั่วไปจะไม่สามารถเข้าสู่ระบบได้</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="maintenanceModeSwitch">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </div>
-        </div>
+
 
         <div style="margin-top: auto; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 10px; border: 1px solid var(--border);">
             <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px;">สถานะเซิร์ฟเวอร์</div>
@@ -457,30 +442,7 @@
         <!-- Monitor (Live Alert System) -->
         <div id="monitor" class="section">
 
-        <!-- Software Updates -->
-        <div id="updates" class="section">
-            <h2><i class="fas fa-history"></i> ประวัติการอัปเดตซอฟต์แวร์</h2>
-            <div class="card">
-                <div class="changelog-timeline">
-                    <!-- Items will be added here -->
-                    <div class="changelog-item">
-                        <div class="changelog-date">December 5, 2025</div>
-                        <h4><span class="changelog-tag tag-feat">ฟีเจอร์</span>เพิ่มประวัติการอัปเดต</h4>
-                        <p>เพิ่มหน้าสำหรับติดตามการเปลี่ยนแปลงและอัปเดตล่าสุดของระบบในหน้าแอดมิน</p>
-                    </div>
-                    <div class="changelog-item">
-                        <div class="changelog-date">December 5, 2025</div>
-                        <h4><span class="changelog-tag tag-fix">แก้ไข</span>ปรับปรุง Title ของหน้าแอดมิน</h4>
-                        <p>ลบช่องว่างที่ไม่จำเป็นออกจาก Title ของหน้า Admin Panel เพื่อความถูกต้อง</p>
-                    </div>
-                    <div class="changelog-item">
-                        <div class="changelog-date">December 5, 2025</div>
-                        <h4><span class="changelog-tag tag-perf">ปรับปรุง</span>เพิ่มขีดจำกัดการอัปโหลดไฟล์</h4>
-                        <p>แก้ไขปัญหาการอัปโหลดสลิป โดยเพิ่มขีดจำกัดขนาดไฟล์ที่รองรับเป็น 50MB</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 20px;">
                 <h2 style="border: none; margin: 0;"><i class="fas fa-satellite-dish"></i> ศูนย์ควบคุมสด (Live Command)</h2>
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -673,14 +635,15 @@
                     <div>
                         <label style="color: var(--text-muted); font-size: 0.9rem;">ธนาคาร</label>
                         <select id="adminBankName" class="cyber-input">
-                            <option value="kbank">กสิกรไทย (KBANK)</option>
-                            <option value="scb">ไทยพาณิชย์ (SCB)</option>
-                            <option value="ktb">กรุงไทย (KTB)</option>
-                            <option value="bbl">กรุงเทพ (BBL)</option>
-                            <option value="gsb">ออมสิน (GSB)</option>
-                            <option value="ttb">ทีทีบี (ttb)</option>
-                            <option value="promptpay">พร้อมเพย์ (PromptPay)</option>
-                        </select>
+                    <option value="kbank">กสิกรไทย (KBANK)</option>
+                    <option value="scb">ไทยพาณิชย์ (SCB)</option>
+                    <option value="ktb">กรุงไทย (KTB)</option>
+                    <option value="bbl">กรุงเทพ (BBL)</option>
+                    <option value="bay">กรุงศรี (Krungsri)</option>
+                    <option value="gsb">ออมสิน (GSB)</option>
+                    <option value="ttb">ทีทีบี (ttb)</option>
+                    <option value="promptpay">พร้อมเพย์ (PromptPay)</option>
+                </select>
                     </div>
                     <div>
                         <label style="color: var(--text-muted); font-size: 0.9rem;">เลขบัญชี / เบอร์โทร</label>
@@ -730,24 +693,41 @@
             </div>
         </div>
 
-        <!-- Announcements -->
-        <div id="announce" class="section">
-            <h2><i class="fas fa-bullhorn"></i> ประกาศ</h2>
+        <!-- System Settings -->
+        <div id="settings" class="section">
+            <h2><i class="fas fa-cogs"></i> ตั้งค่าระบบ</h2>
+
+            <!-- Announcement -->
             <div class="card">
-                <textarea id="announceText" class="search-bar" style="height: 100px;" placeholder="พิมพ์ข้อความประกาศ..."></textarea>
-                <button onclick="postAnnounce()" class="btn-sm btn-primary" style="width: 100%; padding: 12px;">
-                    <i class="fas fa-paper-plane"></i> เผยแพร่ประกาศ
-                </button>
-                
-                <div style="margin-top: 20px;">
-                    <h3 style="color: var(--text-muted); font-size: 1rem;">ประกาศที่ใช้งานอยู่</h3>
-                    <div id="currentAnnounce" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border-left: 3px solid var(--primary); color: white;">
-                        - ไม่มีประกาศที่ใช้งานอยู่ -
-                    </div>
-                    <button onclick="clearAnnounce()" class="btn-sm btn-red" style="margin-top: 10px;">ล้างประกาศ</button>
+                <h3><i class="fas fa-bullhorn"></i> ประกาศจากระบบ (Main Page Alert)</h3>
+                <div style="margin-bottom: 15px;">
+                    <label class="switch">
+                        <input type="checkbox" id="announceSwitch" onchange="saveAnnouncement()">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="margin-left: 10px; color: #ccc;">เปิดใช้งานประกาศ</span>
                 </div>
+                <textarea id="announceMsg" class="cyber-input" rows="4" placeholder="ข้อความประกาศ... (รองรับ HTML)" style="width: 100%; margin-bottom: 10px;"></textarea>
+                <button onclick="saveAnnouncement()" class="btn-sm btn-primary" style="width: 100%;">
+                    <i class="fas fa-save"></i> บันทึกประกาศ
+                </button>
             </div>
             
+            <div class="card">
+                <h3 style="margin-top: 0;">การตั้งค่าทั่วไป</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div>
+                        <h4 style="margin: 0; color: var(--warning);"><i class="fas fa-tools"></i> โหมดบำรุงรักษา</h4>
+                        <p style="margin: 5px 0 0; color: var(--text-muted); font-size: 0.9rem;">เมื่อเปิดใช้งาน ผู้ใช้ทั่วไปจะไม่สามารถเข้าสู่ระบบได้</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="maintSwitch" onchange="toggleMaint()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <input type="text" id="maintMsg" class="cyber-input" placeholder="ข้อความแจ้งเตือน (Optional)" style="margin-top: 10px;" onchange="saveMaintMsg()">
+            </div>
+
             <div class="card" style="margin-top: 20px;">
                 <h3 style="color: var(--danger);"><i class="fas fa-trash-alt"></i> รีเซ็ตระบบ</h3>
                 <p style="color: var(--text-muted);">ล้างข้อมูลผู้ใช้ ธุรกรรม และการขุดทั้งหมด</p>
@@ -757,7 +737,30 @@
             </div>
         </div>
 
-    </div>
+        <!-- Software Updates -->
+        <div id="updates" class="section">
+            <h2><i class="fas fa-history"></i> ประวัติการอัปเดตซอฟต์แวร์</h2>
+            <div class="card">
+                <div class="changelog-timeline">
+                    <!-- Items will be added here -->
+                    <div class="changelog-item">
+                        <div class="changelog-date">December 5, 2025</div>
+                        <h4><span class="changelog-tag tag-feat">ฟีเจอร์</span>เพิ่มประวัติการอัปเดต</h4>
+                        <p>เพิ่มหน้าสำหรับติดตามการเปลี่ยนแปลงและอัปเดตล่าสุดของระบบในหน้าแอดมิน</p>
+                    </div>
+                    <div class="changelog-item">
+                        <div class="changelog-date">December 5, 2025</div>
+                        <h4><span class="changelog-tag tag-fix">แก้ไข</span>ปรับปรุง Title ของหน้าแอดมิน</h4>
+                        <p>ลบช่องว่างที่ไม่จำเป็นออกจาก Title ของหน้า Admin Panel เพื่อความถูกต้อง</p>
+                    </div>
+                    <div class="changelog-item">
+                        <div class="changelog-date">December 5, 2025</div>
+                        <h4><span class="changelog-tag tag-perf">ปรับปรุง</span>เพิ่มขีดจำกัดการอัปโหลดไฟล์</h4>
+                        <p>แก้ไขปัญหาการอัปโหลดสลิป โดยเพิ่มขีดจำกัดขนาดไฟล์ที่รองรับเป็น 50MB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     <!-- Image Modal -->
     <div id="imgModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; flex-direction: column;">
@@ -948,6 +951,45 @@
             }
         }
 
+        // Settings
+        async function loadSystemSettings() {
+            try {
+                const res = await fetch('/api/admin/settings');
+                const settings = await res.json();
+                
+                // Announcement
+                document.getElementById('announceSwitch').checked = settings.system_announcement_active === 'true';
+                document.getElementById('announceMsg').value = settings.system_announcement || '';
+                
+                // Maintenance
+                document.getElementById('maintSwitch').checked = settings.maintenance === true || settings.maintenance === 'true';
+                document.getElementById('maintMsg').value = settings.maintenance_msg || '';
+
+            } catch(err) {
+                console.error('Load Settings Error:', err);
+                showToast('ไม่สามารถโหลดการตั้งค่าได้', 'error');
+            }
+        }
+
+        async function saveAnnouncement() {
+            const isActive = document.getElementById('announceSwitch').checked;
+            const msg = document.getElementById('announceMsg').value;
+            
+            try {
+                await fetch('/api/admin/settings', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({ 
+                         system_announcement: msg,
+                         system_announcement_active: isActive ? 'true' : 'false'
+                     })
+                });
+                showToast('บันทึกประกาศเรียบร้อยแล้ว', 'success');
+            } catch(e) { 
+                showToast('เกิดข้อผิดพลาดในการบันทึก', 'error'); 
+            }
+        }
+
         // Maintenance
         async function toggleMaint() {
             const status = document.getElementById('maintSwitch').checked;
@@ -1122,7 +1164,8 @@
         async function renderShop() {
             try {
                 const res = await fetch('/api/shop/items');
-                const items = await res.json();
+                const data = await res.json();
+                const items = data.items || [];
                 
                 const tb = document.querySelector('#shopTable tbody');
                 tb.innerHTML = '';
@@ -1588,35 +1631,6 @@
         }
 
         // Announcements & System
-        async function postAnnounce() {
-            const txt = document.getElementById('announceText').value;
-            if(txt) {
-                const annObj = { msg: txt, date: new Date().toISOString() };
-                try {
-                    await fetch('/api/admin/settings', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ mining_announcement: annObj })
-                    });
-                    document.getElementById('currentAnnounce').innerText = txt;
-                    document.getElementById('announceText').value = '';
-                    showToast('อัปเดตประกาศแล้ว', 'success');
-                } catch(e) { showToast('Connection Error', 'error'); }
-            }
-        }
-        
-        async function clearAnnounce() {
-            try {
-                await fetch('/api/admin/settings', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ mining_announcement: null })
-                });
-                document.getElementById('currentAnnounce').innerText = '- ไม่มีประกาศที่ใช้งานอยู่ -';
-                showToast('ล้างประกาศแล้ว', 'success');
-            } catch(e) { showToast('Connection Error', 'error'); }
-        }
-
         async function resetSystem() {
             if(confirm('⚠️ อันตราย! คุณแน่ใจหรือไม่ที่จะล้างข้อมูลทั้งหมด? การกระทำนี้ไม่สามารถกู้คืนได้!')) {
                 try {
@@ -1659,7 +1673,11 @@
                 const res = await fetch('/api/admin/settings');
                 const settings = await res.json();
                 
-                const bank = settings.admin_bank_name || 'promptpay';
+                // Use stored settings or default to user preferred default if not set
+                // Note: The user requested "004-717-6082" and "Suphachai Ruedet" as default earlier
+                // but those were applied to index.html default fallback.
+                // Here we just load what's in the DB.
+                const bank = settings.admin_bank_name || 'kbank';
                 const number = settings.admin_bank_number || '';
                 const name = settings.admin_acc_name || '';
                 
@@ -1893,42 +1911,6 @@
             overlay.classList.toggle('show');
         }
 
-
-        async function loadSystemSettings() {
-            try {
-                const response = await fetch('/api/admin/settings');
-                const settings = await response.json();
-                document.getElementById('maintenanceModeSwitch').checked = settings.maintenance;
-            } catch (error) {
-                console.error('Error loading system settings:', error);
-                showToast('เกิดข้อผิดพลาดในการโหลดการตั้งค่า', 'error');
-            }
-        }
-
-        async function saveSystemSettings() {
-            const maintenanceMode = document.getElementById('maintenanceModeSwitch').checked;
-            try {
-                const response = await fetch('/api/admin/settings', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ maintenance: maintenanceMode }),
-                });
-                if (response.ok) {
-                    showToast('บันทึกการตั้งค่าแล้ว', 'success');
-                } else {
-                    throw new Error('Failed to save settings');
-                }
-            } catch (error) {
-                console.error('Error saving system settings:', error);
-                showToast('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า', 'error');
-                // Revert the switch state on error
-                document.getElementById('maintenanceModeSwitch').checked = !maintenanceMode;
-            }
-        }
-
-        document.getElementById('maintenanceModeSwitch').addEventListener('change', saveSystemSettings);
 
     </script>
 </body>

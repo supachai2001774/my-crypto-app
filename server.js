@@ -5,7 +5,7 @@ const path = require('path');
 const db = require('./database');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors());
@@ -18,10 +18,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// API endpoint to check maintenance status
+// API endpoint to check maintenance status and announcement
 app.get('/api/maintenance-status', (req, res) => {
     const settings = db.getSettings();
-    res.json({ maintenance: !!settings.maintenance });
+    res.json({ 
+        maintenance: !!settings.maintenance,
+        announcement: settings.system_announcement || '',
+        announcement_active: settings.system_announcement_active === 'true'
+    });
 });
 
 // --- API Endpoints ---

@@ -9,12 +9,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Crypto Miner Tycoon</title>
-    <script src="sync-manager.js"></script>
+     <link rel="icon" href="BTC.png" sizes="32x32" />
     <script src="live-sync.js"></script>
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="shortcut icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="icon" href="BTC.png" sizes="32x32" />
+    <link rel="shortcut icon" type="image/png" href="BTC.png">
+    <link rel="apple-touch-icon" href="BTC.png">
     <meta name="theme-color" content="#4e54c8">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -660,15 +660,15 @@
     `;
     document.head.appendChild(style);
         function checkUserBanStatus() {
-    if(! currentUser) return;
-    
-    const isBanned = syncManager.isUserBanned(currentUser.username);
-    if(isBanned) {
-        showToast('❌ บัญชีถูกระงับชั่วคราว', 'error');
-        alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน'); 
-        logout();
-    }
-}
+            if(!currentUser) return;
+            
+            const isBanned = liveSync.isUserBanned(currentUser.username);
+            if(isBanned) {
+                showToast('❌ บัญชีถูกระงับชั่วคราว', 'error');
+                alert('ขออภัย บัญชีถูกระงับชั่วคราว หากต้องการเปิดใช้บริการ กรุณาติดต่อแอดมิน'); 
+                logout();
+            }
+        }
         // --- PWA Logic ---
         let deferredPrompt;
 
@@ -1024,7 +1024,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             // ============ 🔴 SYNC LISTENERS ============
             
             // เมื่อ Admin ลบผู้ใช้
-            syncManager.on('user_deleted', (data) => {
+            liveSync.on('user_deleted', (data) => {
                 if(currentUser && currentUser.username === data.username) {
                     showToast('❌ บัญชีของคุณถูกลบโดยแอดมิน', 'error');
                     setTimeout(() => {
@@ -1034,7 +1034,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
 
             // เมื่อ Admin อนุมัติธุรกรรม
-            syncManager.on('transaction_approved', (data) => {
+            liveSync.on('transaction_approved', (data) => {
                 if(currentUser && currentUser.username === data.user) {
                     console.log('Transaction approved:', data);
                     
@@ -1062,23 +1062,23 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
 
             // เมื่อเปิด/ปิดโหมดบำรุงรักษา
-            syncManager.on('maintenance_mode_changed', (data) => {
+            liveSync.on('maintenance_mode_changed', (data) => {
                 const overlay = document.getElementById('maintenanceOverlay');
                 const msg = data.enabled 
-                    ? 'ระบบกำลังปิดปรับปรุงชั่วคราว.. .'
+                    ? 'ระบบกำลังปิดปรับปรุงชั่วคราว...'
                     : 'ระบบพร้อมใช้งานแล้ว';
                 
                 showToast(msg, data.enabled ? 'warning' : 'success');
                 
                 if(data.enabled) {
-                    overlay. style.display = 'flex';
+                    overlay.style.display = 'flex';
                 } else {
                     overlay.style.display = 'none';
                 }
             });
 
             // เมื่อ Admin เปลี่ยนข้อความบำรุงรักษา
-            syncManager.on('maintenance_msg_changed', (msg) => {
+            liveSync.on('maintenance_msg_changed', (msg) => {
                 const msgEl = document.getElementById('maintMessage');
                 if(msgEl) {
                     msgEl.innerText = msg;
@@ -1086,7 +1086,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
 
             // เมื่อ Admin โพสต์ประกาศ
-            syncManager.on('announcement_posted', (data) => {
+            liveSync.on('announcement_posted', (data) => {
                 if(data && data.msg) {
                     showToast('📢 มีประกาศใหม่จากระบบ', 'info');
                     checkAnnounce();
@@ -1098,7 +1098,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
 
             // เมื่อ Admin ล้างประกาศ
-            syncManager.on('announcement_cleared', () => {
+            liveSync.on('announcement_cleared', () => {
                 const annEl = document.getElementById('dashboardAnnounce');
                 if(annEl) {
                     annEl.innerText = 'ไม่มีประกาศในขณะนี้';
@@ -1106,20 +1106,20 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
 
             // เมื่อ Admin อัพเดตร้านค้า
-            syncManager. on('shop_updated', () => {
+            liveSync.on('shop_updated', () => {
                 console.log('Shop updated from admin');
                 loadShop();
                 checkShopUpdate();
             });
 
             // เมื่อ Admin ลบสินค้า/เพิ่มสินค้า
-            syncManager.on('shop_items_updated', (items) => {
+            liveSync.on('shop_items_updated', (items) => {
                 console.log('Shop items updated:', items);
                 loadShop();
             });
 
             // เมื่อ Admin รีเซ็ตรหัสผ่าน
-            syncManager.on('password_reset', (data) => {
+            liveSync.on('password_reset', (data) => {
                 if(currentUser && currentUser.username === data.username) {
                     showToast('⚠️ แอดมินรีเซ็ตรหัสผ่านของคุณแล้ว กรุณาเข้าสู่ระบบใหม่', 'warning');
                     setTimeout(() => {
@@ -1129,10 +1129,10 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
 
             // ล้างข้อมูลเก่า
-            syncManager.cleanOldData();
+            liveSync.cleanOldData();
 
             console.log('✅ App Sync Listeners Registered');
-            console.log('Sync Manager Debug:', syncManager.debugInfo());
+            console.log('Sync Manager Debug:', liveSync.debugInfo());
         }
 
         async function syncAdmin() {
@@ -1150,11 +1150,13 @@ console.log('Live Sync Status:', liveSync.getStatus());
     // 4.  Check Shop Update
     checkShopUpdate();
 
-    // 5. Check Maintenance (Updated to use backend API)
+    // 5. Check Maintenance & Announcement (Updated to use backend API)
     try {
         const res = await fetch('/api/admin/settings');
         if (res.ok) {
             const settings = await res.json();
+            
+            // Maintenance
             const maint = settings.maintenance === true;
             const maintMsg = settings.maintenance_msg || 'กำลังอัปเกรดเซิร์ฟเวอร์... ';
             const overlay = document.getElementById('maintenanceOverlay');
@@ -1166,9 +1168,34 @@ console.log('Live Sync Status:', liveSync.getStatus());
             } else {
                 overlay.style.display = 'none';
             }
+
+            // Announcement
+            if(settings.system_announcement && settings.system_announcement_active === 'true') {
+                const annObj = { msg: settings.system_announcement, date: new Date().toISOString() };
+                // Only update if changed (simple check) to avoid loop, or just set it
+                // Actually checkAnnounce reads it.
+                // We should store it in a way checkAnnounce understands.
+                // checkAnnounce expects { msg: ..., date: ... } in 'mining_announcement'
+                
+                // Check if current differs
+                const current = localStorage.getItem('mining_announcement');
+                let currentObj = null;
+                try { currentObj = JSON.parse(current); } catch(e){}
+                
+                if(!currentObj || currentObj.msg !== settings.system_announcement) {
+                     localStorage.setItem('mining_announcement', JSON.stringify(annObj));
+                     checkAnnounce(); // Re-check immediately
+                }
+            } else {
+                // If inactive or null, clear it
+                if(localStorage.getItem('mining_announcement')) {
+                    localStorage.removeItem('mining_announcement');
+                    checkAnnounce();
+                }
+            }
         }
     } catch (e) {
-        console.error('Maintenance check failed', e);
+        console.error('Settings check failed', e);
     }
 
     // 6.  Sync Transactions (ตรวจสอบการเปลี่ยนแปลง)
@@ -1207,8 +1234,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
     checkWalletBadges();
 
     // 7. Verify Data Integrity
-    const verification = syncManager.verifyUserData(currentUser.username);
-    if(! verification.isValid) {
+    const verification = liveSync.verifyUserData(currentUser.username);
+    if(!verification.isValid) {
         console.warn('User data invalid, logging out');
         logout();
     }
@@ -1355,11 +1382,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                                         <!-- Populated by JS -->
                                     </div>
 
-                                    <!-- To Admin -->
-                                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: left; margin-bottom: 5px; padding-left: 5px;">ไปยังบัญชีธนาคาร</div>
-                                    <div id="adminBankInfoDisplay" style="background: rgba(46, 204, 113, 0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--success); text-align: left;">
-                                        <!-- Populated by JS -->
-                                    </div>
+
                                 </div>
                             </div>
 
@@ -1519,20 +1542,96 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     const settingsRes = await fetch('/api/admin/settings');
                     const settings = await settingsRes.json();
 
-                    const bankName = settings.admin_bank_name || 'promptpay';
-                    const bankNum = settings.admin_bank_number;
-                    const accName = settings.admin_acc_name;
+                    const bankName = settings.admin_bank_name || 'Krungsri Bank';
+                    const bankNum = settings.admin_bank_number || '004-717-6082';
+                    const accName = settings.admin_acc_name || 'Suphachai Ruedet';
                     
-                    // Check if we are using PromptPay (QR) or Bank Transfer
-                    if(bankName === 'promptpay') {
+                    const cleanNum = bankNum.replace(/[^0-9]/g, '');
+                    
+                    // Validate PromptPay ID (Mobile: 10 digits starting with 06,08,09 OR ID Card: 13 digits)
+                    const isMobile = /^0[689]\d{8}$/.test(cleanNum);
+                    const isIDCard = /^\d{13}$/.test(cleanNum);
+                    const isPromptPay = isMobile || isIDCard;
+
+                    if(bankNum && isPromptPay) {
                         if(qrContainer) qrContainer.style.display = 'inline-block';
                         if(qrImg) {
                             qrImg.style.display = 'block';
-                            qrImg.src = `https://promptpay.io/${bankNum}/${val}`;
+                            qrImg.src = `https://promptpay.io/${cleanNum}/${val}`;
                         }
                     } else {
-                        // Bank Transfer Mode - Hide QR, show bank info prominently
+                        // Fallback for Bank Account (Manual Transfer)
                         if(qrContainer) qrContainer.style.display = 'none';
+                        if(qrImg) qrImg.style.display = 'none';
+                    }
+
+                    // Always Show Admin Bank Info (Destination) for Manual Check
+                    // Use existing container or inject new one if missing
+                    let destContainer = document.getElementById('manualTransferInfo');
+                    if(!destContainer) {
+                         destContainer = document.createElement('div');
+                         destContainer.id = 'manualTransferInfo';
+                         destContainer.style.marginTop = '15px';
+                         if(qrSec) qrSec.querySelector('.modal-body') ? qrSec.querySelector('.modal-body').appendChild(destContainer) : qrSec.appendChild(destContainer);
+                    }
+                    
+                    // We need to find where to put this info. Ideally replacing the hidden QR or below it.
+                    // Let's look for 'qrSection' structure in previous reads.
+                    // The qrSection contains qrContainer.
+                    
+                    if(!isPromptPay && bankNum) {
+                        // Determine Bank Color & Icon
+                        let bankColor = 'var(--primary)';
+                        let bankIcon = 'fa-university';
+                        const bName = bankName.toLowerCase();
+                        
+                        if(bName.includes('krungsri') || bName.includes('bay')) { bankColor = '#fec43b'; } // Yellow
+                        else if(bName.includes('kbank') || bName.includes('kasikorn')) { bankColor = '#138f2d'; } // Green
+                        else if(bName.includes('scb')) { bankColor = '#4e2e7f'; } // Purple
+                        else if(bName.includes('ktb') || bName.includes('krungthai')) { bankColor = '#1ba5e1'; } // Light Blue
+                        else if(bName.includes('bbl') || bName.includes('bangkok')) { bankColor = '#1e4598'; } // Dark Blue
+                        else if(bName.includes('gsb')) { bankColor = '#eb198d'; } // Pink
+                        else if(bName.includes('ttb')) { bankColor = '#0056b8'; } // Blue
+
+                        // Show Big Manual Transfer Box
+                        if(qrContainer) {
+                            qrContainer.style.display = 'block'; // Use container for text
+                            qrContainer.innerHTML = `
+                                <div style="padding: 25px 20px; background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.2) 100%); border-radius: 16px; border: 1px solid ${bankColor}; box-shadow: 0 0 20px ${bankColor}40; position: relative; overflow: hidden;">
+                                    <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: ${bankColor}; opacity: 0.1; border-radius: 50%; filter: blur(20px);"></div>
+                                    
+                                    <div style="color: var(--warning); font-size: 0.85rem; margin-bottom: 15px; background: rgba(255, 193, 7, 0.1); padding: 8px; border-radius: 8px; display: inline-block;">
+                                        <i class="fas fa-info-circle"></i> ไม่สามารถสร้าง QR Code ได้ (ไม่ใช่เบอร์พร้อมเพย์)
+                                    </div>
+                                    
+                                    <div style="font-size: 0.9rem; color: #ccc; margin-bottom: 5px;">กรุณาโอนเงินมาที่บัญชี</div>
+                                    
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                                        <i class="fas ${bankIcon}" style="font-size: 1.5rem; color: ${bankColor};"></i>
+                                        <div style="font-size: 1.4rem; font-weight: bold; color: ${bankColor}; text-shadow: 0 0 10px ${bankColor}60;">${bankName}</div>
+                                    </div>
+                                    
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 12px; margin: 15px 0; border: 1px dashed ${bankColor}60;">
+                                        <div style="font-size: 1.6rem; font-weight: bold; color: white; letter-spacing: 2px; user-select: all; font-family: monospace;" id="manualBankNum">${bankNum}</div>
+                                        <button class="cyber-btn" id="btnCopyBank" style="padding: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: ${bankColor}20; border: 1px solid ${bankColor}; color: ${bankColor};" 
+                                            onclick="copyBankNum(this, '${bankNum}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+
+                                    <div style="font-size: 1.1rem; color: white; font-weight: 500;">${accName}</div>
+                                    <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">ชื่อบัญชี</div>
+                                </div>
+                            `;
+                        }
+                    } else if (qrContainer) {
+                        // Reset if it was changed
+                        if(!qrContainer.querySelector('img')) {
+                             qrContainer.innerHTML = `<img id="qrImage" src="" style="width: 100%; height: auto; border-radius: 8px; display: block;">`;
+                             // Re-get img ref
+                             const newImg = document.getElementById('qrImage');
+                             if(newImg) newImg.src = `https://promptpay.io/${cleanNum}/${val}`;
+                        }
                     }
 
                     // Show User Bank Info (Source)
@@ -1636,6 +1735,25 @@ console.log('Live Sync Status:', liveSync.getStatus());
             if(depositTimerInterval) clearInterval(depositTimerInterval);
             const timerEl = document.getElementById('qrTimer');
             if(timerEl) timerEl.innerText = "กรุณาชำระภายใน 01:00:00";
+        }
+
+        function copyBankNum(btn, num) {
+            navigator.clipboard.writeText(num).then(() => {
+                showToast('คัดลอกเลขบัญชีแล้ว', 'success');
+                
+                // Visual Feedback
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                btn.classList.add('btn-success-anim'); // Optional class if needed
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('btn-success-anim');
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed', err);
+                showToast('ไม่สามารถคัดลอกได้', 'error');
+            });
         }
 
         function handleSlipSelect(input) {
@@ -1837,23 +1955,28 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 let raw = localStorage.getItem('mining_announcement');
                 let ann = null;
                 try { ann = raw ? JSON.parse(raw) : null; } catch (_) { ann = raw ? { msg: raw, date: new Date().toISOString() } : null; }
+                
+                const db = document.getElementById('dashboardAnnounce');
+                const badge = document.getElementById('annBadge');
+                const label = document.getElementById('annLabel');
+
                 if(ann && ann.msg) {
                     // Update Dashboard Board
-                    const db = document.getElementById('dashboardAnnounce');
                     if(db) db.innerText = ann.msg;
 
                     const lastAnn = localStorage.getItem('last_ann_seen');
                     if(lastAnn !== ann.date) {
-                        const b = document.getElementById('annBadge');
-                        if(b) b.style.display = 'block';
-                        const l = document.getElementById('annLabel');
-                        if(l) { l.innerText = 'มีประกาศใหม่'; l.style.color = '#ef4444'; }
+                        if(badge) badge.style.display = 'block';
+                        if(label) { label.innerText = 'มีประกาศใหม่'; label.style.color = '#ef4444'; }
                     } else {
-                        const b = document.getElementById('annBadge');
-                        if(b) b.style.display = 'none';
-                        const l = document.getElementById('annLabel');
-                        if(l) { l.innerText = 'ตรวจสอบ'; l.style.color = '#aaa'; }
+                        if(badge) badge.style.display = 'none';
+                        if(label) { label.innerText = 'ตรวจสอบ'; label.style.color = '#aaa'; }
                     }
+                } else {
+                    // No announcement
+                    if(db) db.innerText = 'ไม่มีประกาศในขณะนี้';
+                    if(badge) badge.style.display = 'none';
+                    if(label) { label.innerText = 'ว่าง'; label.style.color = '#aaa'; }
                 }
                 
                 // Check for Referrer Notifications
@@ -2763,7 +2886,12 @@ console.log('Live Sync Status:', liveSync.getStatus());
         let lastKnownShopUpdate = localStorage.getItem('shop_last_update');
         
         function checkShopUpdate() {
-             // Keep legacy or refactor later
+             const lastUpdate = localStorage.getItem('mining_shop_items_update');
+             if(lastUpdate && lastUpdate !== lastKnownShopUpdate) {
+                 lastKnownShopUpdate = lastUpdate;
+                 console.log('🔄 Shop updated, reloading...');
+                 loadShop();
+             }
         }
         
         async function buyItem(p, s, id) {
@@ -3150,27 +3278,28 @@ console.log('Live Sync Status:', liveSync.getStatus());
             if(!mon) return;
             
             const cmds = [
-                "Mining block #" + Math.floor(Math.random()*999999),
-                "Verifying hash...",
-                "Share accepted (" + (Math.random()*50+10).toFixed(2) + "ms)",
-                "Syncing with VPS...",
-                "Temperature: " + (Math.random()*10+60).toFixed(1) + "C",
-                "Fan Speed: " + Math.floor(Math.random()*20+80) + "%",
-                "Calculating nonce...",
-                "Peer connected: 192.168.X.X",
-                "Network difficulty: " + (Math.random()*100).toFixed(2) + "T"
+                { text: "Mining block #" + Math.floor(Math.random()*999999), color: "#00cec9" },
+                { text: "Verifying hash... [OK]", color: "#00ff00" },
+                { text: "Share accepted (" + (Math.random()*50+10).toFixed(2) + "ms)", color: "#00ff00" },
+                { text: "Syncing with VPS node...", color: "#74b9ff" },
+                { text: "GPU Temperature: " + (Math.random()*10+60).toFixed(1) + "C", color: "#ff7675" },
+                { text: "Fan Speed: " + Math.floor(Math.random()*20+80) + "%", color: "#dfe6e9" },
+                { text: "Calculating nonce solution...", color: "#a29bfe" },
+                { text: "New Peer connected: 192.168." + Math.floor(Math.random()*255) + "." + Math.floor(Math.random()*255), color: "#fab1a0" },
+                { text: "Network difficulty: " + (Math.random()*100).toFixed(2) + " TH/s", color: "#fdcb6e" },
+                { text: "Allocating DAG buffer...", color: "#636e72" },
+                { text: "Receiving new job...", color: "#0984e3" }
             ];
             const cmd = cmds[Math.floor(Math.random()*cmds.length)];
             
-            // Only add random log if not paused or just randomly
-            // We reuse addLiveLog for consistency
             const div = document.createElement('div');
-            div.innerText = "> " + cmd;
-            div.style.color = "#00cec9";
+            div.innerText = "> " + cmd.text;
+            div.style.color = cmd.color;
             div.style.fontFamily = "monospace";
-            div.style.fontSize = "0.6rem";
+            div.style.fontSize = "0.7rem"; // Slightly larger for readability
+            div.style.marginBottom = "2px";
             mon.appendChild(div);
-            if(mon.children.length > 6) mon.removeChild(mon.children[0]);
+            if(mon.children.length > 8) mon.removeChild(mon.children[0]); // Show more lines
         }
 
         setInterval(() => {
@@ -3455,6 +3584,31 @@ console.log('Live Sync Status:', liveSync.getStatus());
                             lastShopUpdate = settings.last_shop_update;
                             loadShop();
                             showToast('ร้านค้ามีการอัปเดตสินค้าใหม่', 'info');
+                        }
+                    }
+
+                    // 2.5 Announcement Sync
+                    if (settings.system_announcement_active === 'true' && settings.system_announcement) {
+                        const currentAnnRaw = localStorage.getItem('mining_announcement');
+                        let currentAnn = null;
+                        try { currentAnn = currentAnnRaw ? JSON.parse(currentAnnRaw) : null; } catch(e) {}
+                        
+                        // If content changed or no current announcement
+                        if (!currentAnn || currentAnn.msg !== settings.system_announcement) {
+                            const newAnn = {
+                                msg: settings.system_announcement,
+                                date: new Date().toISOString()
+                            };
+                            localStorage.setItem('mining_announcement', JSON.stringify(newAnn));
+                            checkAnnounce(); // Update UI
+                            console.log('📢 Announcement synced from server');
+                        }
+                    } else {
+                        // If disabled on server, remove local
+                        if(localStorage.getItem('mining_announcement')) {
+                            localStorage.removeItem('mining_announcement');
+                            checkAnnounce(); // Update UI (clears it)
+                            console.log('📢 Announcement cleared by server');
                         }
                     }
 
