@@ -1,14 +1,15 @@
 :root {
     --primary: #00f2ff;
-    --primary-dim: rgba(0, 242, 255, 0.1);
+    --primary-dim: rgba(0, 242, 255, 0.15);
     --secondary: #7000ff;
     --accent: #ff0055;
-    --bg-dark: #050510;
-    --bg-panel: rgba(20, 25, 40, 0.7);
-    --glass: rgba(255, 255, 255, 0.05);
-    --border: rgba(0, 242, 255, 0.3);
+    --bg-dark: #02040a;
+    --bg-panel: rgba(22, 27, 45, 0.9);
+    --glass: rgba(255, 255, 255, 0.08);
+    --border: rgba(0, 242, 255, 0.4);
+    --border-subtle: rgba(255, 255, 255, 0.15);
     --text-main: #ffffff;
-    --text-muted: #94a3b8;
+    --text-muted: #cbd5e1;
     --success: #00ff9d;
     --warning: #ffb800;
     --danger: #ff0055;
@@ -20,6 +21,7 @@
     --bg-panel: rgba(255, 255, 255, 0.95);
     --glass: rgba(0, 0, 0, 0.05);
     --border: rgba(0, 0, 0, 0.1);
+    --border-subtle: rgba(0, 0, 0, 0.1);
     --text-main: #1e293b;
     --text-muted: #64748b;
     --primary: #2563eb;
@@ -42,10 +44,10 @@ body {
     font-family: 'Kanit', sans-serif;
     background-color: var(--bg-dark);
     background-image: 
-        radial-gradient(circle at 10% 20%, rgba(112, 0, 255, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(0, 242, 255, 0.1) 0%, transparent 40%),
-        linear-gradient(0deg, rgba(0,0,0,0.2) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,0,0,0.2) 1px, transparent 1px);
+        radial-gradient(circle at 15% 25%, rgba(112, 0, 255, 0.2) 0%, transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(0, 242, 255, 0.15) 0%, transparent 45%),
+        linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
     background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
     background-attachment: fixed;
     color: var(--text-main);
@@ -126,8 +128,8 @@ body {
     gap: 12px;
     padding: 10px 12px;
     border-radius: 16px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border-subtle);
 }
 
 .avatar-small {
@@ -238,7 +240,7 @@ body {
 }
 .menu-item {
     background: var(--bg-panel);
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid var(--border-subtle);
     border-radius: 16px;
     padding: 15px 10px;
     display: flex;
@@ -394,7 +396,7 @@ body {
     padding: 12px 16px;
     margin-bottom: 12px;
     background: var(--bg-panel);
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid var(--border-subtle);
     border-radius: 14px;
 }
 .switch-label { font-weight: 600; }
@@ -402,9 +404,9 @@ body {
 
 .toggle-switch { position: relative; width: 46px; height: 26px; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
-.slider {
+.toggle-switch .slider {
     position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.1); border: 1px solid var(--border-subtle);
     transition: .3s; border-radius: 26px;
 }
 .slider:before {
@@ -417,8 +419,8 @@ body {
 /* Shop Cards Enhanced */
 .shop-grid-new { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding-bottom: 100px; }
 .shop-card-cyber {
-    background: rgba(20, 30, 50, 0.6);
-    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
     border-radius: 16px;
     padding: 15px;
     position: relative;
@@ -514,7 +516,7 @@ body {
     width: 100%;
     padding: 12px;
     background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--border-subtle);
     border-radius: 8px;
     color: white;
     margin: 10px 0;
@@ -545,7 +547,7 @@ body {
 .glass-panel {
     background: var(--bg-panel);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid var(--border-subtle);
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -557,7 +559,7 @@ body {
     align-items: center;
     padding: 15px;
     background: var(--bg-panel);
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid var(--border-subtle);
     border-radius: 16px;
     margin-bottom: 10px;
     cursor: pointer;
