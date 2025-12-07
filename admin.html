@@ -346,6 +346,7 @@
         </div>
         <div class="menu-item" onclick="nav('settings', this)"><i class="fas fa-cogs"></i> ตั้งค่าระบบ</div>
         <div class="menu-item" onclick="nav('updates', this)"><i class="fas fa-history"></i> ประวัติอัปเดต</div>
+        <div class="menu-item" onclick="nav('logs', this)"><i class="fas fa-terminal"></i> บันทึกระบบ</div>
 
 
 
@@ -762,6 +763,20 @@
             </div>
         </div>
 
+        <!-- System Logs -->
+        <div id="logs" class="section">
+            <h2><i class="fas fa-terminal"></i> บันทึกระบบ (System Logs)</h2>
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <button onclick="renderLogs()" class="btn-sm btn-primary"><i class="fas fa-sync"></i> รีเฟรช</button>
+                    <div style="color: var(--text-muted); font-size: 0.9rem;">บันทึก 100 รายการล่าสุด</div>
+                </div>
+                <div style="background: #0a0a0a; color: #00ff9d; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; height: 400px; overflow-y: auto; border: 1px solid #333; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);" id="logConsole">
+                    <div style="color: #666;">> System initialized...</div>
+                </div>
+            </div>
+        </div>
+
     <!-- Image Modal -->
     <div id="imgModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; flex-direction: column;">
         <img id="modalImg" src="" style="max-width: 90%; max-height: 60vh; border: 2px solid var(--primary); box-shadow: 0 0 30px var(--primary); border-radius: 8px;">
@@ -868,6 +883,44 @@
             if(id === 'trans') renderTrans();
             if(id === 'referrals') renderReferrals();
             if(id === 'monitor') updateMonitor();
+            if(id === 'logs') renderLogs();
+        }
+
+        async function renderLogs() {
+            const consoleEl = document.getElementById('logConsole');
+            consoleEl.innerHTML = '<div style="color: #666;">> Fetching logs...</div>';
+            
+            try {
+                const res = await fetch('/api/admin/logs');
+                const logs = await res.json();
+                
+                if(logs.length === 0) {
+                    consoleEl.innerHTML = '<div style="color: #666;">> No logs found.</div>';
+                    return;
+                }
+                
+                consoleEl.innerHTML = '';
+                logs.forEach(log => {
+                    const date = new Date(log.timestamp).toLocaleString();
+                    const color = log.type === 'error' ? '#ff5555' : 
+                                  log.type === 'system' ? '#bd93f9' : 
+                                  log.type === 'client' ? '#f1fa8c' : '#8be9fd';
+                    
+                    const div = document.createElement('div');
+                    div.style.borderBottom = '1px solid #222';
+                    div.style.padding = '4px 0';
+                    div.style.fontFamily = "'Courier New', monospace";
+                    div.innerHTML = `
+                        <span style="color: #666;">[${date}]</span> 
+                        <span style="color: ${color}; font-weight: bold;">[${log.type.toUpperCase()}]</span> 
+                        <span style="color: #ddd;">${log.action || ''}</span> 
+                        <span style="color: #aaa;">${log.detail || JSON.stringify(log)}</span>
+                    `;
+                    consoleEl.appendChild(div);
+                });
+            } catch(e) {
+                consoleEl.innerHTML = '<div style="color: red;">> Error fetching logs: ' + e.message + '</div>';
+            }
         }
 
         // Toast

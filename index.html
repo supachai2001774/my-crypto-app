@@ -90,7 +90,7 @@
         <div class="maint-content">
             <i class="fas fa-microchip maint-icon" onclick="emergencyExit()"></i>
             <div class="maint-title">ระบบออฟไลน์</div>
-            <div style="color: #00f2ff; font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;">ปิดปรับปรุงระบบชั่วคราว</div>
+            <div style="color: #00f2ff; font-size: 1.2rem; margin-bottom: 10px; font-weight: bold;">เครื่องขุดรายวันและต่อเดือน</div>
             <p id="maintMessage" class="maint-desc">กำลังอัปเกรดระบบเพื่อประสิทธิภาพที่ดียิ่งขึ้น<br>กรุณารอสักครู่..</p>
             <div style="margin-top: 20px; font-size: 0.8rem; color: rgba(0, 242, 255, 0.5);">ระบบความปลอดภัย AI: ทำงาน</div>
         </div>
@@ -3677,6 +3677,42 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 }
             }
         });
+
+        // Manual Refresh
+        function manualRefresh() {
+            const icon = document.getElementById('refreshIcon');
+            if(icon) icon.classList.add('fa-spin');
+            
+            // 1. Sync Data
+            if(currentUser) {
+                loadUserData().then(() => {
+                    // 2. Refresh UI
+                    updateUI();
+                    renderActiveContracts();
+                    
+                    // 3. Force Live Sync Check
+                    if(typeof liveSync !== 'undefined') {
+                        liveSync.forceCheck();
+                    }
+                    
+                    // 4. Play Sound
+                    if(typeof soundMgr !== 'undefined') {
+                        soundMgr.play('click');
+                    }
+                    
+                    showToast('รีเฟรชข้อมูลล่าสุดแล้ว', 'success');
+                    
+                    setTimeout(() => {
+                        if(icon) icon.classList.remove('fa-spin');
+                    }, 1000);
+                }).catch(() => {
+                    showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+                    if(icon) icon.classList.remove('fa-spin');
+                });
+            } else {
+                 location.reload();
+            }
+        }
 
         function showSystemWarningModal(title, msg) {
             // Store for recall

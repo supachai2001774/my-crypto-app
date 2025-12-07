@@ -7,6 +7,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const SHOP_FILE = path.join(DATA_DIR, 'shop.json');
+const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -240,6 +241,20 @@ const db = {
             }
         }
         return false;
+    },
+
+    // --- LOGS ---
+    getLogs: () => {
+        return readJson(LOGS_FILE).sort((a, b) => b.timestamp - a.timestamp).slice(0, 100);
+    },
+    addLog: (logData) => {
+        const logs = readJson(LOGS_FILE);
+        const newLog = { ...logData, id: Date.now(), timestamp: Date.now() };
+        logs.push(newLog);
+        // Limit to 500 logs
+        if(logs.length > 500) logs.shift();
+        writeJson(LOGS_FILE, logs);
+        return newLog;
     }
 };
 

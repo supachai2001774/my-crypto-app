@@ -439,7 +439,10 @@ app.post('/api/admin/delete-rig', (req, res) => {
     const { username, rigName } = req.body;
     try {
         const success = db.deleteUserRig(username, rigName);
-        if(success) res.json({ success: true });
+        if(success) {
+            db.addLog({ type: 'system', action: 'delete_rig', detail: `Admin deleted rig ${rigName} from ${username}` });
+            res.json({ success: true });
+        }
         else res.status(404).json({ error: 'Rig or User not found' });
     } catch(err) {
         res.status(500).json({ error: err.message });
@@ -447,14 +450,20 @@ app.post('/api/admin/delete-rig', (req, res) => {
 });
 
 // --- System Logs ---
+app.get('/api/admin/logs', (req, res) => {
+    const logs = db.getLogs();
+    res.json(logs);
+});
+
+// Client Logs
 app.post('/api/log', (req, res) => {
     const log = req.body;
-    // Optional: Store logs in a file or DB
-    // console.log('Client Log:', log);
+    db.addLog({ type: 'client', ...log });
     res.json({ success: true });
 });
 
 // Start Server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
+    db.addLog({ type: 'system', action: 'startup', detail: `Server started on port ${PORT}` });
 });
