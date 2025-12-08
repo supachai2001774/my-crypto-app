@@ -81,6 +81,24 @@
                 });
         });
     </script>
+<style>
+        /* Custom Styles for Announcement Card */
+        @keyframes borderFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        .ai-announce-card:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 5px 30px rgba(0, 242, 255, 0.2) !important;
+        }
+        .modal-content {
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
 </head>
 <body>
 
@@ -167,6 +185,7 @@
                         <div class="value" id="incomeDisplay">+฿0.00</div>
                         <div style="font-size: 0.7rem; color: var(--text-muted);">/วินาที</div>
                         <div style="font-size: 0.65rem; color: var(--success); margin-top: 2px; white-space: nowrap;" id="estDailyDisplay">วันละ ฿0.00</div>
+                        <div style="font-size: 0.65rem; color: #00f2ff; margin-top: 2px; white-space: nowrap;" id="monthlyTotalDisplay">เดือนละ ฿0.00</div>
                     </div>
                 </div>
             </div>
@@ -187,26 +206,30 @@
                 </div>
             </div>
 
-            <!-- AI Announcement Board -->
-            <div class="ai-announce-card" onclick="openAnnounceModal()" style="cursor: pointer; margin: 20px 0; position: relative; overflow: hidden; border-radius: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 255, 0.2); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);">
+            // AI Announcement Board
+            <div class="ai-announce-card" onclick="openAnnounceModal()" style="cursor: pointer; margin: 20px 0; position: relative; overflow: hidden; border-radius: 16px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(0, 242, 255, 0.2); box-shadow: 0 0 20px rgba(0, 242, 255, 0.1); transition: 0.3s; transform-style: preserve-3d;">
                 <!-- Scanline effect -->
                 <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(transparent 50%, rgba(0, 242, 255, 0.02) 50%); background-size: 100% 4px; pointer-events: none;"></div>
+                <!-- Glowing Border Animation -->
+                <div style="position: absolute; inset: 0; border-radius: 16px; padding: 1px; background: linear-gradient(90deg, transparent, #00f2ff, transparent); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: borderFlow 2s linear infinite;"></div>
                 
-                <div style="padding: 15px; display: flex; gap: 15px; align-items: center; position: relative; z-index: 2;">
+                <div style="padding: 20px; display: flex; gap: 20px; align-items: center; position: relative; z-index: 2;">
                     <!-- Animated Icon -->
-                    <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(0, 242, 255, 0.1); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0, 242, 255, 0.3); position: relative;">
-                        <i class="fas fa-rss" style="color: #00f2ff; font-size: 1.5rem; animation: pulse 2s infinite;"></i>
-                        <div style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 10px #00f2ff; animation: blink 1s infinite;"></div>
+                    <div style="width: 60px; height: 60px; border-radius: 15px; background: rgba(0, 242, 255, 0.08); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0, 242, 255, 0.3); position: relative; box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);">
+                        <i class="fas fa-bullhorn" style="color: #00f2ff; font-size: 1.8rem; animation: pulse 2s infinite;"></i>
+                        <div style="position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444; animation: blink 1s infinite; display: none;" id="annDot"></div>
                     </div>
                     
                     <!-- Content -->
                     <div style="flex: 1; overflow: hidden;">
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                            <span style="color: #00f2ff; font-size: 0.7rem; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 5px rgba(0, 242, 255, 0.5);">ประกาศระบบ</span>
-                        <span id="annBadge" style="display:none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #f59e0b; padding: 1px 5px; border-radius: 4px; font-size: 0.6rem;">ใหม่</span>
-                            <span id="annLabel" style="font-size: 0.7rem; color: #aaa; margin-left: auto;">ตรวจสอบ</span>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <span style="color: #00f2ff; font-size: 0.75rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 8px rgba(0, 242, 255, 0.6);">ประกาศจากระบบ</span>
+                            <span id="annBadge" style="display:none; background: linear-gradient(45deg, #ef4444, #f87171); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: bold; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.4); animation: bounce 1s infinite;">ใหม่</span>
+                            <span id="annLabel" style="font-size: 0.7rem; color: #94a3b8; margin-left: auto; display: flex; align-items: center; gap: 5px;">
+                                ตรวจสอบ <i class="fas fa-chevron-right" style="font-size: 0.6rem;"></i>
+                            </span>
                         </div>
-                        <div id="dashboardAnnounce" style="color: #fff; font-family: 'Courier New', monospace; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);">
+                        <div id="dashboardAnnounce" style="color: #e2e8f0; font-family: 'Kanit', sans-serif; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 2px rgba(0,0,0,0.5); font-weight: 300;">
                             รอโหลดข้อมูล...
                         </div>
                     </div>
@@ -308,6 +331,12 @@
             <div class="menu-list-item" onclick="showRemoteGuide()">
                 <i class="fas fa-mobile-alt" style="font-size: 1.2rem;"></i>
                 <div style="flex: 1;">การเข้าถึงระยะไกล</div>
+                <i class="fas fa-chevron-right" style="font-size: 1rem; color: var(--text-muted);"></i>
+            </div>
+
+            <div class="menu-list-item" onclick="showUpdateHistoryModal()">
+                <i class="fas fa-history" style="font-size: 1.2rem;"></i>
+                <div style="flex: 1;">ประวัติการอัปเดตซอฟต์แวร์</div>
                 <i class="fas fa-chevron-right" style="font-size: 1rem; color: var(--text-muted);"></i>
             </div>
 
@@ -455,6 +484,11 @@
                 <input type="password" id="loginPass" class="cyber-input" placeholder="กรอกรหัสผ่าน">
             </div>
             
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                <input type="checkbox" id="rememberMe" style="width: 16px; height: 16px; accent-color: #00f2ff; margin-right: 8px; cursor: pointer;">
+                <label for="rememberMe" style="color: #94a3b8; font-size: 0.85rem; cursor: pointer; user-select: none;">จดจำรหัสผ่าน</label>
+            </div>
+
             <button class="cyber-btn" onclick="login()" style="width: 100%; margin-bottom: 15px;">
                 <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
             </button>
@@ -602,24 +636,26 @@
     </div>
 
     <div id="announceModal" class="modal">
-        <div class="modal-content" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #00f2ff; box-shadow: 0 0 30px rgba(0, 242, 255, 0.2); max-width: 400px; width: 90%; position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #00f2ff; box-shadow: 0 0 10px #00f2ff;"></div>
-            <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(transparent 90%, rgba(0, 242, 255, 0.05) 100%); pointer-events: none;"></div>
+        <div class="modal-content" style="background: rgba(10, 15, 30, 0.98); border: 1px solid #00f2ff; box-shadow: 0 0 50px rgba(0, 242, 255, 0.3); max-width: 450px; width: 95%; position: relative; overflow: hidden; border-radius: 16px;">
+            <!-- Decorative Elements -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #00f2ff, transparent); animation: scan 2s linear infinite;"></div>
+            <div style="position: absolute; top: -50px; right: -50px; width: 100px; height: 100px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; filter: blur(40px);"></div>
+            <div style="position: absolute; bottom: -50px; left: -50px; width: 100px; height: 100px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; filter: blur(40px);"></div>
             
-            <div style="text-align: center; margin-bottom: 20px; position: relative; z-index: 2;">
-                <div style="width: 70px; height: 70px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid rgba(0, 242, 255, 0.3);">
-                    <i class="fas fa-bullhorn" style="font-size: 2.5rem; color: #00f2ff; animation: swing 3s infinite ease-in-out;"></i>
+            <div style="text-align: center; margin-bottom: 25px; position: relative; z-index: 2; padding-top: 10px;">
+                <div style="width: 80px; height: 80px; background: rgba(0, 242, 255, 0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid rgba(0, 242, 255, 0.3); box-shadow: 0 0 20px rgba(0, 242, 255, 0.2);">
+                    <i class="fas fa-bullhorn" style="font-size: 2.8rem; color: #00f2ff; animation: pulse 2s infinite;"></i>
                 </div>
-                <h2 style="color: white; margin: 0; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);">System Broadcast</h2>
-                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 5px;">ประกาศจากระบบ</div>
+                <h2 style="color: white; margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: 2px; text-shadow: 0 0 15px rgba(0, 242, 255, 0.6); font-family: 'Kanit', sans-serif;">ประกาศจากระบบ</h2>
+                <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 5px; text-transform: uppercase; letter-spacing: 3px;">SYSTEM ANNOUNCEMENT</div>
             </div>
             
-            <div class="glass-panel" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
-                <div id="announceBody" style="color: #e2e8f0; font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;"></div>
+            <div class="glass-panel" style="max-height: 60vh; overflow-y: auto; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); padding: 20px; border-radius: 12px;">
+                <div id="announceBody" style="color: #e2e8f0; font-size: 1.1rem; line-height: 1.8; white-space: pre-wrap; font-weight: 300;"></div>
             </div>
             
-            <button class="cyber-btn" style="width: 100%;" onclick="closeAnnounce()">
-                <i class="fas fa-check"></i> รับทราบ
+            <button class="cyber-btn" style="width: 100%; height: 50px; font-size: 1.1rem; letter-spacing: 1px; background: linear-gradient(90deg, #00f2ff, #00c3ff); color: #000; font-weight: bold; border: none; box-shadow: 0 0 20px rgba(0, 242, 255, 0.4);" onclick="closeAnnounce()">
+                <i class="fas fa-check-circle"></i> รับทราบ
             </button>
         </div>
     </div>
@@ -722,6 +758,7 @@
         let hashrate = 0.00;
         let dailyProfit = 0.00;
         let lastProfitDate = new Date().toDateString();
+        let lastMiningTime = Date.now(); // Track for delta time calculation
         let currentAction = '';
         let isMining = true;
         let clientIP = 'Unknown';
@@ -979,19 +1016,30 @@ console.log('Live Sync Status:', liveSync.getStatus());
             // 2. Sync Active Items from Rigs (Source of Truth)
             // This fixes the issue where paid items weren't added to active_items
             if(rigs.length > 0) {
+                // Clean Rigs (Remove 0 speed items)
+                const cleanRigs = rigs.filter(r => r.speed > 0);
+                if(cleanRigs.length !== rigs.length) {
+                    console.log('♻️ Removing 0 speed items from rigs');
+                    rigs = cleanRigs;
+                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
+                    changed = true;
+                }
+
                 const now = Date.now();
+                // Law Enforced: No Expiration
+                // Also remove 0 speed items
                 const calculatedActive = rigs
-                    .filter(r => !r.expiresAt || r.expiresAt > now)
+                    .filter(r => r.speed > 0)
                     .map(r => ({
                         id: r.id,
                         name: r.name,
                         speed: r.speed,
-                        expiresAt: r.expiresAt
+                        expiresAt: null // r.expiresAt
                     }));
                 
                 // Compare arrays (simple stringify check)
                 if(JSON.stringify(calculatedActive) !== JSON.stringify(active)) {
-                    console.log('♻️ Syncing active_items from mining_rigs');
+                    console.log('♻️ Syncing active_items from mining_rigs (Permanent Mode)');
                     localStorage.setItem(`active_items_${currentUser.username}`, JSON.stringify(calculatedActive));
                     active = calculatedActive;
                     changed = true;
@@ -1000,7 +1048,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
 
             // 3. Verify Hashrate
             const realHashrate = active.reduce((sum, item) => sum + (item.speed || 0), 0);
-            if(Math.abs(hashrate - realHashrate) > 0.1) {
+            if(Math.abs(hashrate - realHashrate) > 0.0000001) {
                 console.log(`♻️ Correcting hashrate: ${hashrate} -> ${realHashrate}`);
                 hashrate = realHashrate;
                 saveData();
@@ -1032,7 +1080,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
             loadShop();
             
             setInterval(miningLoop, 1000);
-            setInterval(syncAdmin, 2000);
+            setInterval(syncAdmin, 1000); // Speed up sync
             renderProfile();
             checkAnnounce();
 
@@ -1150,8 +1198,50 @@ console.log('Live Sync Status:', liveSync.getStatus());
             console.log('Sync Manager Debug:', liveSync.debugInfo());
         }
 
+        async function checkServerNotifications() {
+            if(!currentUser) return;
+            try {
+                const res = await fetch(`/api/user/${currentUser.username}/notifications?unread=true`);
+                if(res.ok) {
+                    const data = await res.json();
+                    if(data.success && data.notifications && data.notifications.length > 0) {
+                        for(const n of data.notifications) {
+                            // Show Toast
+                            showToast(n.message, n.type);
+                            
+                            // Add to local history
+                            addNotification(n.message, n.type);
+                            
+                            // Special handling for Deposit/Withdraw (Banner)
+                            if(n.message.includes('ฝากเงิน') || n.message.includes('ถอนเงิน')) {
+                                lastWarningData = { 
+                                    title: n.type === 'success' ? 'ทำรายการสำเร็จ' : 'รายการถูกปฏิเสธ', 
+                                    msg: n.message 
+                                };
+                                const badge = document.getElementById('warningFloatBadge');
+                                if(badge) {
+                                    badge.style.display = 'block';
+                                    if(typeof soundMgr !== 'undefined') soundMgr.play(n.type === 'success' ? 'success' : 'alert');
+                                }
+                            }
+
+                            // Mark as read on server
+                            await fetch(`/api/user/notifications/read`, { 
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ id: n.id })
+                            });
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('Error checking notifications:', e);
+            }
+        }
+
         async function syncAdmin() {
-    if(!currentUser) return;
+            checkServerNotifications();
+            if(!currentUser) return;
     
     // 1. Check Ban Status
     checkUserBanStatus();
@@ -1909,8 +1999,25 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     
                     // Fee detail text
                     let feeDetail = '';
-                    if(t.type === 'withdraw' && t.fee) {
-                        feeDetail = `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">ค่าธรรมเนียม: ${t.fee.toLocaleString()}</div>`;
+                    let displayAmount = parseFloat(t.amount);
+                    let displayLabel = `฿${displayAmount.toLocaleString()}`;
+                    
+                    if(t.net_amount && t.net_amount !== t.amount) {
+                         const net = parseFloat(t.net_amount);
+                         const fee = parseFloat(t.fee || 0);
+                         
+                         if(t.type === 'deposit') {
+                             feeDetail = `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">ค่าธรรมเนียม: -฿${fee.toLocaleString()} (เข้าบัญชี: ฿${net.toLocaleString()})</div>`;
+                             // Show NET amount for deposit success
+                             if(t.status === 'approved') {
+                                 displayLabel = `฿${net.toLocaleString()}`;
+                             }
+                         } else if (t.type === 'withdraw') {
+                             feeDetail = `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">ค่าธรรมเนียม: -฿${fee.toLocaleString()} (รับจริง: ฿${net.toLocaleString()})</div>`;
+                         }
+                    } else if(t.type === 'withdraw' && t.fee) {
+                         // Fallback for old data
+                        feeDetail = `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">ค่าธรรมเนียม: ${parseFloat(t.fee).toLocaleString()}</div>`;
                     }
 
                     list.innerHTML += `
@@ -1925,7 +2032,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                                 </div>
                             </div>
                             <div style="text-align: right;">
-                                <div style="font-weight: bold; color: ${amountColor}; font-size:1.1rem; text-shadow: 0 0 10px ${amountColor}40;">${sign}${parseFloat(t.amount).toLocaleString()}</div>
+                                <div style="font-weight: bold; color: ${amountColor}; font-size:1.1rem; text-shadow: 0 0 10px ${amountColor}40;">${sign}${displayLabel}</div>
                                 ${feeDetail}
                                 <div style="margin-top: 6px;">${statusBadge}</div>
                             </div>
@@ -1939,7 +2046,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         function miningLoop() {
-            checkExpiration();
+            // checkExpiration(); // Disabled: No expiration (Law Enforced)
             autoMiningController();
             
             // Check for new day reset
@@ -1947,12 +2054,31 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 dailyProfit = 0;
                 lastProfitDate = new Date().toDateString();
                 saveData();
+                showToast('🌤️ เช้าวันใหม่! รีเซ็ตยอดรายวันแล้ว', 'info');
             }
             
             if(isMining && hashrate > 0) {
-                // เพิ่มรายได้ = hashrate ต่อวินาที
-                balance += hashrate;
-                dailyProfit += hashrate;
+                // Real-Time Idle: Calculate based on time delta (Profit Per Second)
+                const now = Date.now();
+                // If lastMiningTime is too old (e.g. > 5s) or future, reset it to avoid huge jumps/negative
+                // But we handle offline profit separately on load.
+                // During runtime, if tab sleeps, this handles catch-up naturally.
+                // However, to prevent double counting with offline profit on load, we rely on loadUserData setting initial state.
+                // But here we need to ensure lastMiningTime is tracked.
+                
+                if(!lastMiningTime) lastMiningTime = now;
+                
+                const deltaSeconds = (now - lastMiningTime) / 1000;
+                
+                // Only process if delta is reasonable (e.g. > 0.01s)
+                if(deltaSeconds > 0) {
+                     const profit = hashrate * deltaSeconds;
+                     balance += profit;
+                     dailyProfit += profit;
+                     
+                     // Update last time
+                     lastMiningTime = now;
+                }
                 
                 // บันทึกทุก 10 วินาที
                 if(Math.floor(Date.now() / 10000) % 1 === 0) {
@@ -1961,8 +2087,50 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 
                 updateUI();
                 
-                console.log(`⛏️ Mining: +${hashrate.toFixed(2)} ฿ | Balance: ${balance.toFixed(2)} ฿`);
+                // console.log(`⛏️ Mining: +${hashrate.toFixed(2)} ฿/s | Balance: ${balance.toFixed(2)} ฿`);
+            } else {
+                // Keep time updated even if not mining, to avoid jump when starting
+                lastMiningTime = Date.now();
             }
+        }
+
+        function showOfflineProfitModal(profit, seconds) {
+            const modalId = 'offlineProfitModal';
+            if(document.getElementById(modalId)) document.getElementById(modalId).remove();
+            
+            // Format duration
+            let duration = '';
+            if(seconds < 60) duration = `${Math.floor(seconds)} วินาที`;
+            else if(seconds < 3600) duration = `${Math.floor(seconds/60)} นาที`;
+            else duration = `${(seconds/3600).toFixed(1)} ชั่วโมง`;
+            
+            const div = document.createElement('div');
+            div.id = modalId;
+            div.className = 'modal';
+            div.style.display = 'flex';
+            div.style.zIndex = '10002';
+            div.innerHTML = `
+                <div class="modal-content ai-card-border" style="background: rgba(10, 15, 30, 0.98); border: 1px solid var(--success); text-align:center; border-radius: 16px; width: 85%; max-width: 350px; box-shadow: 0 0 30px rgba(0, 255, 157, 0.2); animation: slideUp 0.3s ease-out;">
+                    <div style="width: 80px; height: 80px; background: rgba(0, 255, 157, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 1px solid var(--success); box-shadow: 0 0 15px rgba(0, 255, 157, 0.3);">
+                        <i class="fas fa-moon" style="font-size: 3rem; color: var(--success); animation: pulse 2s infinite;"></i>
+                    </div>
+                    <h2 style="color: var(--success); margin:0 0 5px; text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);">ยินดีต้อนรับกลับ!</h2>
+                    <p style="color: #94a3b8; margin-bottom: 20px;">ระบบขุดทำงานต่อเนื่องเป็นเวลา ${duration}</p>
+                    
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="font-size: 0.8rem; color: #aaa;">รายได้ที่ได้รับ (Log-in Bonus)</div>
+                        <div style="font-size: 2rem; font-weight: bold; color: var(--success); text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);">
+                            +฿${profit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </div>
+                    </div>
+                    
+                    <button class="cyber-btn" style="width: 100%; --btn-bg: var(--success);" onclick="document.getElementById('${modalId}').remove()">
+                        รับทราบ
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(div);
+            if(typeof soundMgr !== 'undefined') soundMgr.play('success');
         }
 
         function checkAnnounce() {
@@ -1980,9 +2148,20 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     if(db) db.innerText = ann.msg;
 
                     const lastAnn = localStorage.getItem('last_ann_seen');
+                    
+                    // Auto-show logic: If new announcement (different date/id)
                     if(lastAnn !== ann.date) {
                         if(badge) badge.style.display = 'block';
                         if(label) { label.innerText = 'มีประกาศใหม่'; label.style.color = '#ef4444'; }
+                        
+                        // Auto open modal with a slight delay for better UX
+                        // Check if modal is not already open
+                        const modal = document.getElementById('announceModal');
+                        if(modal && modal.style.display !== 'flex') {
+                            setTimeout(() => {
+                                openAnnounceModal();
+                            }, 500); 
+                        }
                     } else {
                         if(badge) badge.style.display = 'none';
                         if(label) { label.innerText = 'ตรวจสอบ'; label.style.color = '#aaa'; }
@@ -2042,8 +2221,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
             let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser.username}`)) || [];
             
             // Filter active rigs
-            const now = Date.now();
-            const activeRigs = rigs.filter(r => !r.expiresAt || r.expiresAt > now);
+            // Law Enforced: All rigs are permanent, ignore expiresAt
+            const activeRigs = rigs; // .filter(r => !r.expiresAt || r.expiresAt > now);
             
             if(countEl) countEl.innerText = `${activeRigs.length} รายการ`;
 
@@ -2061,22 +2240,19 @@ console.log('Live Sync Status:', liveSync.getStatus());
             });
 
             activeRigs.forEach(r => {
-                let timeLeft = 'ถาวร';
+                let timeLeft = 'ถาวร (ถูกกฎหมาย)';
                 let statusColor = 'var(--success)';
                 
-                if(r.paused) {
+                if(r.status === 'paused') {
                     timeLeft = '⛔ พักการขุด';
                     statusColor = '#fbbf24'; // Warning yellow
-                } else if(r.expiresAt) {
+                } 
+                /* Expiration Disabled
+                else if(r.expiresAt) {
                     const diff = r.expiresAt - now;
-                    const h = Math.floor(diff / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((diff % (1000 * 60)) / 1000);
-                    timeLeft = `${h}ชม. ${m}น. ${s}วิ.`;
-                    
-                    if(diff < 60000) statusColor = 'var(--danger)'; // Last minute
-                    else if(diff < 3600000) statusColor = 'var(--warning)'; // Last hour
+                    // ... logic removed ...
                 }
+                */
 
                 const daily = r.speed * 86400;
                 const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('th-TH') : '';
@@ -2089,14 +2265,13 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     <div style="flex: 1;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div style="font-weight: bold; font-size: 0.9rem; color: #fff;">${r.name}</div>
-                            <div style="font-size: 0.75rem; color: ${statusColor}; font-weight: bold;">${timeLeft}</div>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 0.75rem; color: var(--text-muted);">
                             <div>Speed: <span style="color: #fff;">${r.speed} MH/s</span></div>
                             <div>${dateStr}</div>
                         </div>
                         <div style="font-size: 0.7rem; color: var(--success); margin-top: 2px;">
-                            ≈ ฿${daily.toLocaleString()}/วัน
+                            ≈ ฿${daily.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}/วัน
                         </div>
                     </div>
                 </div>
@@ -2115,21 +2290,45 @@ console.log('Live Sync Status:', liveSync.getStatus());
             
             document.getElementById('balanceDisplay').innerText = 
                 `฿${parseFloat(balance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            // Dynamic precision for income display
+            let incomePrecision = 3;
+            if(incomePerSec > 0 && incomePerSec < 0.001) incomePrecision = 6;
+
             document.getElementById('incomeDisplay').innerText = 
-                `+฿${incomePerSec.toFixed(3)}`;
+                `+฿${incomePerSec.toFixed(incomePrecision)}`;
             
             // Update Estimated Daily Profit
             const dailyEst = incomePerSec * 86400;
             const estEl = document.getElementById('estDailyDisplay');
-            if(estEl) estEl.innerText = `วันละ ฿${dailyEst.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+            if(estEl) {
+                const opts = dailyEst < 100 
+                    ? {minimumFractionDigits: 2, maximumFractionDigits: 4}
+                    : {maximumFractionDigits: 0};
+                estEl.innerText = `วันละ ฿${dailyEst.toLocaleString('en-US', opts)}`;
+            }
+
+            // Update Monthly Profit (Including Today)
+            const monthlyTotal = (incomePerSec * 2592000) + dailyProfit;
+            const monthlyEl = document.getElementById('monthlyTotalDisplay');
+            if(monthlyEl) {
+                const opts = monthlyTotal < 100 
+                    ? {minimumFractionDigits: 2, maximumFractionDigits: 4}
+                    : {maximumFractionDigits: 0};
+                monthlyEl.innerText = `เดือนละ ฿${monthlyTotal.toLocaleString('en-US', opts)}`;
+            }
+
+            // Dynamic precision for hashrate
+            let hashratePrecision = 1;
+            if(hashrate > 0 && hashrate < 0.1) hashratePrecision = 6;
 
             document.getElementById('hashrateDisplay').innerText = 
-                hashrate.toFixed(1);
+                hashrate.toFixed(hashratePrecision);
             
             // Update Daily Profit Display
             const dailyEl = document.getElementById('dailyProfitDisplay');
             if(dailyEl) {
-                dailyEl.innerText = `฿${dailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                dailyEl.innerText = `฿${dailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 4})}`;
             }
             
             autoMiningController();
@@ -2282,9 +2481,20 @@ console.log('Live Sync Status:', liveSync.getStatus());
              }
         }
 
+        function checkRememberedUser() {
+            const remUser = localStorage.getItem('remember_user');
+            const remPass = localStorage.getItem('remember_pass');
+            if(remUser && remPass) {
+                document.getElementById('loginUser').value = remUser;
+                document.getElementById('loginPass').value = remPass;
+                document.getElementById('rememberMe').checked = true;
+            }
+        }
+
         async function login() {
             const u = document.getElementById('loginUser').value;
             const p = document.getElementById('loginPass').value;
+            const remember = document.getElementById('rememberMe').checked;
             
             try {
                 const res = await fetch('/api/login', {
@@ -2305,6 +2515,15 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         referrer_id: user.referrer_id
                     };
                     localStorage.setItem('current_user', JSON.stringify(currentUser));
+                    
+                    // Remember Me Logic
+                    if(remember) {
+                        localStorage.setItem('remember_user', u);
+                        localStorage.setItem('remember_pass', p);
+                    } else {
+                        localStorage.removeItem('remember_user');
+                        localStorage.removeItem('remember_pass');
+                    }
                     
                     // Cache initial profile data
                     let pf = JSON.parse(localStorage.getItem(`pf_${user.username}`)) || {};
@@ -2334,6 +2553,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 pf.hashrate = hashrate; 
                 pf.dailyProfit = dailyProfit;
                 pf.lastProfitDate = lastProfitDate;
+                pf.lastMiningTime = Date.now(); // Save timestamp
                 localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf)); 
                 
                 // Sync to Backend
@@ -2351,39 +2571,81 @@ console.log('Live Sync Status:', liveSync.getStatus());
             } 
         }
         async function loadUserData() {
-            // Try fetch from backend first
+            // 1. Load LocalStorage Data FIRST (Primary Source for Hot Data)
+            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`));
+            if(pf) {
+                balance = parseFloat(pf.balance || 0);
+                hashrate = parseFloat(pf.hashrate || 0);
+                dailyProfit = parseFloat(pf.dailyProfit || 0);
+                lastProfitDate = pf.lastProfitDate || new Date().toDateString();
+            }
+
+            // 2. Try fetch from backend (Secondary / Backup)
             try {
                 const res = await fetch(`/api/user/${currentUser.username}`);
                 if(res.ok) {
                     const data = await res.json();
                     if(data.user) {
                         const u = data.user;
-                        // Update local balance/hashrate if backend has it (e.g. admin changed it)
-                        // Note: client logic usually rules for mining, but admin override is priority.
-                        // For now, let's assume backend is source of truth on load.
-                        balance = parseFloat(u.balance || 0);
-                        hashrate = parseFloat(u.hashrate || 0);
                         
-                        // Update LocalStorage
-                        let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`)) || {};
-                        pf.balance = balance;
-                        pf.hashrate = hashrate;
-                        localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+                        // If local data is missing, use backend
+                        if(!pf) {
+                            balance = parseFloat(u.balance || 0);
+                            hashrate = parseFloat(u.hashrate || 0);
+                            // Initialize local
+                            pf = {
+                                balance: balance,
+                                hashrate: hashrate,
+                                dailyProfit: 0,
+                                lastProfitDate: new Date().toDateString(),
+                                lastMiningTime: Date.now()
+                            };
+                            localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+                        } else {
+                            // If backend balance is significantly higher (e.g. top-up from another device), take it?
+                            // But user said "don't reset". So we prioritize local accumulation.
+                            // However, we should sync rigs.
+                            if(u.rigs) {
+                                localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(u.rigs));
+                            }
+                        }
                     }
                 }
             } catch(e) { console.error('Backend Load Error:', e); }
 
-            let pf = JSON.parse(localStorage.getItem(`pf_${currentUser.username}`));
-            if(pf) {
-                balance = parseFloat(pf.balance || balance);
-                hashrate = parseFloat(pf.hashrate || hashrate);
-                dailyProfit = parseFloat(pf.dailyProfit || 0);
-                lastProfitDate = pf.lastProfitDate || new Date().toDateString();
-
+            // 3. Process Logic
+            if(pf || balance > 0) {
+                // Check for New Day Reset FIRST
                 if(lastProfitDate !== new Date().toDateString()) {
                     dailyProfit = 0;
                     lastProfitDate = new Date().toDateString();
                     saveData();
+                }
+
+                // Offline Profit Calculation (Log-in Bonus)
+                if(pf && pf.lastMiningTime && hashrate > 0) {
+                    const now = Date.now();
+                    const diffSeconds = (now - pf.lastMiningTime) / 1000;
+                    
+                    // If offline for more than 10 seconds
+                    if(diffSeconds > 10) {
+                        const offlineProfit = diffSeconds * hashrate;
+                        if(offlineProfit > 0) {
+                            balance += offlineProfit;
+                            dailyProfit += offlineProfit;
+                            saveData(); // Save immediately
+                            
+                            // Update global lastMiningTime to prevent double counting
+                            lastMiningTime = now;
+                            
+                            console.log(`💤 Offline for ${diffSeconds.toFixed(1)}s, Earned: ${offlineProfit.toFixed(2)}`);
+                            
+                            // Show Modal
+                            setTimeout(() => {
+                                showOfflineProfitModal(offlineProfit, diffSeconds);
+                            }, 1000);
+                        }
+                    }
                 }
 
                 console.log('📊 Loaded Data:', { balance, hashrate, dailyProfit });
@@ -2396,6 +2658,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
                 updateUI();
             }
         }
+        /* CSS injected via JS to avoid clutter */
         function renderProfile() {
             // Use currentUser directly (assuming it has id)
             if(!currentUser) return;
@@ -2812,17 +3075,66 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         // --- Shop ---
+        let currentShopTab = 0;
+
+        function switchShopTab(id) {
+            currentShopTab = id;
+            loadShop();
+        }
+
         async function loadShop() {
             const g = document.getElementById('shopList');
             if(!g) return;
-            g.innerHTML = '';
+            
+            // Inject Tabs if missing
+            let tabContainer = document.getElementById('shopTabs');
+            if (!tabContainer) {
+                tabContainer = document.createElement('div');
+                tabContainer.id = 'shopTabs';
+                tabContainer.className = 'shop-tabs';
+                tabContainer.style.display = 'flex';
+                tabContainer.style.overflowX = 'auto';
+                tabContainer.style.gap = '10px';
+                tabContainer.style.marginBottom = '20px';
+                tabContainer.style.paddingBottom = '10px';
+                // Scrollbar styling for tabs
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    #shopTabs::-webkit-scrollbar { height: 4px; }
+                    #shopTabs::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 2px; }
+                    #shopTabs::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+                `;
+                document.head.appendChild(style);
+                
+                g.parentNode.insertBefore(tabContainer, g);
+            }
+
+            // Render Tabs
+            const tabs = [
+                { id: 0, label: 'ทั้งหมด' },
+                { id: 1, label: 'Lv.1-20 (Basic)' },
+                { id: 2, label: 'Lv.21-40 (Mid)' },
+                { id: 3, label: 'Lv.41-60 (High)' },
+                { id: 4, label: 'Lv.61-80 (Pro)' },
+                { id: 5, label: 'Lv.81-100 (Legend)' }
+            ];
+            
+            tabContainer.innerHTML = tabs.map(t => `
+                <button onclick="switchShopTab(${t.id})" 
+                    class="cyber-btn" 
+                    style="padding: 6px 16px; font-size: 0.85rem; white-space: nowrap; ${currentShopTab === t.id ? 'background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary); border-color: var(--primary);' : 'background: rgba(255,255,255,0.05); color: #94a3b8; border-color: rgba(255,255,255,0.1);'} border-radius: 20px; flex-shrink: 0; transition: all 0.3s;">
+                    ${t.label}
+                </button>
+            `).join('');
+
+            g.innerHTML = ''; // Clear current
             
             try {
                 const res = await fetch('/api/shop/items');
                 const data = await res.json();
                 
                 if(data.disabled) {
-                    g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
+                    g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px; grid-column: 1/-1;">
                         <div style="font-size:1.2rem; font-weight:bold; color: var(--warning); margin-bottom: 8px;">ร้านค้าปรับปรุง</div>
                         <div style="color: var(--text-muted);">กรุณากลับมาใหม่ภายหลัง</div>
                         ${data.notice ? `<div style="margin-top:10px; color:#fff;">${data.notice}</div>` : ''}
@@ -2830,9 +3142,9 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     return;
                 }
                 
-                const items = data.items;
+                let items = data.items;
                 if(!items || items.length === 0) {
-                    g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px;">
+                    g.innerHTML = `<div class="glass-panel" style="text-align:center; padding: 30px; grid-column: 1/-1;">
                         <div style="font-size:1.2rem; font-weight:bold; color: #fff; margin-bottom: 8px;">ยังไม่มีสินค้า</div>
                         <div style="color: var(--text-muted);">แอดมินแจ้งระบบเชื่อมต่อให้ร้านค่าเครื่องเข้ามาใหม่ก่อน</div>
                         ${data.notice ? `<div style="margin-top:10px; color:#fff;">${data.notice}</div>` : ''}
@@ -2840,23 +3152,28 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     return;
                 }
 
-                if(data.notice) g.innerHTML += `<div class="glass-panel" style="margin-bottom:15px;">${data.notice}</div>`;
+                if(data.notice) g.innerHTML += `<div class="glass-panel" style="margin-bottom:15px; grid-column: 1/-1;">${data.notice}</div>`;
                 
-                // Get active items (e.g. free trial) from current user rigs if needed, 
-                // but for now we just render the shop. 
-                // The backend 'buy' will handle validation.
+                // Filter Logic
+                if (currentShopTab === 1) items = items.filter(i => i.id >= 1 && i.id <= 20);
+                else if (currentShopTab === 2) items = items.filter(i => i.id >= 21 && i.id <= 40);
+                else if (currentShopTab === 3) items = items.filter(i => i.id >= 41 && i.id <= 60);
+                else if (currentShopTab === 4) items = items.filter(i => i.id >= 61 && i.id <= 80);
+                else if (currentShopTab === 5) items = items.filter(i => i.id >= 81 && i.id <= 100);
+
+                if(items.length === 0) {
+                     g.innerHTML += `<div class="glass-panel" style="text-align:center; padding: 40px; grid-column: 1/-1;">
+                        <i class="fas fa-search" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 15px;"></i>
+                        <div style="font-size:1.1rem; color: #fff;">ไม่พบสินค้าในหมวดนี้</div>
+                    </div>`;
+                    return;
+                }
 
                 items.forEach(i => {
                     const tagClass = i.tag ? i.tag : '';
                     const tagLabel = i.tag ? ({hot:'ฮอต', new:'ใหม่', sale:'ลดราคา', best:'แนะนำ', used:'มือสอง', free:'ฟรี'}[i.tag] || i.tag) : null;
                     let btnText = 'ซื้อสินค้า <i class="fas fa-shopping-cart"></i>';
                     let btnState = '';
-                    let btnStyle = 'margin-top:5px; padding:8px 0; font-size:0.9rem;';
-                    
-                    // Check if user already has the free item (id 6)
-                    // We can check currentUser.rigs if available, or just let backend reject it.
-                    // For UI polish, we might want to know. 
-                    // Assuming currentUser is up to date via sync/login.
                     
                     const icon = i.icon || 'fa-microchip';
                     const tier = i.tier || 'basic';
@@ -2866,8 +3183,14 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     else if(tier === 'mid') tierColor = '#00cec9';
                     else if(tier === 'basic') tierColor = '#74b9ff';
                     else if(tier === 'limited') tierColor = '#ff7675';
+                    
                     const isUsed = tagClass.includes('used');
                     const cardClass = isUsed ? 'shop-card-cyber used' : 'shop-card-cyber';
+                    
+                    // Monthly Income Calculation for Display
+                    // Based on formula: Speed (Baht/s) * 30 * 24 * 3600
+                    const monthlyIncome = i.speed * 2592000;
+                    
                     g.innerHTML += `
                     <div class="${cardClass}" style="--card-color: ${tierColor};">
                         ${tagLabel ? `<div style=\"position: absolute; top: 10px; right: 10px; background: ${tierColor}; color: #000; font-size: 0.6rem; font-weight: bold; padding: 2px 8px; border-radius: 4px;\">${tagLabel}</div>` : ''}
@@ -2875,17 +3198,17 @@ console.log('Live Sync Status:', liveSync.getStatus());
                             <i class="fas ${icon}" style="color: ${tierColor};"></i>
                         </div>
                         <h3 style="margin: 10px 0 5px; font-size: 1rem; color: white;">${i.name}</h3>
-                        <div style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 15px;">
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 15px;">
                             <div style="display: flex; justify-content: center; align-items: center; gap: 5px; color: #94a3b8; font-size: 0.8rem;">
                                 <i class="fas fa-bolt" style="color: ${tierColor};"></i>
-                                <span>+${i.speed} MH/s</span>
+                                <span>รายได้/วัน: ฿${(i.speed * 86400).toLocaleString(undefined, {maximumFractionDigits:0})}</span>
                             </div>
                             <div style="font-size: 0.75rem; color: var(--success); text-shadow: 0 0 5px rgba(0,255,157,0.3);">
-                                ≈ ฿${(i.speed * 86400).toLocaleString()}/วัน
+                                รายได้/เดือน: ฿${monthlyIncome.toLocaleString(undefined, {maximumFractionDigits:0})}
                             </div>
                         </div>
                         <div style="font-size: 1.2rem; font-weight: bold; color: white; margin-bottom: 15px; text-shadow: 0 0 10px ${tierColor}80;">
-                            ${i.price === 0 ? 'ฟรี' : '฿'+i.price.toLocaleString()}
+                            ${i.price === 0 ? 'ฟรี (ถาวร)' : '฿'+i.price.toLocaleString() + ' (ถาวร)'}
                         </div>
                         <button class="cyber-btn" onclick="buyItem(${i.price}, ${i.speed}, ${i.id})" ${btnState} style="${btnState ? 'opacity:0.5;cursor:not-allowed;' : ''} border-color: ${tierColor}; color: ${tierColor}; box-shadow: 0 0 10px ${tierColor}20;">
                             ${btnText}
@@ -2935,6 +3258,11 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     pf.balance = currentUser.balance;
                     pf.hashrate = currentUser.hashrate;
                     localStorage.setItem(`pf_${currentUser.username}`, JSON.stringify(pf));
+                    
+                    // Update Rigs LocalStorage
+                    if(currentUser.rigs) {
+                        localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(currentUser.rigs));
+                    }
                     
                     updateUI();
                     showToast(`✅ สั่งซื้อสำเร็จ!`, 'success');
@@ -2993,47 +3321,8 @@ console.log('Live Sync Status:', liveSync.getStatus());
         }
 
         function checkExpiration() {
-            if(! currentUser) return;
-            let active = JSON.parse(localStorage.getItem(`active_items_${currentUser.username}`)) || [];
-            if(active.length === 0) return;
-
-            let now = Date.now();
-            let updatedActive = [];
-            let expiredSpeed = 0;
-            let hasExpired = false;
-
-            active.forEach(item => {
-                if(item.expiresAt > now) {
-                    updatedActive.push(item);
-                } else {
-                    expiredSpeed += item.speed;
-                    hasExpired = true;
-                }
-            });
-
-            if(hasExpired) {
-                hashrate = Math.max(0, hashrate - expiredSpeed);
-                localStorage.setItem(`active_items_${currentUser. username}`, JSON.stringify(updatedActive));
-                
-                console.log(`⏰ Item expired!  Hashrate: ${hashrate. toFixed(2)}`);
-                
-                saveData();
-                updateUI();
-                autoMiningController();
-                updateMiningMode();
-                
-                try {
-                    let rigs = JSON.parse(localStorage.getItem(`mining_rigs_${currentUser. username}`)) || [];
-                    const nowTs = Date.now();
-                    rigs. forEach(r => { if(r.expiresAt && r.expiresAt <= nowTs) r.status = 'expired'; });
-                    localStorage.setItem(`mining_rigs_${currentUser.username}`, JSON.stringify(rigs));
-                } catch (_) {}
-                
-                loadShop();
-                
-                showToast('⏰ ไอเทมหมดอายุ: แรงขุดลดลง ' + expiredSpeed.toFixed(2) + ' MH/s', 'warning');
-                addNotification(`⏰ ไอเทมหมดอายุ -${expiredSpeed.toFixed(2)} MH/s`, 'warning');
-            }
+            // Disabled by Law: No Expiration
+            return;
         }
 
         function openShopPage() {
@@ -3405,6 +3694,15 @@ console.log('Live Sync Status:', liveSync.getStatus());
             const container = document.getElementById('toastContainer');
             if (!container) return;
             
+            // Check for duplicates
+            const existingToasts = container.querySelectorAll('.ai-toast');
+            for(let t of existingToasts) {
+                if(t.innerText.includes(msg)) {
+                    // Reset timer or just return
+                    return;
+                }
+            }
+            
             const toast = document.createElement('div');
             toast.className = `ai-toast ${type}`;
             
@@ -3501,6 +3799,7 @@ console.log('Live Sync Status:', liveSync.getStatus());
         setInterval(checkGlobalMaintenance, 3000);
         // Initial check
         checkMaintenance();
+        checkRememberedUser();
 
         // --- System Sync Loop ---
         function updateConnectionStatus() {
@@ -3840,6 +4139,94 @@ console.log('Live Sync Status:', liveSync.getStatus());
                     <button class="cyber-btn" style="width: 100%;" onclick="document.getElementById('${modalId}').remove()">
                         เข้าใจแล้ว
                     </button>
+                </div>
+            `;
+            document.body.appendChild(div);
+        }
+
+        function showUpdateHistoryModal() {
+            const modalId = 'updateHistoryModal';
+            if(document.getElementById(modalId)) document.getElementById(modalId).remove();
+
+            const updates = [
+                {
+                    version: 'v1.2.5',
+                    date: '08/12/2025',
+                    changes: [
+                        'เพิ่มระบบแจ้งเตือนเมื่อฝาก/ถอนสำเร็จ',
+                        'ปรับปรุงการแสดงผลความเร็วการขุดให้แม่นยำขึ้น',
+                        'แก้ไขบั๊กการแจ้งเตือนซ้ำ',
+                        'เพิ่มหน้าประวัติการอัปเดตซอฟต์แวร์'
+                    ]
+                },
+                {
+                    version: 'v1.2.0',
+                    date: '01/12/2025',
+                    changes: [
+                        'เพิ่มระบบ AI Mining Boost',
+                        'ปรับปรุงหน้าต่างร้านค้าใหม่',
+                        'เพิ่มประสิทธิภาพความปลอดภัย'
+                    ]
+                },
+                {
+                    version: 'v1.1.0',
+                    date: '15/11/2025',
+                    changes: [
+                        'เปิดใช้งานระบบแนะนำเพื่อน',
+                        'เพิ่มช่องทางการถอนเงิน',
+                        'ปรับปรุง UI ให้ทันสมัยขึ้น'
+                    ]
+                },
+                {
+                    version: 'v1.0.0',
+                    date: '01/11/2025',
+                    changes: [
+                        'เปิดตัวระบบขุดเหรียญจำลอง',
+                        'ระบบร้านค้าและคลังสินค้า',
+                        'ระบบกระเป๋าเงิน'
+                    ]
+                }
+            ];
+            
+            let htmlList = '';
+            updates.forEach((u, index) => {
+                htmlList += `
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; margin-bottom: 10px; text-align: left; border-left: 3px solid ${index === 0 ? 'var(--success)' : 'var(--text-muted)'};">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-weight: bold; color: ${index === 0 ? 'var(--success)' : '#fff'}; font-size: 1.1rem;">${u.version}</span>
+                            <span style="font-size: 0.8rem; color: #94a3b8;">${u.date}</span>
+                        </div>
+                        <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; font-size: 0.9rem;">
+                            ${u.changes.map(c => `<li>${c}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+
+            const div = document.createElement('div');
+            div.id = modalId;
+            div.className = 'modal';
+            div.style.display = 'flex';
+            div.style.zIndex = '10005';
+            div.innerHTML = `
+                <div class="modal-content ai-card-border" style="width: 90%; max-width: 450px; max-height: 80vh; display: flex; flex-direction: column; background: rgba(10, 14, 30, 0.98); border: 1px solid var(--primary); text-align:center; border-radius: 16px; box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); animation: slideUp 0.3s ease-out;">
+                    <div style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <div style="width: 60px; height: 60px; background: rgba(0, 242, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; border: 1px solid var(--primary); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);">
+                            <i class="fas fa-history" style="font-size: 1.8rem; color: var(--primary);"></i>
+                        </div>
+                        <h2 style="color: var(--primary); margin: 0; text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);">ประวัติการอัปเดต</h2>
+                        <p style="margin: 5px 0 0; color: #94a3b8; font-size: 0.8rem;">Software Update History</p>
+                    </div>
+                    
+                    <div style="flex: 1; overflow-y: auto; padding: 20px;">
+                        ${htmlList}
+                    </div>
+                    
+                    <div style="padding: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <button class="cyber-btn" style="width: 100%;" onclick="document.getElementById('${modalId}').remove()">
+                            ปิดหน้าต่าง
+                        </button>
+                    </div>
                 </div>
             `;
             document.body.appendChild(div);

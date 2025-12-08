@@ -7,6 +7,7 @@ const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const TRANSACTIONS_FILE = path.join(DATA_DIR, 'transactions.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const SHOP_FILE = path.join(DATA_DIR, 'shop.json');
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
 const LOGS_FILE = path.join(DATA_DIR, 'logs.json');
 
 // Ensure data directory exists
@@ -140,11 +141,15 @@ const db = {
         writeJson(TRANSACTIONS_FILE, trans);
         return newTrans;
     },
-    updateTransactionStatus: (id, status) => {
+    updateTransactionStatus: (id, status, updates = {}) => {
         const trans = readJson(TRANSACTIONS_FILE);
         const idx = trans.findIndex(t => t.id == id);
         if (idx !== -1) {
             trans[idx].status = status;
+            // Apply other updates (e.g., fee, net_amount, admin_note)
+            Object.keys(updates).forEach(key => {
+                trans[idx][key] = updates[key];
+            });
             writeJson(TRANSACTIONS_FILE, trans);
             return trans[idx];
         }
@@ -222,6 +227,7 @@ const db = {
         writeJson(USERS_FILE, {});
         writeJson(TRANSACTIONS_FILE, []);
         writeJson(SHOP_FILE, []);
+        writeJson(NOTIFICATIONS_FILE, []); // Clear notifications
         writeJson(SETTINGS_FILE, preservedSettings);
         // Note: Logs are intentionally NOT cleared
         return true;
@@ -246,11 +252,36 @@ const db = {
             const initLen = users[username].rigs.length;
             users[username].rigs = users[username].rigs.filter(r => r.name !== rigName);
             if (users[username].rigs.length !== initLen) {
+                // Recalculate hashrate based on ACTIVE rigs only
+                users[username].hashrate = users[username].rigs
+                    .filter(r => r.status !== 'paused')
+                    .reduce((sum, r) => sum + (r.speed || 0), 0);
                 writeData(users);
                 return true;
             }
         }
         return false;
+    },
+    toggleUserRigStatus: (username, rigName) => {
+        const users = readData();
+        if (users[username] && users[username].rigs) {
+            const rig = users[username].rigs.find(r => r.name === rigName);
+            if (rig) {
+                // Toggle status
+                const currentStatus = rig.status || 'active';
+                const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+                rig.status = newStatus;
+
+                // Recalculate hashrate based on ACTIVE rigs only
+                users[username].hashrate = users[username].rigs
+                    .filter(r => r.status !== 'paused')
+                    .reduce((sum, r) => sum + (r.speed || 0), 0);
+                
+                writeData(users);
+                return { success: true, status: newStatus, user: users[username] };
+            }
+        }
+        return { success: false, error: 'Rig not found' };
     },
 
     // --- LOGS ---
@@ -269,6 +300,39 @@ const db = {
     clearLogs: () => {
         writeJson(LOGS_FILE, []);
         return true;
+    },
+
+    // --- NOTIFICATIONS ---
+    getNotifications: (username) => {
+        const all = readJson(NOTIFICATIONS_FILE);
+        // Filter by user and sort by newest
+        return all.filter(n => n.user === username).sort((a, b) => b.timestamp - a.timestamp);
+    },
+    addNotification: (username, message, type = 'info') => {
+        const all = readJson(NOTIFICATIONS_FILE);
+        const notif = {
+            id: Date.now(),
+            user: username,
+            message: message,
+            type: type, // info, success, warning, error
+            read: false,
+            timestamp: Date.now()
+        };
+        all.push(notif);
+        // Limit total notifications to avoid file bloat
+        if(all.length > 2000) all.shift();
+        writeJson(NOTIFICATIONS_FILE, all);
+        return notif;
+    },
+    markNotificationRead: (id) => {
+        const all = readJson(NOTIFICATIONS_FILE);
+        const idx = all.findIndex(n => n.id == id);
+        if(idx !== -1) {
+            all[idx].read = true;
+            writeJson(NOTIFICATIONS_FILE, all);
+            return true;
+        }
+        return false;
     }
 };
 

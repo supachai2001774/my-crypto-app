@@ -26,8 +26,25 @@ app.get('/api/maintenance-status', (req, res) => {
     res.json({ 
         maintenance: !!settings.maintenance,
         announcement: settings.system_announcement || '',
-        announcement_active: settings.system_announcement_active === 'true'
+        announcement_active: settings.system_announcement_active === 'true',
+        deposit_fee_percent: settings.deposit_fee_percent || 0,
+        withdraw_fee_percent: settings.withdraw_fee_percent || 0
     });
+});
+
+// --- Logs API ---
+app.get('/api/admin/logs', (req, res) => {
+    const logs = db.getLogs();
+    res.json(logs);
+});
+
+app.post('/api/admin/logs/clear', (req, res) => {
+    try {
+        db.clearLogs();
+        res.json({ success: true });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // --- API Endpoints ---
@@ -78,6 +95,13 @@ app.post('/api/register', (req, res) => {
             status: referrer_id ? 'pending' : 'approved' // If no referrer, auto-approve? Or always pending? Let's say if referred, pending approval.
         });
 
+        db.addLog({
+            type: 'register',
+            user: username,
+            action: 'New User Registration',
+            details: `Referrer: ${referrer_id || 'None'}, IP: ${ip || 'Unknown'}`
+        });
+
         res.json({ success: true, user: newUser });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -99,6 +123,13 @@ app.post('/api/login', (req, res) => {
     const user = db.findUserByUsername(username);
 
     if (user && user.password === password) {
+        // Log Login
+        db.addLog({
+            type: 'login',
+            user: username,
+            action: 'User Login',
+            details: `IP: ${req.ip || 'Unknown'}`
+        });
         res.json({ success: true, user });
     } else {
         res.status(401).json({ error: 'Invalid credentials' });
@@ -119,6 +150,29 @@ app.get('/api/user/:username', (req, res) => {
 app.get('/api/user/:username/referrals', (req, res) => {
     const refs = db.getUserReferrals(req.params.username);
     res.json({ success: true, referrals: refs });
+});
+
+// Get User Notifications
+app.get('/api/user/:username/notifications', (req, res) => {
+    let notifs = db.getNotifications(req.params.username);
+    
+    // Filter by unread if requested
+    if (req.query.unread === 'true') {
+        notifs = notifs.filter(n => !n.read);
+    }
+    
+    res.json({ success: true, notifications: notifs });
+});
+
+// Mark Notification Read
+app.post('/api/user/notifications/read', (req, res) => {
+    const { id } = req.body;
+    try {
+        db.markNotificationRead(id);
+        res.json({ success: true });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Sync User Data (Mining Progress)
@@ -223,6 +277,14 @@ app.post('/api/transactions/deposit', (req, res) => {
             slip: slip,
             processed: false
         });
+
+        db.addLog({
+            type: 'transaction',
+            user: username,
+            action: 'Deposit Request',
+            details: `Amount: ${amount}, Method: ${method || 'qr_auto'}`
+        });
+
         res.json({ success: true, transaction: trans });
     } catch(err) {
         res.status(500).json({ error: err.message });
@@ -257,6 +319,14 @@ app.post('/api/transactions/withdraw', (req, res) => {
             account: account,
             processed: false
         });
+
+        db.addLog({
+            type: 'transaction',
+            user: username,
+            action: 'Withdraw Request',
+            details: `Amount: ${amount}, Bank: ${bank}, Acc: ${account}`
+        });
+
         res.json({ success: true, transaction: trans });
     } catch(err) {
         res.status(400).json({ error: err.message });
@@ -275,17 +345,53 @@ app.post('/api/admin/transactions/clear', (req, res) => {
 app.post('/api/admin/update-transaction-status', (req, res) => {
     const { id, status } = req.body;
     try {
-        const trans = db.updateTransactionStatus(id, status);
-        if (!trans) throw new Error('Transaction not found');
+        // 1. Get Settings & Transaction
+        const settings = db.getSettings();
+        const allTrans = db.getAllTransactions();
+        const existingTrans = allTrans.find(t => t.id == id);
+        
+        if (!existingTrans) throw new Error('Transaction not found');
 
-        // If approved/rejected, update balance logic might be needed
-        // Deposit Approved -> Add Balance
-        // Withdraw Rejected -> Refund Balance
-        if (status === 'approved' && trans.type === 'deposit') {
-             db.updateUserBalance(trans.user, parseFloat(trans.amount));
-        } else if (status === 'rejected' && trans.type === 'withdraw') {
-             db.updateUserBalance(trans.user, parseFloat(trans.amount));
+        let updates = {};
+        let amount = parseFloat(existingTrans.amount);
+        let netAmount = amount;
+        let fee = 0;
+
+        // Calculate Fee if approving
+        if (status === 'approved') {
+            if (existingTrans.type === 'deposit') {
+                const feePercent = parseFloat(settings.deposit_fee_percent || 0);
+                fee = (amount * feePercent) / 100;
+                netAmount = amount - fee;
+            } else if (existingTrans.type === 'withdraw') {
+                const feePercent = parseFloat(settings.withdraw_fee_percent || 0);
+                fee = (amount * feePercent) / 100;
+                netAmount = amount - fee;
+            }
+            updates = { fee, net_amount: netAmount };
         }
+
+        const trans = db.updateTransactionStatus(id, status, updates);
+
+        if (status === 'approved' && trans.type === 'deposit') {
+             db.updateUserBalance(trans.user, parseFloat(trans.net_amount));
+             db.addNotification(trans.user, `รายการฝากเงิน ${amount.toLocaleString()} บาท ได้รับการอนุมัติแล้ว (เข้าบัญชี: ${netAmount.toLocaleString()} บาท)`, 'success');
+        } else if (status === 'approved' && trans.type === 'withdraw') {
+             // Balance already deducted. Just notify.
+             db.addNotification(trans.user, `รายการถอนเงิน ${amount.toLocaleString()} บาท ได้รับการอนุมัติแล้ว (ได้รับจริง: ${netAmount.toLocaleString()} บาท)`, 'success');
+        } else if (status === 'rejected') {
+             if (trans.type === 'withdraw') {
+                 db.updateUserBalance(trans.user, parseFloat(trans.amount)); // Refund full amount
+             }
+             db.addNotification(trans.user, `รายการ ${trans.type === 'deposit' ? 'ฝากเงิน' : 'ถอนเงิน'} ${amount.toLocaleString()} บาท ถูกปฏิเสธ`, 'error');
+        }
+
+        db.addLog({
+            type: 'admin_action',
+            user: 'admin',
+            action: 'Transaction Update',
+            details: `ID: ${id}, Status: ${status}, User: ${trans.user}`
+        });
 
         res.json({ success: true, transaction: trans });
     } catch(err) {
@@ -303,6 +409,14 @@ app.post('/api/admin/settings', (req, res) => {
     const settings = req.body;
     try {
         const updated = db.updateSettings(settings);
+        
+        db.addLog({
+            type: 'admin_action',
+            user: 'admin',
+            action: 'Settings Update',
+            details: JSON.stringify(settings)
+        });
+        
         res.json({ success: true, settings: updated });
     } catch(err) {
         res.status(500).json({ error: err.message });
@@ -392,6 +506,13 @@ app.post('/api/shop/buy', (req, res) => {
             processed: true
         });
 
+        db.addLog({
+            type: 'purchase',
+            user: username,
+            action: 'Item Purchased',
+            details: `Item: ${item.name}, Price: ${item.price}`
+        });
+
         res.json({ success: true, user: db.findUserByUsername(username) });
     } catch(err) {
         res.status(400).json({ error: err.message });
@@ -446,6 +567,21 @@ app.post('/api/admin/delete-rig', (req, res) => {
             res.json({ success: true });
         }
         else res.status(404).json({ error: 'Rig or User not found' });
+    } catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/admin/toggle-rig-status', (req, res) => {
+    const { username, rigName } = req.body;
+    try {
+        const result = db.toggleUserRigStatus(username, rigName);
+        if(result.success) {
+            db.addLog({ type: 'system', action: 'toggle_rig', detail: `Admin changed rig ${rigName} status to ${result.status} for ${username}` });
+            res.json(result);
+        } else {
+            res.status(404).json({ error: result.error });
+        }
     } catch(err) {
         res.status(500).json({ error: err.message });
     }
