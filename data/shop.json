@@ -1,0 +1,902 @@
+[
+  {
+    "id": 1,
+    "name": "AI Miner System Lv.1",
+    "price": 500,
+    "speed": 0.00011574074074074075,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": "new"
+  },
+  {
+    "id": 2,
+    "name": "AI Miner System Lv.2",
+    "price": 570,
+    "speed": 0.0001273148148148148,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 3,
+    "name": "AI Miner System Lv.3",
+    "price": 640,
+    "speed": 0.00014004629629629632,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 4,
+    "name": "AI Miner System Lv.4",
+    "price": 730,
+    "speed": 0.00015405092592592597,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 5,
+    "name": "AI Miner System Lv.5",
+    "price": 830,
+    "speed": 0.00016945601851851857,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 6,
+    "name": "AI Miner System Lv.6",
+    "price": 940,
+    "speed": 0.00018640162037037044,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 7,
+    "name": "AI Miner System Lv.7",
+    "price": 1100,
+    "speed": 0.0002050417824074075,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 8,
+    "name": "AI Miner System Lv.8",
+    "price": 1200,
+    "speed": 0.00022554596064814828,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 9,
+    "name": "AI Miner System Lv.9",
+    "price": 1400,
+    "speed": 0.0002481005567129631,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 10,
+    "name": "AI Miner System Lv.10",
+    "price": 1600,
+    "speed": 0.0002729106123842595,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": "sale"
+  },
+  {
+    "id": 11,
+    "name": "AI Miner System Lv.11",
+    "price": 1800,
+    "speed": 0.00030020167362268546,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 12,
+    "name": "AI Miner System Lv.12",
+    "price": 2000,
+    "speed": 0.000330221840984954,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 13,
+    "name": "AI Miner System Lv.13",
+    "price": 2300,
+    "speed": 0.00036324402508344946,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 14,
+    "name": "AI Miner System Lv.14",
+    "price": 2600,
+    "speed": 0.00039956842759179443,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 15,
+    "name": "AI Miner System Lv.15",
+    "price": 2900,
+    "speed": 0.0004395252703509739,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 16,
+    "name": "AI Miner System Lv.16",
+    "price": 3300,
+    "speed": 0.0004834777973860713,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 17,
+    "name": "AI Miner System Lv.17",
+    "price": 3800,
+    "speed": 0.0005318255771246784,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 18,
+    "name": "AI Miner System Lv.18",
+    "price": 4300,
+    "speed": 0.0005850081348371465,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 19,
+    "name": "AI Miner System Lv.19",
+    "price": 4900,
+    "speed": 0.0006435089483208611,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": ""
+  },
+  {
+    "id": 20,
+    "name": "AI Miner System Lv.20",
+    "price": 5500,
+    "speed": 0.0007078598431529472,
+    "tier": "basic",
+    "icon": "fa-fan",
+    "tag": "sale"
+  },
+  {
+    "id": 21,
+    "name": "AI Miner System Lv.21",
+    "price": 6300,
+    "speed": 0.000778645827468242,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 22,
+    "name": "AI Miner System Lv.22",
+    "price": 7100,
+    "speed": 0.0008565104102150662,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 23,
+    "name": "AI Miner System Lv.23",
+    "price": 8100,
+    "speed": 0.000942161451236573,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 24,
+    "name": "AI Miner System Lv.24",
+    "price": 9200,
+    "speed": 0.0010363775963602303,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 25,
+    "name": "AI Miner System Lv.25",
+    "price": 10000,
+    "speed": 0.0011400153559962534,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": "hot"
+  },
+  {
+    "id": 26,
+    "name": "AI Miner System Lv.26",
+    "price": 12000,
+    "speed": 0.0012540168915958789,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 27,
+    "name": "AI Miner System Lv.27",
+    "price": 13000,
+    "speed": 0.001379418580755467,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 28,
+    "name": "AI Miner System Lv.28",
+    "price": 15000,
+    "speed": 0.0015173604388310138,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 29,
+    "name": "AI Miner System Lv.29",
+    "price": 17000,
+    "speed": 0.0016690964827141153,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 30,
+    "name": "AI Miner System Lv.30",
+    "price": 20000,
+    "speed": 0.001836006130985527,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": "sale"
+  },
+  {
+    "id": 31,
+    "name": "AI Miner System Lv.31",
+    "price": 22000,
+    "speed": 0.0020196067440840797,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 32,
+    "name": "AI Miner System Lv.32",
+    "price": 25000,
+    "speed": 0.002221567418492488,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 33,
+    "name": "AI Miner System Lv.33",
+    "price": 29000,
+    "speed": 0.002443724160341737,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 34,
+    "name": "AI Miner System Lv.34",
+    "price": 33000,
+    "speed": 0.0026880965763759106,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 35,
+    "name": "AI Miner System Lv.35",
+    "price": 37000,
+    "speed": 0.002956906234013502,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 36,
+    "name": "AI Miner System Lv.36",
+    "price": 42000,
+    "speed": 0.003252596857414853,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 37,
+    "name": "AI Miner System Lv.37",
+    "price": 48000,
+    "speed": 0.0035778565431563384,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 38,
+    "name": "AI Miner System Lv.38",
+    "price": 54000,
+    "speed": 0.003935642197471972,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 39,
+    "name": "AI Miner System Lv.39",
+    "price": 61000,
+    "speed": 0.00432920641721917,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": ""
+  },
+  {
+    "id": 40,
+    "name": "AI Miner System Lv.40",
+    "price": 70000,
+    "speed": 0.004762127058941088,
+    "tier": "mid",
+    "icon": "fa-server",
+    "tag": "sale"
+  },
+  {
+    "id": 41,
+    "name": "AI Miner System Lv.41",
+    "price": 79000,
+    "speed": 0.005238339764835198,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 42,
+    "name": "AI Miner System Lv.42",
+    "price": 90000,
+    "speed": 0.005762173741318716,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 43,
+    "name": "AI Miner System Lv.43",
+    "price": 102000,
+    "speed": 0.006338391115450588,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 44,
+    "name": "AI Miner System Lv.44",
+    "price": 116000,
+    "speed": 0.006972230226995648,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 45,
+    "name": "AI Miner System Lv.45",
+    "price": 131000,
+    "speed": 0.007669453249695214,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 46,
+    "name": "AI Miner System Lv.46",
+    "price": 149000,
+    "speed": 0.008436398574664735,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 47,
+    "name": "AI Miner System Lv.47",
+    "price": 169000,
+    "speed": 0.00928003843213121,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 48,
+    "name": "AI Miner System Lv.48",
+    "price": 192000,
+    "speed": 0.010208042275344331,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 49,
+    "name": "AI Miner System Lv.49",
+    "price": 218000,
+    "speed": 0.011228846502878765,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 50,
+    "name": "AI Miner System Lv.50",
+    "price": 248000,
+    "speed": 0.012351731153166644,
+    "tier": "mid",
+    "icon": "fa-microchip",
+    "tag": "hot"
+  },
+  {
+    "id": 51,
+    "name": "AI Miner System Lv.51",
+    "price": 281000,
+    "speed": 0.013586904268483309,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 52,
+    "name": "AI Miner System Lv.52",
+    "price": 319000,
+    "speed": 0.014945594695331643,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 53,
+    "name": "AI Miner System Lv.53",
+    "price": 362000,
+    "speed": 0.016440154164864808,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 54,
+    "name": "AI Miner System Lv.54",
+    "price": 411000,
+    "speed": 0.018084169581351287,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 55,
+    "name": "AI Miner System Lv.55",
+    "price": 466000,
+    "speed": 0.01989258653948642,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 56,
+    "name": "AI Miner System Lv.56",
+    "price": 529000,
+    "speed": 0.02188184519343506,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 57,
+    "name": "AI Miner System Lv.57",
+    "price": 601000,
+    "speed": 0.024070029712778572,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 58,
+    "name": "AI Miner System Lv.58",
+    "price": 682000,
+    "speed": 0.02647703268405643,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 59,
+    "name": "AI Miner System Lv.59",
+    "price": 774000,
+    "speed": 0.029124735952462073,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": ""
+  },
+  {
+    "id": 60,
+    "name": "AI Miner System Lv.60",
+    "price": 878000,
+    "speed": 0.032037209547708285,
+    "tier": "pro",
+    "icon": "fa-microchip",
+    "tag": "sale"
+  },
+  {
+    "id": 61,
+    "name": "AI Miner System Lv.61",
+    "price": 997000,
+    "speed": 0.03524093050247912,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 62,
+    "name": "AI Miner System Lv.62",
+    "price": 1130000,
+    "speed": 0.03876502355272703,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 63,
+    "name": "AI Miner System Lv.63",
+    "price": 1280000,
+    "speed": 0.042641525907999744,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 64,
+    "name": "AI Miner System Lv.64",
+    "price": 1460000,
+    "speed": 0.046905678498799716,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 65,
+    "name": "AI Miner System Lv.65",
+    "price": 1650000,
+    "speed": 0.051596246348679695,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 66,
+    "name": "AI Miner System Lv.66",
+    "price": 1880000,
+    "speed": 0.05675587098354766,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 67,
+    "name": "AI Miner System Lv.67",
+    "price": 2130000,
+    "speed": 0.062431458081902445,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 68,
+    "name": "AI Miner System Lv.68",
+    "price": 2420000,
+    "speed": 0.0686746038900927,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 69,
+    "name": "AI Miner System Lv.69",
+    "price": 2750000,
+    "speed": 0.07554206427910197,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 70,
+    "name": "AI Miner System Lv.70",
+    "price": 3120000,
+    "speed": 0.08309627070701216,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": "sale"
+  },
+  {
+    "id": 71,
+    "name": "AI Miner System Lv.71",
+    "price": 3540000,
+    "speed": 0.0914058977777134,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 72,
+    "name": "AI Miner System Lv.72",
+    "price": 4010000,
+    "speed": 0.10054648755548473,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 73,
+    "name": "AI Miner System Lv.73",
+    "price": 4560000,
+    "speed": 0.11060113631103323,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 74,
+    "name": "AI Miner System Lv.74",
+    "price": 5170000,
+    "speed": 0.12166124994213656,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 75,
+    "name": "AI Miner System Lv.75",
+    "price": 5870000,
+    "speed": 0.13382737493635022,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": "hot"
+  },
+  {
+    "id": 76,
+    "name": "AI Miner System Lv.76",
+    "price": 6660000,
+    "speed": 0.14721011242998525,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 77,
+    "name": "AI Miner System Lv.77",
+    "price": 7560000,
+    "speed": 0.1619311236729838,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 78,
+    "name": "AI Miner System Lv.78",
+    "price": 8580000,
+    "speed": 0.17812423604028219,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 79,
+    "name": "AI Miner System Lv.79",
+    "price": 9740000,
+    "speed": 0.19593665964431042,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": ""
+  },
+  {
+    "id": 80,
+    "name": "AI Miner System Lv.80",
+    "price": 11060000,
+    "speed": 0.21553032560874147,
+    "tier": "pro",
+    "icon": "fa-memory",
+    "tag": "sale"
+  },
+  {
+    "id": 81,
+    "name": "AI Miner System Lv.81",
+    "price": 12550000,
+    "speed": 0.23708335816961565,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 82,
+    "name": "AI Miner System Lv.82",
+    "price": 14240000,
+    "speed": 0.26079169398657726,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 83,
+    "name": "AI Miner System Lv.83",
+    "price": 16170000,
+    "speed": 0.28687086338523493,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 84,
+    "name": "AI Miner System Lv.84",
+    "price": 18350000,
+    "speed": 0.3155579497237585,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 85,
+    "name": "AI Miner System Lv.85",
+    "price": 20830000,
+    "speed": 0.3471137446961344,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 86,
+    "name": "AI Miner System Lv.86",
+    "price": 23640000,
+    "speed": 0.38182511916574785,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 87,
+    "name": "AI Miner System Lv.87",
+    "price": 26830000,
+    "speed": 0.42000763108232264,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 88,
+    "name": "AI Miner System Lv.88",
+    "price": 30450000,
+    "speed": 0.4620083941905549,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 89,
+    "name": "AI Miner System Lv.89",
+    "price": 34560000,
+    "speed": 0.5082092336096105,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 90,
+    "name": "AI Miner System Lv.90",
+    "price": 39230000,
+    "speed": 0.5590301569705716,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": "sale"
+  },
+  {
+    "id": 91,
+    "name": "AI Miner System Lv.91",
+    "price": 44520000,
+    "speed": 0.6149331726676287,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 92,
+    "name": "AI Miner System Lv.92",
+    "price": 50540000,
+    "speed": 0.6764264899343917,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 93,
+    "name": "AI Miner System Lv.93",
+    "price": 57360000,
+    "speed": 0.744069138927831,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 94,
+    "name": "AI Miner System Lv.94",
+    "price": 65100000,
+    "speed": 0.8184760528206141,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 95,
+    "name": "AI Miner System Lv.95",
+    "price": 73890000,
+    "speed": 0.9003236581026756,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 96,
+    "name": "AI Miner System Lv.96",
+    "price": 83860000,
+    "speed": 0.9903560239129432,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 97,
+    "name": "AI Miner System Lv.97",
+    "price": 95190000,
+    "speed": 1.0893916263042376,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 98,
+    "name": "AI Miner System Lv.98",
+    "price": 108040000,
+    "speed": 1.1983307889346615,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 99,
+    "name": "AI Miner System Lv.99",
+    "price": 122620000,
+    "speed": 1.318163867828128,
+    "tier": "legendary",
+    "icon": "fa-brain",
+    "tag": ""
+  },
+  {
+    "id": 100,
+    "name": "AI Miner System Lv.100",
+    "price": 139170000,
+    "speed": 1.4499802546109406,
+    "tier": "limited",
+    "icon": "fa-rocket",
+    "tag": "best"
+  }
+]

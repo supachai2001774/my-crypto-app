@@ -46,6 +46,66 @@ function writeJson(file, data) {
     }
 }
 
+// Helper functions for Shop Generation
+function formatPrice(num) {
+    if (num < 1000) return Math.round(num / 10) * 10;
+    if (num < 10000) return Math.round(num / 100) * 100;
+    if (num < 1000000) return Math.round(num / 1000) * 1000;
+    return Math.round(num / 10000) * 10000;
+}
+
+function getTier(lv) {
+    if (lv <= 20) return 'basic';
+    if (lv <= 50) return 'mid';
+    if (lv <= 80) return 'pro';
+    if (lv < 100) return 'legendary';
+    return 'limited';
+}
+
+function getIcon(lv) {
+    if (lv <= 20) return 'fa-fan';
+    if (lv <= 40) return 'fa-server';
+    if (lv <= 60) return 'fa-microchip';
+    if (lv <= 80) return 'fa-memory';
+    if (lv < 100) return 'fa-brain';
+    return 'fa-rocket';
+}
+
+function getTag(lv) {
+    if (lv === 1) return 'new';
+    if (lv === 100) return 'best';
+    if (lv % 25 === 0) return 'hot';
+    if (lv % 10 === 0) return 'sale';
+    return '';
+}
+
+function generateDefaultShop() {
+    const LEVELS = 100;
+    const BASE_PRICE = 500;
+    const BASE_INCOME_MO = 300;
+    const MULT_PRICE = 1.135;
+    const MULT_INCOME = 1.10;
+
+    const items = [];
+    for (let i = 1; i <= LEVELS; i++) {
+        const rawPrice = BASE_PRICE * Math.pow(MULT_PRICE, i - 1);
+        const price = formatPrice(rawPrice);
+        const incomeMo = BASE_INCOME_MO * Math.pow(MULT_INCOME, i - 1);
+        const speed = incomeMo / (30 * 24 * 3600);
+
+        items.push({
+            id: i,
+            name: `AI Miner System Lv.${i}`,
+            price: price,
+            speed: speed,
+            tier: getTier(i),
+            icon: getIcon(i),
+            tag: getTag(i)
+        });
+    }
+    return items;
+}
+
 // Legacy helpers (to be refactored if needed, but keeping for compatibility)
 function readData() { return readJsonObj(USERS_FILE); }
 function writeData(data) { return writeJson(USERS_FILE, data); }
@@ -169,7 +229,14 @@ const db = {
 
     // --- SHOP ---
     getShopItems: () => {
-        return readJson(SHOP_FILE);
+        let items = readJson(SHOP_FILE);
+        // If shop is empty, generate default items
+        if (items.length === 0) {
+            console.log('Shop is empty, generating default items...');
+            items = generateDefaultShop();
+            writeJson(SHOP_FILE, items);
+        }
+        return items;
     },
     addShopItem: (item) => {
         const items = readJson(SHOP_FILE);
