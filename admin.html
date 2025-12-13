@@ -467,13 +467,7 @@
             <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--accent);">
                 <h3 style="margin-top:0; color: var(--accent);"><i class="fas fa-terminal"></i> คำสั่งระบบ (Quick Commands)</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <!-- Deploy Render -->
-                    <button onclick="triggerGitHubRender()" class="btn-sm" style="background: #000; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                        <i class="fas fa-rocket" style="font-size: 1.5rem; color: var(--primary);"></i>
-                        <span>Terminal Deploy</span>
-                    </button>
-                    
-                    <!-- Git Pull -->
+
                     <button onclick="triggerGitPull()" class="btn-sm" style="background: #000; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
                         <i class="fas fa-download" style="font-size: 1.5rem; color: var(--warning);"></i>
                         <span>Git Pull</span>
@@ -873,35 +867,7 @@
                 <input type="text" id="maintMsg" class="cyber-input" placeholder="ข้อความแจ้งเตือน (Optional)" style="margin-top: 10px;" onchange="saveMaintMsg()">
             </div>
 
-            <div class="card">
-                <h3><i class="fab fa-github"></i> Render Deployment</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Trigger a manual deployment hook for Render.com</p>
-                
-                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="color: var(--text-muted); font-size: 0.8rem;">Live Server</div>
-                        <a href="https://my-crypto-app-fsv2.onrender.com" target="_blank" style="color: var(--secondary); font-weight: bold; text-decoration: none;">
-                            my-crypto-app-fsv2.onrender.com <i class="fas fa-external-link-alt"></i>
-                        </a>
-                    </div>
-                    <a href="https://my-crypto-app-fsv2.onrender.com" target="_blank" class="btn-sm" style="background: var(--bg-body); border: 1px solid var(--secondary); color: var(--secondary);">
-                        Open App
-                    </a>
-                </div>
 
-                <div style="margin-top: 10px;">
-                    <label style="color: var(--text-muted); font-size: 0.9rem;">Render Webhook URL</label>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="password" id="renderWebhookUrl" class="cyber-input" placeholder="https://api.render.com/deploy/..." value="https://my-crypto-app-fsv2.onrender.com" style="flex:1;">
-                        <button onclick="saveRenderSettings()" class="btn-sm btn-green" style="white-space: nowrap;">
-                            <i class="fas fa-save"></i> บันทึก
-                        </button>
-                    </div>
-                </div>
-                <button onclick="triggerGitHubRender()" class="btn-sm btn-primary" style="width: 100%; margin-top: 10px;">
-                    <i class="fas fa-rocket"></i> Deploy to Render
-                </button>
-            </div>
 
             <div class="card" style="margin-top: 20px;">
                 <h3><i class="fab fa-git-alt"></i> Local Server Git</h3>
@@ -931,11 +897,7 @@
             <div class="card">
                 <div class="changelog-timeline">
                     <!-- Items -->
-                    <div class="changelog-item">
-                        <div class="changelog-date">December 14, 2025</div>
-                        <h4><span class="changelog-tag tag-feat">New Feature</span>GitHub & Render Integration</h4>
-                        <p>เพิ่มระบบเชื่อมต่อ GitHub (Status/Pull) และ Render Deployment Webhook ในหน้า Admin</p>
-                    </div>
+
                     <div class="changelog-item">
                         <div class="changelog-date">December 14, 2025</div>
                         <h4><span class="changelog-tag tag-feat">System</span>LiveSync Optimization</h4>
@@ -1254,10 +1216,7 @@
                 document.getElementById('depositFee').value = settings.deposit_fee_percent || 0;
                 document.getElementById('withdrawFee').value = settings.withdraw_fee_percent || 0;
 
-                // Render
-                if(document.getElementById('renderWebhookUrl')) {
-                    document.getElementById('renderWebhookUrl').value = settings.render_webhook_url || '';
-                }
+
 
             } catch(err) {
                 console.error('Load Settings Error:', err);
@@ -1265,17 +1224,7 @@
             }
         }
 
-        async function saveRenderSettings() {
-             const url = document.getElementById('renderWebhookUrl').value;
-             try {
-                await fetch('/api/admin/settings', {
-                     method: 'POST',
-                     headers: {'Content-Type': 'application/json'},
-                     body: JSON.stringify({ render_webhook_url: url })
-                });
-                showToast('บันทึก Render URL แล้ว', 'success');
-             } catch(e) { showToast('เกิดข้อผิดพลาดในการบันทึก', 'error'); }
-        }
+
 
         async function saveFeeSettings() {
             const deposit = document.getElementById('depositFee').value;
@@ -2195,17 +2144,15 @@
                 const bank = settings.admin_bank_name || 'kbank';
                 const number = settings.admin_bank_number || '';
                 const name = settings.admin_acc_name || '';
-                const renderUrl = settings.render_webhook_url || '';
-                
+
                 const elBank = document.getElementById('adminBankName');
                 const elNum = document.getElementById('adminBankNumber');
                 const elName = document.getElementById('adminAccName');
-                const elRender = document.getElementById('renderWebhookUrl');
                 
                 if(elBank) elBank.value = bank;
                 if(elNum) elNum.value = number;
                 if(elName) elName.value = name;
-                if(elRender) elRender.value = renderUrl;
+
             } catch(e) { console.error('Load Settings Error:', e); }
         }
 
@@ -2420,48 +2367,7 @@
             }
         }
 
-        async function triggerGitHubRender() {
-            const url = document.getElementById('renderWebhookUrl').value;
-            if(!url) {
-                showToast('Please enter Render Webhook URL', 'warning');
-                return;
-            }
-            
-            // Validation Warning
-            if(url.includes('onrender.com') && !url.includes('deploy')) {
-                if(!confirm('⚠️ เตือน: URL ที่ระบุตือเหมือนหน้าเว็บหลัก (ไม่ใช่ Webhook)\nการส่งคำสั่งอาจไม่เกิดผลใดๆ\n\nต้องการดำเนินการต่อหรือไม่?')) return;
-            }
 
-            if(!confirm('🚀 ยืนยันการสั่ง Terminal Deploy ไปยัง Render?\n(ระบบจะทำการ Build และ Update เว็บไซต์จริงบน Cloud)')) return;
-
-            const btn = event.target.closest('button'); // Ensure we get the button if icon clicked
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Triggering...';
-            btn.disabled = true;
-            
-            try {
-                // Use Server Proxy to avoid CORS
-                const res = await fetch('/api/admin/render/deploy', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ url })
-                });
-                
-                const data = await res.json();
-
-                if(res.ok && data.success) {
-                    showToast('Deploy Triggered Successfully!', 'success');
-                } else {
-                    showToast('Deploy Failed: ' + (data.error || 'Unknown Error'), 'error');
-                }
-            } catch(e) {
-                console.error(e);
-                showToast('Connection Error', 'error');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
 
         function clearAllAlerts() {
              updateMonitor();
