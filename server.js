@@ -87,30 +87,7 @@ app.post('/api/admin/git/pull', (req, res) => {
     });
 });
 
-// 3. Trigger Render Deploy (Proxy to avoid CORS)
-app.post('/api/admin/render/deploy', (req, res) => {
-    const { url } = req.body;
-    
-    // Prefer URL from body, fallback to settings if needed (but frontend sends it)
-    if (!url) return res.status(400).json({ error: 'Missing Render Webhook URL' });
 
-    const https = require('https');
-    
-    const request = https.request(url, { method: 'POST' }, (response) => {
-        if (response.statusCode === 200 || response.statusCode === 201) {
-            res.json({ success: true });
-        } else {
-            res.status(response.statusCode).json({ error: `Render returned status ${response.statusCode}` });
-        }
-    });
-    
-    request.on('error', (e) => {
-        console.error('Render Deploy Error:', e);
-        res.status(500).json({ error: 'Failed to trigger Render deploy', details: e.message });
-    });
-    
-    request.end();
-});
 
 // --- API Endpoints ---
 
