@@ -1175,22 +1175,6 @@
                 const trans = await resTrans.json();
                 const settings = await resSettings.json();
                 
-                // Update System Health UI
-                if(document.getElementById('sysDB')) document.getElementById('sysDB').innerText = 'Connected';
-                if(document.getElementById('sysDB')) document.getElementById('sysDB').style.color = 'var(--success)';
-                
-                if(document.getElementById('sysLiveSync')) {
-                    const lsStatus = window.liveSync ? window.liveSync.getStatus() : 'disabled';
-                    document.getElementById('sysLiveSync').innerText = lsStatus === 'active' ? 'Active' : 'Disconnected';
-                    document.getElementById('sysLiveSync').style.color = lsStatus === 'active' ? 'var(--success)' : 'var(--danger)';
-                }
-
-                if(document.getElementById('sysMem')) {
-                    // Simulate Memory or use API if available
-                    const mem = (performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : Math.floor(Math.random() * 50 + 30));
-                    document.getElementById('sysMem').innerText = mem + ' MB';
-                }
-
                 // 1. Users
                 const userCount = Object.keys(users).length;
                 document.getElementById('dashUsers').innerText = userCount;
@@ -1215,6 +1199,12 @@
                     statusEl.style.color = '#10b981';
                     statusEl.style.textShadow = '0 0 10px rgba(16, 185, 129, 0.3)';
                 }
+                
+                // Update System Health UI (Success)
+                if(document.getElementById('sysDB')) {
+                     document.getElementById('sysDB').innerText = 'Connected';
+                     document.getElementById('sysDB').style.color = 'var(--success)';
+                }
 
             } catch(err) { 
                 console.error('Dashboard Error:', err);
@@ -1223,6 +1213,24 @@
                     statusEl.innerText = 'OFFLINE';
                     statusEl.style.color = '#ef4444';
                     statusEl.style.textShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+                }
+                
+                // Update System Health UI (Error)
+                if(document.getElementById('sysDB')) {
+                     document.getElementById('sysDB').innerText = 'Error';
+                     document.getElementById('sysDB').style.color = 'var(--danger)';
+                }
+            } finally {
+                // Always update LiveSync status
+                if(document.getElementById('sysLiveSync')) {
+                    const lsStatus = window.liveSync ? window.liveSync.getStatus() : 'disabled';
+                    document.getElementById('sysLiveSync').innerText = lsStatus === 'active' ? 'Active' : 'Disconnected';
+                    document.getElementById('sysLiveSync').style.color = lsStatus === 'active' ? 'var(--success)' : 'var(--danger)';
+                }
+                
+                if(document.getElementById('sysMem')) {
+                    const mem = (performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : Math.floor(Math.random() * 50 + 30));
+                    document.getElementById('sysMem').innerText = mem + ' MB';
                 }
             }
         }
@@ -2506,7 +2514,7 @@
         setInterval(() => {
             updateMonitor();
             renderDashboard(); // Update stats from server
-        }, 5000);
+        }, 1500); // 1.5s for faster updates
         
         // Additional Pulse Animation for Monitor
         setInterval(() => {
