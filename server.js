@@ -22,51 +22,120 @@ app.get('/', (req, res) => {
 
 // API endpoint to check maintenance status and announcement
 app.get('/api/maintenance-status', (req, res) => {
-    const settings = db.getSettings();
-    res.json({ 
-        maintenance: !!settings.maintenance,
-        announcement: settings.system_announcement || '',
-        announcement_active: settings.system_announcement_active === 'true',
-        deposit_fee_percent: settings.deposit_fee_percent || 0,
-        withdraw_fee_percent: settings.withdraw_fee_percent || 0
-    });
+    try {
+        const settings = db.getSettings();
+        res.json({ 
+            maintenance: !!settings.maintenance,
+            announcement: settings.system_announcement || '',
+            announcement_active: settings.system_announcement_active === 'true',
+            deposit_fee_percent: settings.deposit_fee_percent || 0,
+            withdraw_fee_percent: settings.withdraw_fee_percent || 0
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch maintenance status' });
+    }
 });
 
 // --- Logs API ---
 app.get('/api/admin/logs', (req, res) => {
-    const logs = db.getLogs();
-    res.json(logs);
+    try {
+        const logs = db.getLogs();
+        res.json(logs);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch logs' });
+    }
 });
 
-app.post('/api/admin/logs/clear', (req, res) => {
+// Regenerate Shop Items (Admin)
+app.post('/api/admin/shop/regenerate', (req, res) => {
     try {
-        db.clearLogs();
-        res.json({ success: true });
-    } catch(err) {
-        res.status(500).json({ error: err.message });
+        const items = db.regenerateShop();
+        res.json({ success: true, count: items.length });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to regenerate shop' });
     }
+});
+
+const { exec } = require('child_process');
+
+// --- Git / System Commands ---
+
+// 1. Get Git Status
+app.get('/api/admin/git/status', (req, res) => {
+    exec('git log -1 --format="%h - %s (%cd)" --date=short', (err, stdout, stderr) => {
+        if (err) {
+            console.error('Git Status Error:', err);
+            // Fallback for non-git environments
+            return res.json({ 
+                commit: 'No Git Info', 
+                message: 'Running in non-git environment or error occurred.' 
+            });
+        }
+        res.json({ commit: stdout.trim() });
+    });
+});
+
+// 2. Trigger Git Pull (Local Update)
+app.post('/api/admin/git/pull', (req, res) => {
+    exec('git pull', (err, stdout, stderr) => {
+        if (err) {
+            console.error('Git Pull Error:', err);
+            return res.status(500).json({ error: 'Git Pull Failed', details: stderr });
+        }
+        console.log('Git Pull Output:', stdout);
+        res.json({ success: true, output: stdout });
+    });
+});
+
+// 3. Trigger Render Deploy (Proxy to avoid CORS)
+app.post('/api/admin/render/deploy', (req, res) => {
+    const { url } = req.body;
+    
+    // Prefer URL from body, fallback to settings if needed (but frontend sends it)
+    if (!url) return res.status(400).json({ error: 'Missing Render Webhook URL' });
+
+    const https = require('https');
+    
+    const request = https.request(url, { method: 'POST' }, (response) => {
+        if (response.statusCode === 200 || response.statusCode === 201) {
+            res.json({ success: true });
+        } else {
+            res.status(response.statusCode).json({ error: `Render returned status ${response.statusCode}` });
+        }
+    });
+    
+    request.on('error', (e) => {
+        console.error('Render Deploy Error:', e);
+        res.status(500).json({ error: 'Failed to trigger Render deploy', details: e.message });
+    });
+    
+    request.end();
 });
 
 // --- API Endpoints ---
 
 // 1. Check Referral Code
 app.get('/api/check-referral/:code', (req, res) => {
-    const code = req.params.code;
-    // Remove 'x' suffix if present (logic from frontend moved here or kept consistent)
-    const cleanCode = code.replace(/x/i, '');
-    
-    const referrer = db.findUserById(cleanCode);
-    
-    if (referrer) {
-        res.json({ 
-            valid: true, 
-            referrer: { 
-                id: referrer.id, 
-                username: referrer.username // Send back name for confirmation
-            } 
-        });
-    } else {
-        res.json({ valid: false });
+    try {
+        const code = req.params.code;
+        // Remove 'x' suffix if present (logic from frontend moved here or kept consistent)
+        const cleanCode = code.replace(/x/i, '');
+        
+        const referrer = db.findUserById(cleanCode);
+        
+        if (referrer) {
+            res.json({ 
+                valid: true, 
+                referrer: { 
+                    id: referrer.id, 
+                    username: referrer.username // Send back name for confirmation
+                } 
+            });
+        } else {
+            res.json({ valid: false });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to check referral' });
     }
 });
 
@@ -92,7 +161,7 @@ app.post('/api/register', (req, res) => {
             referrer_id: referrer_id, // Can be null
             ip: ip,
             deviceId: deviceId,
-            status: referrer_id ? 'pending' : 'approved' // If no referrer, auto-approve? Or always pending? Let's say if referred, pending approval.
+            status: 'approved' // Auto-approve all new users
         });
 
         db.addLog({
@@ -110,39 +179,47 @@ app.post('/api/register', (req, res) => {
 
 // 3. Login (Basic)
 app.post('/api/login', (req, res) => {
-    const settings = db.getSettings();
-    if (settings.maintenance) {
-        // Allow admin login during maintenance, assuming 'admin' is a specific username
-        const { username } = req.body;
-        if (username !== 'admin') { // You might want a more robust role system
-            return res.status(503).json({ error: 'ระบบกำลังอยู่ในช่วงบำรุงรักษา' });
+    try {
+        const settings = db.getSettings();
+        if (settings.maintenance) {
+            // Allow admin login during maintenance, assuming 'admin' is a specific username
+            const { username } = req.body;
+            if (username !== 'admin') { // You might want a more robust role system
+                return res.status(503).json({ error: 'ระบบกำลังอยู่ในช่วงบำรุงรักษา' });
+            }
         }
-    }
 
-    const { username, password } = req.body;
-    const user = db.findUserByUsername(username);
+        const { username, password } = req.body;
+        const user = db.findUserByUsername(username);
 
-    if (user && user.password === password) {
-        // Log Login
-        db.addLog({
-            type: 'login',
-            user: username,
-            action: 'User Login',
-            details: `IP: ${req.ip || 'Unknown'}`
-        });
-        res.json({ success: true, user });
-    } else {
-        res.status(401).json({ error: 'Invalid credentials' });
+        if (user && user.password === password) {
+            // Log Login
+            db.addLog({
+                type: 'login',
+                user: username,
+                action: 'User Login',
+                details: `IP: ${req.ip || 'Unknown'}`
+            });
+            res.json({ success: true, user });
+        } else {
+            res.status(401).json({ error: 'Invalid credentials' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Login failed' });
     }
 });
 
 // Get User Data
 app.get('/api/user/:username', (req, res) => {
-    const user = db.findUserByUsername(req.params.username);
-    if (user) {
-        res.json({ success: true, user });
-    } else {
-        res.status(404).json({ error: 'User not found' });
+    try {
+        const user = db.findUserByUsername(req.params.username);
+        if (user) {
+            res.json({ success: true, user });
+        } else {
+            res.status(404).json({ error: 'User not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch user data' });
     }
 });
 
@@ -185,6 +262,9 @@ app.post('/api/user/sync', (req, res) => {
             if(balance !== undefined) user.balance = balance;
             if(hashrate !== undefined) user.hashrate = hashrate;
             if(rigs !== undefined) user.rigs = rigs;
+            
+            // Update Activity Timestamp for Online Status
+            user.lastActive = Date.now();
             
             // Save to DB (need a generic update helper or use specific ones)
             // database.js doesn't have a generic 'updateUser' that takes all fields.
@@ -261,8 +341,12 @@ app.post('/api/admin/update-balance', (req, res) => {
 
 // --- Transactions API ---
 app.get('/api/admin/transactions', (req, res) => {
-    const trans = db.getAllTransactions();
-    res.json(trans);
+    try {
+        const trans = db.getAllTransactions();
+        res.json(trans);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch transactions' });
+    }
 });
 
 app.post('/api/transactions/deposit', (req, res) => {
@@ -401,8 +485,13 @@ app.post('/api/admin/update-transaction-status', (req, res) => {
 
 // --- Settings API ---
 app.get('/api/admin/settings', (req, res) => {
-    const settings = db.getSettings();
-    res.json(settings);
+    try {
+        const settings = db.getSettings();
+        res.json(settings);
+    } catch (err) {
+        console.error('Error fetching settings:', err);
+        res.status(500).json({ error: 'Failed to fetch settings' });
+    }
 });
 
 app.post('/api/admin/settings', (req, res) => {
@@ -420,6 +509,37 @@ app.post('/api/admin/settings', (req, res) => {
         res.json({ success: true, settings: updated });
     } catch(err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Create User (Admin)
+app.post('/api/admin/create-user', (req, res) => {
+    const { username, password, email } = req.body;
+    try {
+        if(!username || !password) throw new Error('กรุณาระบุชื่อผู้ใช้และรหัสผ่าน');
+        
+        // Basic ID generation if not handled by db (db uses username as key, but stores id inside)
+        // db.createUser expects userData
+        const newUser = db.createUser({
+            username,
+            password,
+            email: email || '',
+            id: Date.now(),
+            status: 'active', // Admin created users are active by default
+            ip: 'Admin Created',
+            deviceId: 'Admin Console'
+        });
+        
+        db.addLog({
+            type: 'admin_action',
+            user: 'admin',
+            action: 'Create User',
+            details: `Created user: ${username}`
+        });
+        
+        res.json({ success: true, user: newUser });
+    } catch(err) {
+        res.status(400).json({ error: err.message });
     }
 });
 
@@ -452,19 +572,23 @@ app.post('/api/admin/reset-password', (req, res) => {
 
 // --- Shop API ---
 app.get('/api/shop/items', (req, res) => {
-    const settings = db.getSettings();
-    if(settings.shop_disabled === 'true') {
-        res.json({ 
-            disabled: true, 
-            notice: settings.shop_notice || '',
-            items: [] 
-        });
-    } else {
-        res.json({ 
-            disabled: false, 
-            notice: settings.shop_notice || '',
-            items: db.getShopItems() 
-        });
+    try {
+        const settings = db.getSettings();
+        if(settings.shop_disabled === 'true') {
+            res.json({ 
+                disabled: true, 
+                notice: settings.shop_notice || '',
+                items: [] 
+            });
+        } else {
+            res.json({ 
+                disabled: false, 
+                notice: settings.shop_notice || '',
+                items: db.getShopItems() 
+            });
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch shop items' });
     }
 });
 
@@ -605,9 +729,13 @@ app.post('/api/admin/logs/clear', (req, res) => {
 
 // Client Logs
 app.post('/api/log', (req, res) => {
-    const log = req.body;
-    db.addLog({ type: 'client', ...log });
-    res.json({ success: true });
+    try {
+        const log = req.body;
+        db.addLog({ type: 'client', ...log });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to add log' });
+    }
 });
 
 // Start Server

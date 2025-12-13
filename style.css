@@ -191,7 +191,7 @@ body {
     background: linear-gradient(160deg, rgba(20,30,50,0.9), rgba(10,15,25,0.95));
     border: 1px solid var(--border);
     border-radius: 24px;
-    padding: 25px;
+    padding: 20px;
     position: relative;
     overflow: hidden;
     margin-bottom: 25px;
@@ -222,11 +222,12 @@ body {
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
 .stat-row {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 15px;
     border-top: 1px solid rgba(255,255,255,0.1);
-    padding-top: 15px;
+    padding-top: 10px;
 }
 .stat-item .label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 .stat-item .value { font-size: 1.2rem; font-weight: bold; color: var(--primary); text-shadow: 0 0 10px var(--primary-dim); }
@@ -236,7 +237,7 @@ body {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 12px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 .menu-item {
     background: var(--bg-panel);
@@ -271,7 +272,7 @@ body {
     color: #000;
     box-shadow: 0 0 15px var(--primary);
 }
-.menu-label { font-size: 0.8rem; color: #fff; font-weight: 600; }
+.menu-label { font-size: 0.8rem; color: var(--text-main); font-weight: 600; }
 .menu-item:hover .menu-label { color: var(--text-main); }
 
 /* Badges */
@@ -304,8 +305,8 @@ body {
     background: rgba(0, 242, 255, 0.05);
     border-top: 1px solid var(--primary);
     border-bottom: 1px solid var(--primary);
-    padding: 10px 0;
-    margin: 20px 0;
+    padding: 8px 0;
+    margin: 15px 0;
     position: relative;
     overflow: hidden;
     white-space: nowrap;
@@ -508,7 +509,7 @@ body {
     max-width: 400px;
     position: relative;
     box-shadow: 0 0 30px rgba(0,0,0,0.5);
-    color: white;
+    color: var(--text-main);
     max-height: 90vh;
     overflow-y: auto;
 }
@@ -564,7 +565,7 @@ body {
     margin-bottom: 10px;
     cursor: pointer;
     transition: 0.3s;
-    color: white;
+    color: var(--text-main);
 }
 .menu-list-item:hover {
     background: rgba(0, 242, 255, 0.1);
@@ -577,3 +578,14 @@ body {
     text-align: center;
     margin-right: 10px;
 }
+
+/* Bank Cards */
+.bank-card {
+    background: linear-gradient(135deg, #333, #000); /* Default */
+    color: white;
+}
+.bank-card.kbank { background: linear-gradient(135deg, #138f2d, #00561b); }
+.bank-card.scb { background: linear-gradient(135deg, #4e2a84, #2d184f); }
+.bank-card.ktb { background: linear-gradient(135deg, #1ba5e1, #0e74a0); }
+.bank-card.bbl { background: linear-gradient(135deg, #1e4598, #0f2c6a); }
+.bank-card.gsb { background: linear-gradient(135deg, #eb198d, #a61263); }

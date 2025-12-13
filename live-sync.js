@@ -7,14 +7,32 @@
 
 class LiveSync {
     constructor() {
-        this.pollInterval = 1000; // 1 second
+        this.pollInterval = 1000; // Default 1 second
         this.isPolling = false;
         this.lastUpdate = {};
         this.callbacks = {};
+        
+        // Network Status Optimization
+        this.connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         this.init();
     }
 
     init() {
+        // Monitor Network Type
+        if (this.connection) {
+            this.updatePollInterval();
+            this.connection.addEventListener('change', () => this.updatePollInterval());
+        }
+
+        // Monitor Visibility (Tab Switch)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.stopPolling();
+            } else {
+                this.startPolling();
+            }
+        });
+
         // Start polling
         this.startPolling();
         
@@ -33,6 +51,35 @@ class LiveSync {
         }
         
         console.log('✅ LiveSync initialized');
+    }
+
+    updatePollInterval() {
+        if (!this.connection) return;
+        
+        const type = this.connection.effectiveType;
+        const saveData = this.connection.saveData;
+        
+        console.log(`📡 Network Status: ${type} (SaveData: ${saveData})`);
+        
+        if (saveData === true) {
+            // Data Saver Mode -> Very Slow Polling
+            this.pollInterval = 5000;
+        } else if (type === '4g' || type === 'wifi' || type === 'ethernet') {
+            // Fast Connection -> Real-time
+            this.pollInterval = 1000;
+        } else if (type === '3g') {
+            // Medium
+            this.pollInterval = 2000;
+        } else {
+            // Slow (2g, etc)
+            this.pollInterval = 4000;
+        }
+        
+        // Restart polling if active
+        if (this.isPolling) {
+            this.stopPolling();
+            this.startPolling();
+        }
     }
 
     /**
@@ -59,6 +106,13 @@ class LiveSync {
         }, this.pollInterval);
         
         console.log('🔄 Live polling started (every ' + this.pollInterval + 'ms)');
+    }
+
+    /**
+     * Get current status
+     */
+    getStatus() {
+        return this.isPolling ? 'active' : 'idle';
     }
 
     /**

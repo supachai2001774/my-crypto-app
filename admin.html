@@ -135,6 +135,22 @@
             transform: translateY(-5px); 
             box-shadow: 0 15px 40px rgba(0, 242, 255, 0.1); 
         }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
+            outline: none;
+            transition: 0.3s;
+        }
+        .search-bar:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+        }
         
         h2 {
             color: var(--text-main);
@@ -160,7 +176,7 @@
         td { 
             padding: 15px; 
             background: rgba(255,255,255,0.02); 
-            color: #e2e8f0; 
+            color: var(--text-main); 
             border-top: 1px solid rgba(255,255,255,0.05);
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
@@ -175,7 +191,7 @@
             background: rgba(0,0,0,0.4); 
             border: 1px solid var(--border); 
             border-radius: 8px; 
-            color: white; 
+            color: var(--text-main); 
             margin-bottom: 15px; 
             box-sizing: border-box; 
             outline: none;
@@ -314,6 +330,35 @@
         .tag-fix { background: #ff0055; color: white; }
         .tag-feat { background: #00f2ff; color: #050510; }
         .tag-perf { background: #7000ff; color: white; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: #0f1423;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%; max-width: 400px;
+            border: 1px solid var(--border);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+            position: relative;
+        }
+        .modal-header {
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-weight: bold;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .close-modal {
+            cursor: pointer; color: var(--text-muted); font-size: 1.2rem;
+        }
+        .close-modal:hover { color: var(--danger); }
+        
     </style>
 </head>
 <body>
@@ -346,7 +391,7 @@
         </div>
         <div class="menu-item" onclick="nav('settings', this)"><i class="fas fa-cogs"></i> ตั้งค่าระบบ</div>
         <div class="menu-item" onclick="nav('updates', this)"><i class="fas fa-history"></i> ประวัติอัปเดต</div>
-        <div class="menu-item" onclick="nav('logs', this)"><i class="fas fa-terminal"></i> บันทึกระบบ</div>
+
 
 
 
@@ -356,7 +401,7 @@
                 <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite;"></div>
                 <span style="color: var(--success); font-weight: bold; font-size: 0.9rem;">LIVE SYSTEM</span>
             </div>
-            <div style="font-size: 0.65rem; color: #aaa; margin-top: 5px;">MySQL Ready (Mode: Simulation)</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 5px;">MySQL Ready (Mode: Simulation)</div>
         </div>
     </div>
 
@@ -375,7 +420,7 @@
                     A
                 </div>
                 <div style="text-align: left;">
-                    <div style="font-weight: bold; font-size: 1rem; color: white; line-height: 1.2;">Admin</div>
+                    <div style="font-weight: bold; font-size: 1rem; color: var(--text-main); line-height: 1.2;">Admin</div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">ผู้ดูแลระบบ</div>
                 </div>
             </div>
@@ -388,19 +433,19 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; margin-bottom: 30px;">
                 
                 <div class="card" style="border-left: 4px solid #10b981; margin: 0;">
-                    <div style="font-size: 0.9rem; color: #94a3b8;">ยอดฝากรวม</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">ยอดฝากรวม</div>
                     <div style="font-size: 2rem; font-weight: bold; margin-top: 5px; color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);" id="dashDeposit">฿0.00</div>
                     <i class="fas fa-arrow-down" style="position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.1; color: #10b981;"></i>
                 </div>
 
                 <div class="card" style="border-left: 4px solid #ef4444; margin: 0;">
-                    <div style="font-size: 0.9rem; color: #94a3b8;">ยอดถอนรวม</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">ยอดถอนรวม</div>
                     <div style="font-size: 2rem; font-weight: bold; margin-top: 5px; color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);" id="dashWithdraw">฿0.00</div>
                     <i class="fas fa-arrow-up" style="position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.1; color: #ef4444;"></i>
                 </div>
 
                 <div class="card" style="border-left: 4px solid #3b82f6; margin: 0;">
-                    <div style="font-size: 0.9rem; color: #94a3b8;">กำไรสุทธิ</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">กำไรสุทธิ</div>
                     <div style="font-size: 2rem; font-weight: bold; margin-top: 5px; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);" id="dashNet">฿0.00</div>
                     <i class="fas fa-wallet" style="position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.1; color: #3b82f6;"></i>
                 </div>
@@ -415,6 +460,64 @@
                     <div style="font-size: 0.9rem; color: #94a3b8;">สถานะระบบ</div>
                     <div style="font-size: 1.5rem; font-weight: bold; margin-top: 5px; color: #a855f7; text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);" id="dashStatus">Checking...</div>
                     <i class="fas fa-server" style="position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: 0.1; color: #a855f7;"></i>
+                </div>
+            </div>
+
+            <!-- System Commands (Quick Actions) -->
+            <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--accent);">
+                <h3 style="margin-top:0; color: var(--accent);"><i class="fas fa-terminal"></i> คำสั่งระบบ (Quick Commands)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <!-- Deploy Render -->
+                    <button onclick="triggerGitHubRender()" class="btn-sm" style="background: #000; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <i class="fas fa-rocket" style="font-size: 1.5rem; color: var(--primary);"></i>
+                        <span>Terminal Deploy</span>
+                    </button>
+                    
+                    <!-- Git Pull -->
+                    <button onclick="triggerGitPull()" class="btn-sm" style="background: #000; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <i class="fas fa-download" style="font-size: 1.5rem; color: var(--warning);"></i>
+                        <span>Git Pull</span>
+                    </button>
+
+                    <!-- Open App -->
+                    <a href="https://my-crypto-app-fsv2.onrender.com" target="_blank" class="btn-sm" style="background: #000; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-decoration: none; color: white;">
+                        <i class="fas fa-external-link-alt" style="font-size: 1.5rem; color: var(--secondary);"></i>
+                        <span>เปิดหน้าเว็บจริง</span>
+                    </a>
+
+                    <!-- Toggle Maintenance -->
+                    <button onclick="quickToggleMaint()" class="btn-sm" style="background: #000; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <i class="fas fa-tools" style="font-size: 1.5rem; color: var(--danger);"></i>
+                        <span id="quickMaintLabel">Maintenance</span>
+                    </button>
+                    
+                    <!-- Clear Cache/Reload -->
+                    <button onclick="location.reload()" class="btn-sm" style="background: #000; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <i class="fas fa-sync-alt" style="font-size: 1.5rem; color: var(--success);"></i>
+                        <span>รีโหลดหน้า Admin</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 style="margin-top:0;"><i class="fas fa-heartbeat"></i> System Health Check</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color:var(--text-muted); font-size: 0.8rem; margin-bottom: 5px;">API Latency</div>
+                        <div style="color:var(--success); font-weight: bold;" id="sysLatency">...</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color:var(--text-muted); font-size: 0.8rem; margin-bottom: 5px;">LiveSync</div>
+                        <div style="color:var(--success); font-weight: bold;" id="sysLiveSync">Checking...</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color:var(--text-muted); font-size: 0.8rem; margin-bottom: 5px;">Database</div>
+                        <div style="color:var(--success); font-weight: bold;" id="sysDB">Connected</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="color:var(--text-muted); font-size: 0.8rem; margin-bottom: 5px;">Memory Usage</div>
+                        <div style="color:var(--primary); font-weight: bold;" id="sysMem">...</div>
+                    </div>
                 </div>
             </div>
 
@@ -491,7 +594,10 @@
         <div id="users" class="section">
             <h2><i class="fas fa-users"></i> จัดการผู้ใช้</h2>
             <div class="card">
-                <input type="text" id="searchUser" class="search-bar" placeholder="ค้นหาชื่อผู้ใช้, อีเมล..." onkeyup="filterUsers()">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <input type="text" id="searchUser" class="search-bar" placeholder="ค้นหาชื่อผู้ใช้, อีเมล..." onkeyup="filterUsers()" style="margin-bottom: 0; flex: 1;">
+                    <button onclick="openAddUserModal()" class="btn-sm btn-green" style="white-space: nowrap; padding: 0 20px;"><i class="fas fa-plus"></i> เพิ่มผู้ใช้</button>
+                </div>
                 <div style="overflow-x: auto;">
                     <table id="usersTable">
                         <thead>
@@ -501,6 +607,7 @@
                                 <th>ผู้ใช้</th>
                                 <th>ยอดเงิน</th>
                                 <th>เครื่องขุด</th>
+                                <th>ออนไลน์</th>
                                 <th>สถานะ</th>
                                 <th>การดำเนินการ</th>
                             </tr>
@@ -567,6 +674,16 @@
 
             <div class="card">
                 <h3 style="color: var(--primary); margin-top: 0;">สินค้าปัจจุบัน</h3>
+                
+                <div class="shop-tabs" style="display:flex; gap:10px; margin-bottom:15px; overflow-x:auto; padding-bottom:5px;">
+                    <button onclick="renderShop(1)" id="shopTab1" class="btn-sm btn-primary">Lv.1-20</button>
+                    <button onclick="renderShop(2)" id="shopTab2" class="btn-sm btn-gray">Lv.21-40</button>
+                    <button onclick="renderShop(3)" id="shopTab3" class="btn-sm btn-gray">Lv.41-60</button>
+                    <button onclick="renderShop(4)" id="shopTab4" class="btn-sm btn-gray">Lv.61-80</button>
+                    <button onclick="renderShop(5)" id="shopTab5" class="btn-sm btn-gray">Lv.81-100</button>
+                    <button onclick="renderShop(0)" id="shopTab0" class="btn-sm btn-gray">ทั้งหมด</button>
+                </div>
+
                 <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
                     <table id="shopTable">
                         <thead>
@@ -599,9 +716,14 @@
                         <i class="fas fa-store"></i> เปิดร้าน
                     </button>
                 </div>
-                <button onclick="clearShopItems()" class="btn-sm btn-red" style="width: 100%; padding: 12px;">
-                    <i class="fas fa-trash"></i> ล้างสินค้าทั้งหมด
-                </button>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button onclick="clearShopItems()" class="btn-sm btn-red" style="flex: 1; padding: 12px;">
+                        <i class="fas fa-trash"></i> ล้างสินค้าทั้งหมด
+                    </button>
+                    <button onclick="regenerateShop()" class="btn-sm btn-primary" style="flex: 1; padding: 12px;">
+                        <i class="fas fa-sync"></i> รีเซ็ตค่าเริ่มต้น
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -751,6 +873,49 @@
                 <input type="text" id="maintMsg" class="cyber-input" placeholder="ข้อความแจ้งเตือน (Optional)" style="margin-top: 10px;" onchange="saveMaintMsg()">
             </div>
 
+            <div class="card">
+                <h3><i class="fab fa-github"></i> Render Deployment</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Trigger a manual deployment hook for Render.com</p>
+                
+                <div style="margin-top: 10px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="color: var(--text-muted); font-size: 0.8rem;">Live Server</div>
+                        <a href="https://my-crypto-app-fsv2.onrender.com" target="_blank" style="color: var(--secondary); font-weight: bold; text-decoration: none;">
+                            my-crypto-app-fsv2.onrender.com <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                    <a href="https://my-crypto-app-fsv2.onrender.com" target="_blank" class="btn-sm" style="background: var(--bg-body); border: 1px solid var(--secondary); color: var(--secondary);">
+                        Open App
+                    </a>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <label style="color: var(--text-muted); font-size: 0.9rem;">Render Webhook URL</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="password" id="renderWebhookUrl" class="cyber-input" placeholder="https://api.render.com/deploy/..." value="https://my-crypto-app-fsv2.onrender.com" style="flex:1;">
+                        <button onclick="saveRenderSettings()" class="btn-sm btn-green" style="white-space: nowrap;">
+                            <i class="fas fa-save"></i> บันทึก
+                        </button>
+                    </div>
+                </div>
+                <button onclick="triggerGitHubRender()" class="btn-sm btn-primary" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-rocket"></i> Deploy to Render
+                </button>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3><i class="fab fa-git-alt"></i> Local Server Git</h3>
+                <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
+                    <button onclick="checkGitStatus()" class="btn-sm" style="flex: 1; background: var(--bg-body); border: 1px solid var(--border);">
+                        <i class="fas fa-code-branch"></i> Status
+                    </button>
+                    <button onclick="triggerGitPull()" class="btn-sm" style="flex: 1; background: var(--warning); color: #000;">
+                        <i class="fas fa-download"></i> Git Pull
+                    </button>
+                </div>
+                <div id="gitStatusResult" style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); font-family: monospace;"></div>
+            </div>
+
             <div class="card" style="margin-top: 20px;">
                 <h3 style="color: var(--danger);"><i class="fas fa-trash-alt"></i> รีเซ็ตระบบ</h3>
                 <p style="color: var(--text-muted);">ล้างข้อมูลผู้ใช้ ธุรกรรม และการขุดทั้งหมด</p>
@@ -765,7 +930,17 @@
             <h2><i class="fas fa-history"></i> ประวัติการอัปเดตซอฟต์แวร์</h2>
             <div class="card">
                 <div class="changelog-timeline">
-                    <!-- Items will be added here -->
+                    <!-- Items -->
+                    <div class="changelog-item">
+                        <div class="changelog-date">December 14, 2025</div>
+                        <h4><span class="changelog-tag tag-feat">New Feature</span>GitHub & Render Integration</h4>
+                        <p>เพิ่มระบบเชื่อมต่อ GitHub (Status/Pull) และ Render Deployment Webhook ในหน้า Admin</p>
+                    </div>
+                    <div class="changelog-item">
+                        <div class="changelog-date">December 14, 2025</div>
+                        <h4><span class="changelog-tag tag-feat">System</span>LiveSync Optimization</h4>
+                        <p>ปรับปรุงระบบ Real-time Sync รองรับ Data Saver Mode และแสดงสถานะ Online ของผู้ใช้</p>
+                    </div>
                     <div class="changelog-item">
                         <div class="changelog-date">December 5, 2025</div>
                         <h4><span class="changelog-tag tag-feat">ฟีเจอร์</span>เพิ่มประวัติการอัปเดต</h4>
@@ -785,22 +960,7 @@
             </div>
         </div>
 
-        <!-- System Logs -->
-        <div id="logs" class="section">
-            <h2><i class="fas fa-terminal"></i> บันทึกระบบ (System Logs)</h2>
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                    <div>
-                        <button onclick="renderLogs()" class="btn-sm btn-primary"><i class="fas fa-sync"></i> รีเฟรช</button>
-                        <button onclick="clearLogs()" class="btn-sm btn-red"><i class="fas fa-trash"></i> ล้างบันทึก</button>
-                    </div>
-                    <div style="color: var(--text-muted); font-size: 0.9rem;">บันทึก 100 รายการล่าสุด</div>
-                </div>
-                <div style="background: #0a0a0a; color: #00ff9d; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; height: 400px; overflow-y: auto; border: 1px solid #333; box-shadow: inset 0 0 20px rgba(0,0,0,0.5);" id="logConsole">
-                    <div style="color: #666;">> System initialized...</div>
-                </div>
-            </div>
-        </div>
+
 
     <!-- Image Modal -->
     <div id="imgModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; flex-direction: column;">
@@ -819,6 +979,33 @@
         <button onclick="document.getElementById('imgModal').style.display='none'" class="btn-sm btn-red" style="margin-top: 20px; padding: 10px 30px; font-size: 1.2rem;">ปิด</button>
     </div>
 
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span><i class="fas fa-user-plus"></i> เพิ่มผู้ใช้ใหม่</span>
+                <i class="fas fa-times close-modal" onclick="closeAddUserModal()"></i>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="color: var(--text-muted); font-size: 0.9rem;">ชื่อผู้ใช้ (Username)</label>
+                    <input type="text" id="newUsername" class="search-bar" placeholder="เช่น user123" style="margin-top: 5px;">
+                </div>
+                <div>
+                    <label style="color: var(--text-muted); font-size: 0.9rem;">รหัสผ่าน (Password)</label>
+                    <input type="password" id="newPassword" class="search-bar" placeholder="กำหนดรหัสผ่าน" style="margin-top: 5px;">
+                </div>
+                <div>
+                    <label style="color: var(--text-muted); font-size: 0.9rem;">อีเมล (ไม่บังคับ)</label>
+                    <input type="email" id="newEmail" class="search-bar" placeholder="email@example.com" style="margin-top: 5px;">
+                </div>
+                <button onclick="saveNewUser()" class="btn-sm btn-green" style="width: 100%; padding: 12px; margin-top: 10px;">
+                    <i class="fas fa-save"></i> บันทึกข้อมูล
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Admin Login Overlay -->
     <div id="adminLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050510; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
         <div style="text-align: center; margin-bottom: 30px;">
@@ -827,7 +1014,7 @@
             <div style="color: var(--text-muted);">เข้าสู่ระบบจัดการหลังบ้าน</div>
         </div>
         <div style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 16px; border: 1px solid var(--border); width: 300px; text-align: center;">
-            <input type="password" id="adminPin" placeholder="Enter Access PIN" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: white; padding: 12px; border-radius: 8px; font-size: 1.2rem; text-align: center; margin-bottom: 20px; outline: none;">
+            <input type="password" id="adminPin" placeholder="Enter Access PIN" style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); color: var(--text-main); padding: 12px; border-radius: 8px; font-size: 1.2rem; text-align: center; margin-bottom: 20px; outline: none;">
             <button onclick="checkAdminLogin()" class="btn-sm btn-primary" style="width: 100%; padding: 12px; font-size: 1rem;">ACCESS SYSTEM</button>
         </div>
         <div style="margin-top: 20px; color: var(--danger); font-size: 0.9rem; opacity: 0;" id="loginError">
@@ -837,6 +1024,25 @@
 
     <script src="live-sync.js"></script>
     <script>
+        // API Base URL Fix for file:// protocol and Live Server
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            if (typeof url === 'string' && url.startsWith('/api/')) {
+                // If running on file protocol
+                if (location.protocol === 'file:') {
+                    const baseUrl = 'http://localhost:3002';
+                    url = baseUrl + url;
+                } 
+                // If running on a different port (e.g. Live Server on 5500)
+                else if (location.port !== '3002') {
+                    // Use the same hostname (e.g. IP address) but port 3002
+                    const baseUrl = `http://${location.hostname}:3002`;
+                    url = baseUrl + url;
+                }
+            }
+            return originalFetch(url, options);
+        };
+
         // Admin Login Logic
         function checkAdminLogin() {
             const pin = document.getElementById('adminPin').value;
@@ -858,6 +1064,11 @@
         // Check session on load
         if(sessionStorage.getItem('admin_logged_in') === 'true') {
             document.getElementById('adminLogin').style.display = 'none';
+            // Auto load dashboard
+            setTimeout(() => {
+                renderDashboard();
+                showToast('เชื่อมต่อระบบสำเร็จ', 'success');
+            }, 500);
         }
 
         // Enter key support
@@ -888,7 +1099,7 @@
             }
 
             if (id === 'settings') {
-                loadSystemSettings();
+                loadPaymentSettings(); // Use the existing function name
             }
 
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -908,56 +1119,6 @@
             if(id === 'trans') renderTrans();
             if(id === 'referrals') renderReferrals();
             if(id === 'monitor') updateMonitor();
-            if(id === 'logs') renderLogs();
-        }
-
-        async function renderLogs() {
-            const consoleEl = document.getElementById('logConsole');
-            consoleEl.innerHTML = '<div style="color: #666;">> Fetching logs...</div>';
-            
-            try {
-                const res = await fetch('/api/admin/logs');
-                const logs = await res.json();
-                
-                if(logs.length === 0) {
-                    consoleEl.innerHTML = '<div style="color: #666;">> No logs found.</div>';
-                    return;
-                }
-                
-                consoleEl.innerHTML = '';
-                logs.forEach(log => {
-                    const date = new Date(log.timestamp).toLocaleString();
-                    const color = log.type === 'error' ? '#ff5555' : 
-                                  log.type === 'system' ? '#bd93f9' : 
-                                  log.type === 'client' ? '#f1fa8c' : '#8be9fd';
-                    
-                    const div = document.createElement('div');
-                    div.style.borderBottom = '1px solid #222';
-                    div.style.padding = '4px 0';
-                    div.style.fontFamily = "'Courier New', monospace";
-                    div.innerHTML = `
-                        <span style="color: #666;">[${date}]</span> 
-                        <span style="color: ${color}; font-weight: bold;">[${log.type.toUpperCase()}]</span> 
-                        <span style="color: #ddd;">${log.action || ''}</span> 
-                        <span style="color: #aaa;">- ${log.details || ''}</span>
-                    `;
-                    consoleEl.appendChild(div);
-                });
-            } catch(e) {
-                consoleEl.innerHTML = '<div style="color: red;">> Error fetching logs: ' + e.message + '</div>';
-            }
-        }
-
-        async function clearLogs() {
-            if(confirm('คุณแน่ใจหรือไม่ที่จะล้างบันทึกทั้งหมด?')) {
-                try {
-                    const res = await fetch('/api/admin/logs/clear', { method: 'POST' });
-                    if(res.ok) {
-                        renderLogs();
-                        showToast('ล้างบันทึกเรียบร้อย', 'success');
-                    } else showToast('Error clearing logs', 'error');
-                } catch(e) { showToast('Connection Error', 'error'); }
-            }
         }
 
         // Toast
@@ -994,6 +1155,7 @@
 
         // Dashboard
         async function renderDashboard() {
+            const start = performance.now();
             try {
                 const [resUsers, resTrans, resSettings] = await Promise.all([
                     fetch('/api/admin/users'),
@@ -1001,10 +1163,34 @@
                     fetch('/api/admin/settings')
                 ]);
                 
+                // Calculate Latency
+                const latency = Math.round(performance.now() - start);
+                const elLat = document.getElementById('sysLatency');
+                if(elLat) {
+                    elLat.innerText = latency + ' ms';
+                    elLat.style.color = latency < 100 ? 'var(--success)' : (latency < 300 ? 'var(--warning)' : 'var(--danger)');
+                }
+
                 const users = await resUsers.json();
                 const trans = await resTrans.json();
                 const settings = await resSettings.json();
                 
+                // Update System Health UI
+                if(document.getElementById('sysDB')) document.getElementById('sysDB').innerText = 'Connected';
+                if(document.getElementById('sysDB')) document.getElementById('sysDB').style.color = 'var(--success)';
+                
+                if(document.getElementById('sysLiveSync')) {
+                    const lsStatus = window.liveSync ? window.liveSync.getStatus() : 'disabled';
+                    document.getElementById('sysLiveSync').innerText = lsStatus === 'active' ? 'Active' : 'Disconnected';
+                    document.getElementById('sysLiveSync').style.color = lsStatus === 'active' ? 'var(--success)' : 'var(--danger)';
+                }
+
+                if(document.getElementById('sysMem')) {
+                    // Simulate Memory or use API if available
+                    const mem = (performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : Math.floor(Math.random() * 50 + 30));
+                    document.getElementById('sysMem').innerText = mem + ' MB';
+                }
+
                 // 1. Users
                 const userCount = Object.keys(users).length;
                 document.getElementById('dashUsers').innerText = userCount;
@@ -1060,10 +1246,27 @@
                 document.getElementById('depositFee').value = settings.deposit_fee_percent || 0;
                 document.getElementById('withdrawFee').value = settings.withdraw_fee_percent || 0;
 
+                // Render
+                if(document.getElementById('renderWebhookUrl')) {
+                    document.getElementById('renderWebhookUrl').value = settings.render_webhook_url || '';
+                }
+
             } catch(err) {
                 console.error('Load Settings Error:', err);
                 showToast('ไม่สามารถโหลดการตั้งค่าได้', 'error');
             }
+        }
+
+        async function saveRenderSettings() {
+             const url = document.getElementById('renderWebhookUrl').value;
+             try {
+                await fetch('/api/admin/settings', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({ render_webhook_url: url })
+                });
+                showToast('บันทึก Render URL แล้ว', 'success');
+             } catch(e) { showToast('เกิดข้อผิดพลาดในการบันทึก', 'error'); }
         }
 
         async function saveFeeSettings() {
@@ -1110,6 +1313,13 @@
                      headers: {'Content-Type': 'application/json'},
                      body: JSON.stringify({ maintenance: status })
                 });
+                
+                // Broadcast change
+                if(window.liveSync) {
+                    liveSync.broadcast('maintenance', { maintenance: status });
+                }
+                localStorage.setItem('mining_maintenance', status);
+
                 showToast(status ? 'เปิดโหมดบำรุงรักษาแล้ว' : 'ปิดโหมดบำรุงรักษาแล้ว', 'warning');
             } catch(e) { showToast('เกิดข้อผิดพลาดในการบันทึก', 'error'); }
         }
@@ -1122,6 +1332,13 @@
                      headers: {'Content-Type': 'application/json'},
                      body: JSON.stringify({ maintenance_msg: msg })
                 });
+
+                // Broadcast change
+                if(window.liveSync) {
+                    liveSync.broadcast('maintenance_msg_changed', msg);
+                }
+                localStorage.setItem('mining_maintenance_msg', msg);
+
                 showToast('บันทึกข้อความบำรุงรักษาแล้ว', 'success');
             } catch(e) { showToast('เกิดข้อผิดพลาดในการบันทึก', 'error'); }
         }
@@ -1147,6 +1364,29 @@
                     const avatar = u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`;
                     const balance = u.balance || 0;
                     const rigsCount = u.rigs ? u.rigs.length : 0; 
+                    const status = u.status || 'active';
+                    
+                    // Online Status
+                    const isOnline = (Date.now() - (u.last_active || 0)) < 10000; // 10 seconds threshold
+                    const onlineBadge = isOnline 
+                        ? '<span class="badge" style="background:var(--success); color:#000; box-shadow:0 0 5px var(--success);">Online</span>' 
+                        : '<span class="badge" style="background:var(--text-muted); color:#000; opacity:0.5;">Offline</span>';
+
+                    let statusBadge = '<span class="badge badge-success">ปกติ</span>';
+                    let actionBtns = '';
+
+                    if(status === 'pending') {
+                        statusBadge = '<span class="badge badge-warning">รออนุมัติ</span>';
+                        actionBtns += `<button onclick="updateUserStatus('${username}', 'approved')" class="btn-sm btn-green" title="อนุมัติ"><i class="fas fa-check"></i></button>`;
+                    } else if(status === 'banned') {
+                        statusBadge = '<span class="badge badge-danger">ถูกระงับ</span>';
+                        actionBtns += `<button onclick="updateUserStatus('${username}', 'active')" class="btn-sm btn-green" title="ปลดแบน"><i class="fas fa-unlock"></i></button>`;
+                    } else {
+                         actionBtns += `<button onclick="updateUserStatus('${username}', 'banned')" class="btn-sm btn-red" title="ระงับบัญชี"><i class="fas fa-ban"></i></button>`;
+                    }
+
+                    actionBtns += `<button onclick="resetUserPass('${username}')" class="btn-sm btn-warning" title="รีเซ็ตรหัส"><i class="fas fa-key"></i></button>`;
+                    actionBtns += `<button onclick="deleteUser('${username}')" class="btn-sm btn-red" title="ลบผู้ใช้"><i class="fas fa-trash"></i></button>`;
                     
                     let tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -1155,10 +1395,10 @@
                         <td style="font-weight: bold; color: var(--primary);">${username}</td>
                         <td>฿${parseFloat(balance).toLocaleString()}</td>
                         <td>${rigsCount} เครื่อง</td>
-                        <td><span class="badge badge-success">ปกติ</span></td>
-                        <td>
-                            <button onclick="resetUserPass('${username}')" class="btn-sm btn-warning"><i class="fas fa-key"></i></button>
-                            <button onclick="deleteUser('${username}')" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
+                        <td>${onlineBadge}</td>
+                        <td>${statusBadge}</td>
+                        <td style="display:flex; gap:5px;">
+                            ${actionBtns}
                         </td>
                     `;
                     tb.appendChild(tr);
@@ -1167,6 +1407,29 @@
                 console.error('Load Users Error:', err);
                 showToast('ไม่สามารถโหลดข้อมูลผู้ใช้ได้', 'error');
             }
+        }
+
+        async function updateUserStatus(username, status) {
+             try {
+                const res = await fetch('/api/admin/update-status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, status })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast(`อัปเดตสถานะ ${username} เป็น ${status} แล้ว`, 'success');
+                    
+                    // Broadcast to other clients (index.html)
+                    if(window.liveSync) {
+                        liveSync.broadcast('profile_updated', { username, status });
+                    }
+                    
+                    renderUsers();
+                } else {
+                    showToast('Error: ' + data.error, 'error');
+                }
+             } catch(e) { showToast('Connection Error', 'error'); }
         }
         
         async function resetUserPass(user) {
@@ -1299,17 +1562,42 @@
         }
 
         // Shop
-        async function renderShop() {
+        let currentShopTab = 1;
+
+        async function renderShop(tabIndex = null) {
+            if(tabIndex !== null) currentShopTab = tabIndex;
+
+            // Update Tabs UI
+            for(let i=0; i<=5; i++) {
+                const btn = document.getElementById(`shopTab${i}`);
+                if(btn) {
+                    if(i === currentShopTab) {
+                        btn.classList.remove('btn-gray');
+                        btn.classList.add('btn-primary');
+                    } else {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-gray');
+                    }
+                }
+            }
+
             try {
                 const res = await fetch('/api/shop/items');
                 const data = await res.json();
-                const items = data.items || [];
+                let items = data.items || [];
                 
+                // Filter
+                if(currentShopTab === 1) items = items.filter(i => i.id >= 1 && i.id <= 20);
+                else if(currentShopTab === 2) items = items.filter(i => i.id >= 21 && i.id <= 40);
+                else if(currentShopTab === 3) items = items.filter(i => i.id >= 41 && i.id <= 60);
+                else if(currentShopTab === 4) items = items.filter(i => i.id >= 61 && i.id <= 80);
+                else if(currentShopTab === 5) items = items.filter(i => i.id >= 81 && i.id <= 100);
+
                 const tb = document.querySelector('#shopTable tbody');
                 tb.innerHTML = '';
                 
                 if(items.length === 0) {
-                    tb.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#aaa;">ไม่มีสินค้าในร้าน</td></tr>';
+                    tb.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#aaa;">ไม่มีสินค้าในหมวดนี้</td></tr>';
                     return;
                 }
 
@@ -1320,6 +1608,10 @@
                     
                     const incomeMo = i.speed * 30 * 24 * 3600;
                     const breakEven = i.price / incomeMo;
+
+                    const priceDisplay = i.price >= 9999999999999 ? 'MAX' : '฿' + i.price.toLocaleString();
+                    const incomeDisplay = i.speed * 30 * 24 * 3600 >= 9999999999999 ? 'Infinite' : '฿' + Math.round(incomeMo).toLocaleString();
+                    const breakEvenDisplay = i.price >= 9999999999999 ? '0' : breakEven.toFixed(1);
                     
                     let tierColor = 'var(--primary)';
                     const tier = i.tier || 'basic';
@@ -1328,6 +1620,7 @@
                     else if(tier === 'mid') tierColor = '#00cec9';
                     else if(tier === 'basic') tierColor = '#74b9ff';
                     else if(tier === 'limited') tierColor = '#ff7675';
+                    else if(tier === 'god') tierColor = '#ff0000';
 
                     tr.innerHTML = `
                         <td><span class="badge badge-info" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">#${i.id}</span></td>
@@ -1339,9 +1632,9 @@
                                 ${i.name}
                             </div>
                         </td>
-                        <td>฿${i.price.toLocaleString()}</td>
-                        <td style="color: var(--success);">฿${Math.round(incomeMo).toLocaleString()}</td>
-                        <td style="color: #ccc;">${breakEven.toFixed(1)} เดือน</td>
+                        <td>${priceDisplay}</td>
+                        <td style="color: var(--success);">${incomeDisplay}</td>
+                        <td style="color: #ccc;">${breakEvenDisplay} เดือน</td>
                         <td>${tagBadge}</td>
                         <td>
                             <button onclick="deleteShopItem(${i.id})" class="btn-sm btn-red"><i class="fas fa-trash"></i></button>
@@ -1589,6 +1882,20 @@
             } catch(e) { showToast('Connection Error', 'error'); }
         }
 
+        async function regenerateShop() {
+            if(!confirm('คุณแน่ใจหรือไม่ที่จะรีเซ็ตสินค้าทั้งหมดเป็นค่าเริ่มต้น? (Lv.1-100)')) return;
+            try {
+                const res = await fetch('/api/admin/shop/regenerate', { method: 'POST' });
+                const data = await res.json();
+                if(data.success) {
+                    renderShop();
+                    showToast(`รีเซ็ตสำเร็จ! สินค้า ${data.count} รายการ`, 'success');
+                } else {
+                    showToast('Error: ' + data.error, 'error');
+                }
+            } catch(e) { showToast('Connection Error', 'error'); }
+        }
+
         // Transactions
         let currentTransFilter = 'all';
         let currentTransactions = []; // Store for viewSlip access
@@ -1709,7 +2016,7 @@
 
                     tr.innerHTML = `
                         <td>${dateStr}</td>
-                        <td style="font-weight: bold; color: white;">${t.user}</td>
+                        <td style="font-weight: bold; color: var(--text-main);">${t.user}</td>
                         <td style="text-transform: uppercase;">${typeLabel}</td>
                         <td style="font-weight: bold;">฿${parseFloat(t.amount).toLocaleString()}</td>
                         <td style="color: #f59e0b;">${feeDisplay}</td>
@@ -1775,22 +2082,22 @@
                      bankHtml = `
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">
                             <div style="color: var(--success); font-weight: bold; font-size: 1.1rem;">ฝากเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
-                            <div style="font-size: 0.8rem; color: #94a3b8;">${new Date(t.timestamp || t.date).toLocaleString('th-TH')}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${new Date(t.timestamp || t.date).toLocaleString('th-TH')}</div>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span style="color: #94a3b8;">ผู้ทำรายการ:</span>
-                            <span style="color: white; font-weight: bold;">${t.user}</span>
+                            <span style="color: var(--text-muted);">ผู้ทำรายการ:</span>
+                            <span style="color: var(--text-main); font-weight: bold;">${t.user}</span>
                         </div>
                         <div style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1);">
                             <div style="color: var(--warning); margin-bottom: 3px; font-size: 0.9rem;">บัญชีที่โอนเข้ามา (ข้อมูลผู้ใช้):</div>
                             ${u.bank ? `
                                 <div style="display: grid; grid-template-columns: auto 1fr; gap: 5px 15px; font-size: 0.9rem;">
-                                    <div style="color: #94a3b8;">ธนาคาร:</div>
+                                    <div style="color: var(--text-muted);">ธนาคาร:</div>
                                     <div style="color: var(--secondary); font-weight: bold;">${u.bank.toUpperCase()}</div>
-                                    <div style="color: #94a3b8;">เลขบัญชี:</div>
-                                    <div style="color: white; letter-spacing: 0.5px;">${u.acc}</div>
-                                    <div style="color: #94a3b8;">ชื่อบัญชี:</div>
-                                    <div style="color: white;">${u.name}</div>
+                                    <div style="color: var(--text-muted);">เลขบัญชี:</div>
+                                    <div style="color: var(--text-main); letter-spacing: 0.5px;">${u.acc}</div>
+                                    <div style="color: var(--text-muted);">ชื่อบัญชี:</div>
+                                    <div style="color: var(--text-main);">${u.name}</div>
                                 </div>
                             ` : '<div style="color: var(--danger);">ยังไม่ได้ลงทะเบียนบัญชีธนาคาร</div>'}
                         </div>
@@ -1800,19 +2107,19 @@
                      bankHtml = `
                         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">
                             <div style="color: var(--danger); font-weight: bold; font-size: 1.1rem;">ถอนเงิน: ฿${parseFloat(t.amount).toLocaleString()}</div>
-                            <div style="font-size: 0.8rem; color: #94a3b8;">${new Date(t.timestamp || t.date).toLocaleString('th-TH')}</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">${new Date(t.timestamp || t.date).toLocaleString('th-TH')}</div>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span style="color: #94a3b8;">ผู้ทำรายการ:</span>
-                            <span style="color: white; font-weight: bold;">${t.user}</span>
+                            <span style="color: var(--text-muted);">ผู้ทำรายการ:</span>
+                            <span style="color: var(--text-main); font-weight: bold;">${t.user}</span>
                         </div>
                         <div style="margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(255,255,255,0.1);">
                             <div style="color: var(--warning); margin-bottom: 3px; font-size: 0.9rem;">โอนไปยังบัญชี:</div>
                             ${u.bank ? `
                                 <div style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; text-align: center;">
                                     <div style="font-size: 1.1rem; font-weight: bold; color: var(--secondary);">${u.bank.toUpperCase()}</div>
-                                    <div style="font-size: 1.2rem; font-weight: bold; color: white; letter-spacing: 1px;">${u.acc}</div>
-                                    <div style="color: #ccc;">${u.name}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: var(--text-main); letter-spacing: 1px;">${u.acc}</div>
+                                    <div style="color: var(--text-muted);">${u.name}</div>
                                 </div>
                             ` : '<div style="color: var(--danger);">ไม่พบข้อมูลบัญชีธนาคาร!</div>'}
                         </div>
@@ -1839,11 +2146,12 @@
             }
         }
 
-        // Payment Settings
+        // Payment Settings & System Settings
         async function savePaymentSettings() {
             const bank = document.getElementById('adminBankName').value;
             const number = document.getElementById('adminBankNumber').value;
             const name = document.getElementById('adminAccName').value;
+            const renderUrl = document.getElementById('renderWebhookUrl').value;
             
             if(!number || !name) {
                 showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
@@ -1857,12 +2165,15 @@
                     body: JSON.stringify({ 
                         admin_bank_name: bank,
                         admin_bank_number: number,
-                        admin_acc_name: name
+                        admin_acc_name: name,
+                        render_webhook_url: renderUrl
                     })
                 });
-                showToast('บันทึกข้อมูลบัญชีธนาคารแล้ว', 'success');
+                showToast('บันทึกการตั้งค่าแล้ว', 'success');
             } catch(e) { showToast('Connection Error', 'error'); }
         }
+
+
 
         async function loadPaymentSettings() {
             try {
@@ -1876,14 +2187,17 @@
                 const bank = settings.admin_bank_name || 'kbank';
                 const number = settings.admin_bank_number || '';
                 const name = settings.admin_acc_name || '';
+                const renderUrl = settings.render_webhook_url || '';
                 
                 const elBank = document.getElementById('adminBankName');
                 const elNum = document.getElementById('adminBankNumber');
                 const elName = document.getElementById('adminAccName');
+                const elRender = document.getElementById('renderWebhookUrl');
                 
                 if(elBank) elBank.value = bank;
                 if(elNum) elNum.value = number;
                 if(elName) elName.value = name;
+                if(elRender) elRender.value = renderUrl;
             } catch(e) { console.error('Load Settings Error:', e); }
         }
 
@@ -1928,8 +2242,7 @@
 
             let pendingCount = 0;
             let fraudCount = 0;
-            // Mock online users for now, or implement heartbeat later
-            let onlineCount = Math.floor(Math.random() * 5) + 1; 
+            let onlineCount = 0;
 
             let allAlerts = [];
 
@@ -1942,6 +2255,10 @@
                 const users = await resUsers.json();
                 
                 const usersArray = Object.values(users);
+
+                // Calculate Online Users (Active within last 2 minutes)
+                const now = Date.now();
+                onlineCount = usersArray.filter(u => u.lastActive && (now - u.lastActive) < 120000).length;
 
                 // 1. Pending Transactions
                 trans.forEach(t => {
@@ -2048,6 +2365,96 @@
 
 
 
+        // Git Control Functions
+        async function checkGitStatus() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            
+            try {
+                const res = await fetch('/api/admin/git/status');
+                const data = await res.json();
+                
+                const resultDiv = document.getElementById('gitStatusResult');
+                resultDiv.innerText = `Latest Commit: ${data.commit}\nMessage: ${data.message || ''}`;
+                resultDiv.style.color = 'var(--text-main)';
+            } catch(e) {
+                showToast('Error checking git status', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function triggerGitPull() {
+            if(!confirm('⬇️ ยืนยันการอัปเดตระบบ (Git Pull)?\n(ระบบจะดึงโค้ดล่าสุดจาก GitHub ลงเครื่อง Server)')) return;
+            
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pulling...';
+            
+            try {
+                const res = await fetch('/api/admin/git/pull', { method: 'POST' });
+                const data = await res.json();
+                
+                if(data.success) {
+                    showToast('System Updated Successfully!', 'success');
+                    document.getElementById('gitStatusResult').innerText = `Output:\n${data.output}`;
+                    document.getElementById('gitStatusResult').style.color = 'var(--success)';
+                } else {
+                    showToast('Update Failed', 'error');
+                    document.getElementById('gitStatusResult').innerText = `Error:\n${data.details}`;
+                    document.getElementById('gitStatusResult').style.color = 'var(--danger)';
+                }
+            } catch(e) {
+                showToast('Connection Error', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function triggerGitHubRender() {
+            const url = document.getElementById('renderWebhookUrl').value;
+            if(!url) {
+                showToast('Please enter Render Webhook URL', 'warning');
+                return;
+            }
+            
+            // Validation Warning
+            if(url.includes('onrender.com') && !url.includes('deploy')) {
+                if(!confirm('⚠️ เตือน: URL ที่ระบุตือเหมือนหน้าเว็บหลัก (ไม่ใช่ Webhook)\nการส่งคำสั่งอาจไม่เกิดผลใดๆ\n\nต้องการดำเนินการต่อหรือไม่?')) return;
+            }
+
+            if(!confirm('🚀 ยืนยันการสั่ง Terminal Deploy ไปยัง Render?\n(ระบบจะทำการ Build และ Update เว็บไซต์จริงบน Cloud)')) return;
+
+            const btn = event.target.closest('button'); // Ensure we get the button if icon clicked
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Triggering...';
+            btn.disabled = true;
+            
+            try {
+                // Use Server Proxy to avoid CORS
+                const res = await fetch('/api/admin/render/deploy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await res.json();
+
+                if(res.ok && data.success) {
+                    showToast('Deploy Triggered Successfully!', 'success');
+                } else {
+                    showToast('Deploy Failed: ' + (data.error || 'Unknown Error'), 'error');
+                }
+            } catch(e) {
+                console.error(e);
+                showToast('Connection Error', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
         function clearAllAlerts() {
              updateMonitor();
              showToast('รีเฟรชข้อมูลแล้ว', 'success');
@@ -2079,6 +2486,13 @@
              renderReferrals();
         });
 
+        liveSync.on('profile_updated', (data) => {
+             // Sync user data changes (balance, mining status)
+             updateMonitor();
+             renderUsers(); // Refresh user list if open
+             renderDashboard(); // Refresh aggregates
+        });
+
         // Initial Load
         loadPaymentSettings();
         loadSystemSettings();
@@ -2088,11 +2502,11 @@
         renderReferrals(); // to set badge
         updateMonitor(); // Init monitor
         
-        // Poll for updates
+        // Poll for updates (Real-time sync with Server)
         setInterval(() => {
             updateMonitor();
-            // renderDashboard(); // Optional: refresh dashboard stats too
-        }, 10000);
+            renderDashboard(); // Update stats from server
+        }, 5000);
         
         // Additional Pulse Animation for Monitor
         setInterval(() => {
@@ -2101,11 +2515,67 @@
                 dot.style.opacity = (dot.style.opacity === '0.5' ? '1' : '0.5');
             }
         }, 800);
+        function openAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'flex';
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('newEmail').value = '';
+            document.getElementById('newUsername').focus();
+        }
+
+        function closeAddUserModal() {
+            document.getElementById('addUserModal').style.display = 'none';
+        }
+
+        async function saveNewUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const email = document.getElementById('newEmail').value;
+
+            if(!username || !password) {
+                showToast('กรุณาระบุชื่อผู้ใช้และรหัสผ่าน', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/admin/create-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username, password, email })
+                });
+                const data = await res.json();
+                
+                if(data.success) {
+                    showToast(`เพิ่มผู้ใช้ ${username} สำเร็จ`, 'success');
+                    closeAddUserModal();
+                    renderUsers();
+                } else {
+                    showToast('Error: ' + data.error, 'error');
+                }
+            } catch(e) {
+                showToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+                console.error(e);
+            }
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.overlay');
             sidebar.classList.toggle('show');
             overlay.classList.toggle('show');
+        }
+
+        async function quickToggleMaint() {
+            const current = document.getElementById('maintSwitch').checked;
+            document.getElementById('maintSwitch').checked = !current;
+            toggleMaint();
+            
+            // Visual feedback
+            const btn = document.getElementById('quickMaintLabel');
+            if(btn) {
+                btn.innerText = !current ? "Disable Maint" : "Enable Maint";
+                btn.style.color = !current ? "var(--success)" : "var(--danger)";
+            }
         }
 
 

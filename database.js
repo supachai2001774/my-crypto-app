@@ -56,52 +56,116 @@ function formatPrice(num) {
 
 function getTier(lv) {
     if (lv <= 20) return 'basic';
-    if (lv <= 50) return 'mid';
-    if (lv <= 80) return 'pro';
-    if (lv < 100) return 'legendary';
-    return 'limited';
+    if (lv <= 40) return 'mid';
+    if (lv <= 60) return 'pro';
+    if (lv <= 80) return 'legendary';
+    if (lv < 100) return 'limited';
+    return 'god';
 }
 
 function getIcon(lv) {
-    if (lv <= 20) return 'fa-fan';
-    if (lv <= 40) return 'fa-server';
-    if (lv <= 60) return 'fa-microchip';
-    if (lv <= 80) return 'fa-memory';
-    if (lv < 100) return 'fa-brain';
-    return 'fa-rocket';
+    // Milestones will define their own icons, this is a fallback or for interpolation
+    if (lv <= 5) return 'fa-usb';
+    if (lv <= 10) return 'fa-microchip';
+    if (lv <= 20) return 'fa-server';
+    if (lv <= 40) return 'fa-hdd';
+    if (lv <= 60) return 'fa-warehouse';
+    if (lv <= 80) return 'fa-atom';
+    if (lv < 100) return 'fa-satellite';
+    return 'fa-infinity';
 }
 
 function getTag(lv) {
     if (lv === 1) return 'new';
-    if (lv === 100) return 'best';
-    if (lv % 25 === 0) return 'hot';
+    if (lv === 100) return 'godlike';
+    if ([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95, 99].includes(lv)) return 'hot';
     if (lv % 10 === 0) return 'sale';
     return '';
 }
 
 function generateDefaultShop() {
-    const LEVELS = 100;
-    const BASE_PRICE = 500;
-    const BASE_INCOME_MO = 300;
-    const MULT_PRICE = 1.135;
-    const MULT_INCOME = 1.10;
+    const MILESTONES = {
+        1: { name: "USB Miner Stick", price: 500, income: 200, icon: "fa-usb" },
+        5: { name: "Dual GPU Home Rig", price: 15000, income: 5000, icon: "fa-microchip" },
+        10: { name: "6-GPU Open Frame", price: 85000, income: 25500, icon: "fa-server" },
+        15: { name: "Garage Rack Server", price: 250000, income: 70000, icon: "fa-hdd" },
+        20: { name: "Mini ASIC Prototype", price: 800000, income: 200000, icon: "fa-memory" },
+        30: { name: "Pro ASIC S-Series", price: 2500000, income: 550000, icon: "fa-layer-group" },
+        40: { name: "Liquid Cooling Tank", price: 8500000, income: 1700000, icon: "fa-water" },
+        45: { name: "Small Mining Container", price: 20000000, income: 4000000, icon: "fa-box" },
+        50: { name: "Warehouse Server Hub", price: 50000000, income: 11000000, icon: "fa-warehouse" },
+        60: { name: "Hydro-Power Farm", price: 150000000, income: 40000000, icon: "fa-charging-station" },
+        70: { name: "Volcano Energy Plant", price: 850000000, income: 250000000, icon: "fa-fire" },
+        75: { name: "Deep Sea Data Center", price: 2500000000, income: 800000000, icon: "fa-water" },
+        80: { name: "Quantum Core Unit", price: 8000000000, income: 3000000000, icon: "fa-atom" },
+        90: { name: "AI Supercluster", price: 50000000000, income: 25000000000, icon: "fa-brain" },
+        95: { name: "Orbital Solar Rig", price: 250000000000, income: 150000000000, icon: "fa-satellite" },
+        99: { name: "Dyson Sphere Hub", price: 999000000000, income: 800000000000, icon: "fa-globe" },
+        100: { name: "The Singularity", price: 9999999999999, income: 9999999999999, icon: "fa-infinity" }
+    };
 
     const items = [];
-    for (let i = 1; i <= LEVELS; i++) {
-        const rawPrice = BASE_PRICE * Math.pow(MULT_PRICE, i - 1);
-        const price = formatPrice(rawPrice);
-        const incomeMo = BASE_INCOME_MO * Math.pow(MULT_INCOME, i - 1);
-        const speed = incomeMo / (30 * 24 * 3600);
+    const LEVELS = 100;
+    const sortedLevels = Object.keys(MILESTONES).map(Number).sort((a, b) => a - b);
 
-        items.push({
-            id: i,
-            name: `AI Miner System Lv.${i}`,
-            price: price,
-            speed: speed,
-            tier: getTier(i),
-            icon: getIcon(i),
-            tag: getTag(i)
-        });
+    for (let i = 1; i <= LEVELS; i++) {
+        let item = {};
+        
+        if (MILESTONES[i]) {
+            // It's a milestone
+            const m = MILESTONES[i];
+            item = {
+                id: i,
+                name: m.name,
+                price: m.price,
+                speed: m.income / (30 * 24 * 3600), // Convert Monthly Income to Speed (Baht/sec)
+                tier: getTier(i),
+                icon: m.icon || getIcon(i),
+                tag: getTag(i)
+            };
+        } else {
+            // Interpolate
+            // Find prev and next milestones
+            const prevLv = sortedLevels.filter(l => l < i).pop();
+            const nextLv = sortedLevels.filter(l => l > i).shift();
+            
+            if (prevLv && nextLv) {
+                const prev = MILESTONES[prevLv];
+                const next = MILESTONES[nextLv];
+                
+                const steps = nextLv - prevLv;
+                const currentStep = i - prevLv;
+                
+                // Geometric progression ratio
+                const priceRatio = Math.pow(next.price / prev.price, 1 / steps);
+                const incomeRatio = Math.pow(next.income / prev.income, 1 / steps);
+                
+                const price = prev.price * Math.pow(priceRatio, currentStep);
+                const income = prev.income * Math.pow(incomeRatio, currentStep);
+                
+                item = {
+                    id: i,
+                    name: `${prev.name} (Mk ${currentStep + 1})`,
+                    price: formatPrice(price),
+                    speed: income / (30 * 24 * 3600),
+                    tier: getTier(i),
+                    icon: prev.icon || getIcon(i),
+                    tag: getTag(i)
+                };
+            } else {
+                // Fallback (should not happen if 1 and 100 are defined)
+                item = {
+                    id: i,
+                    name: `Miner Lv.${i}`,
+                    price: 1000 * i,
+                    speed: 100 * i,
+                    tier: getTier(i),
+                    icon: getIcon(i),
+                    tag: ''
+                };
+            }
+        }
+        items.push(item);
     }
     return items;
 }
@@ -125,6 +189,8 @@ const db = {
         if (users[userData.username]) {
             throw new Error('Username already exists');
         }
+
+        // Initialize new user object
         users[userData.username] = {
             ...userData,
             regDate: new Date().toISOString(),
@@ -133,9 +199,47 @@ const db = {
             referrer_id: userData.referrer_id || null,
             ip: userData.ip || 'Unknown',
             deviceId: userData.deviceId || 'Unknown',
-            status: userData.status || 'pending',
-            rigs: [] // Add rigs support
+            status: userData.status || 'active',
+            rigs: []
         };
+
+        // --- Referral Reward Logic ---
+        if (userData.referrer_id) {
+            const referrer = Object.values(users).find(u => u.id == userData.referrer_id);
+            if (referrer) {
+                // 1. Reward Referrer (50 THB)
+                referrer.balance = (referrer.balance || 0) + 50;
+                
+                // Log Referrer Transaction
+                const trans = readJson(TRANSACTIONS_FILE);
+                trans.push({
+                    id: Date.now(),
+                    user: referrer.username,
+                    type: 'referral_bonus',
+                    amount: 50,
+                    status: 'approved',
+                    timestamp: Date.now(),
+                    details: `Referral Bonus from user ${userData.username}`
+                });
+                
+                // 2. Reward Referee/New User (100 THB)
+                users[userData.username].balance = 100;
+
+                // Log Referee Transaction
+                trans.push({
+                    id: Date.now() + 1, // Ensure unique ID
+                    user: userData.username,
+                    type: 'signup_bonus',
+                    amount: 100,
+                    status: 'approved',
+                    timestamp: Date.now(),
+                    details: `Welcome Bonus (Referral Code: ${userData.referrer_id})`
+                });
+
+                writeJson(TRANSACTIONS_FILE, trans);
+            }
+        }
+
         writeData(users);
         return users[userData.username];
     },
@@ -250,6 +354,12 @@ const db = {
         writeJson(SETTINGS_FILE, settings);
 
         return newItem;
+    },
+    regenerateShop: () => {
+        console.log('Regenerating shop items...');
+        const items = generateDefaultShop();
+        writeJson(SHOP_FILE, items);
+        return items;
     },
     deleteShopItem: (id) => {
         let items = readJson(SHOP_FILE);
