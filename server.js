@@ -8,6 +8,70 @@ const db = require('./database');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// --- Security Enhancements ---
+app.disable('x-powered-by'); // Hide Express signature
+
+// 1. Manual Rate Limiter (Simple In-Memory)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 1 * 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 300; // Limit each IP to 300 requests per minute (Adjusted for high traffic app)
+
+const limiter = (req, res, next) => {
+    // Skip rate limiting for localhost to prevent locking out admin
+    const ip = req.ip || req.connection.remoteAddress;
+    if(ip === '::1' || ip === '127.0.0.1') return next();
+
+    const now = Date.now();
+    
+    if (!rateLimitMap.has(ip)) {
+        rateLimitMap.set(ip, { count: 1, startTime: now });
+    } else {
+        const data = rateLimitMap.get(ip);
+        if (now - data.startTime > RATE_LIMIT_WINDOW) {
+            // Reset window
+            data.count = 1;
+            data.startTime = now;
+        } else {
+            data.count++;
+            if (data.count > RATE_LIMIT_MAX) {
+                console.warn(`[Security] Rate limit exceeded for IP: ${ip}`);
+                return res.status(429).json({ 
+                    error: 'Too many requests, please try again later.',
+                    retryAfter: Math.ceil((data.startTime + RATE_LIMIT_WINDOW - now) / 1000)
+                });
+            }
+        }
+    }
+    next();
+};
+
+// Cleanup rate limit map every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, data] of rateLimitMap.entries()) {
+        if (now - data.startTime > RATE_LIMIT_WINDOW) {
+            rateLimitMap.delete(ip);
+        }
+    }
+}, 5 * 60 * 1000);
+
+// 2. Security Headers Middleware
+const securityHeaders = (req, res, next) => {
+    // Prevent Clickjacking
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    // Prevent MIME type sniffing
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // Basic XSS Protection
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    // Referrer Policy
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+};
+
+// Apply Security Middleware
+app.use(securityHeaders);
+app.use(limiter);
+
 // Middleware
 app.use(compression()); // Compress all routes
 app.use(cors());
@@ -241,7 +305,7 @@ app.post('/api/user/sync', (req, res) => {
             if(rigs !== undefined) user.rigs = rigs;
             
             // Update Activity Timestamp for Online Status
-            user.lastActive = Date.now();
+            user.last_active = Date.now();
             
             // Save to DB (need a generic update helper or use specific ones)
             // database.js doesn't have a generic 'updateUser' that takes all fields.

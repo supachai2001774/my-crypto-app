@@ -11,6 +11,26 @@
     <title>Crypto Miner Tycoon</title>
      <link rel="icon" href="BTC.png" sizes="32x32" />
     <script src="live-sync.js"></script>
+    <script>
+        // API Base URL Fix for file:// protocol and Live Server
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            if (typeof url === 'string' && url.startsWith('/api/')) {
+                // If running on file protocol
+                if (location.protocol === 'file:') {
+                    const baseUrl = 'http://localhost:3002';
+                    url = baseUrl + url;
+                } 
+                // If running on a different port (e.g. Live Server on 5500)
+                else if (location.port !== '3002') {
+                    // Use the same hostname (e.g. IP address) but port 3002
+                    const baseUrl = `http://${location.hostname}:3002`;
+                    url = baseUrl + url;
+                }
+            }
+            return originalFetch(url, options);
+        };
+    </script>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="BTC.png" sizes="32x32" />
     <link rel="shortcut icon" type="image/png" href="BTC.png">
@@ -669,22 +689,6 @@
     </div>
 
     <script>
-        // API Base URL Fix for file:// protocol and Live Server
-        const originalFetch = window.fetch;
-        window.fetch = function(url, options) {
-            if (typeof url === 'string' && url.startsWith('/api/')) {
-                if (location.protocol === 'file:') {
-                    const baseUrl = 'http://localhost:3002';
-                    url = baseUrl + url;
-                } else if (location.port !== '3002') {
-                    // Use the same hostname (e.g. IP address) but port 3002
-                    const baseUrl = `http://${location.hostname}:3002`;
-                    url = baseUrl + url;
-                }
-            }
-            return originalFetch(url, options);
-        };
-
         let lastShopUpdate = 0; // Global declaration
         let lastWarningData = null;
 
@@ -4134,7 +4138,6 @@ console.log('Live Sync Status:', liveSync.getStatus());
                         'ปรับปรุงการเชื่อมต่อ WiFi/Cellular (Data Saver)',
                         'แสดงสถานะออนไลน์ของผู้ใช้ (Online Status)',
                         'ประวัติธุรกรรมแสดงวันที่และเวลาละเอียด',
-                        'เพิ่มเมนูคำสั่ง GitHub Render ในหน้าแอดมิน',
                         'แก้ไขการแสดงผลโหมดมืด (Dark Mode)'
                     ]
                 },

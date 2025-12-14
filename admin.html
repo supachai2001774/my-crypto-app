@@ -390,6 +390,7 @@
             <span id="navTransBadge" class="nav-badge" style="display:none;">0</span>
         </div>
         <div class="menu-item" onclick="nav('settings', this)"><i class="fas fa-cogs"></i> ตั้งค่าระบบ</div>
+        <div class="menu-item" onclick="nav('github', this)"><i class="fab fa-github"></i> GitHub Update</div>
         <div class="menu-item" onclick="nav('updates', this)"><i class="fas fa-history"></i> ประวัติอัปเดต</div>
 
 
@@ -409,7 +410,7 @@
         
         <!-- Top Header -->
         <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <a href="index.html" target="_blank" style="text-decoration: none; margin-right: 20px;">
+            <a id="adminToAppLink" href="index.html" target="_blank" style="text-decoration: none; margin-right: 20px;">
                 <button style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: 0.3s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
                     <i class="fas fa-globe"></i> ไปหน้าแอป
                 </button>
@@ -2191,6 +2192,8 @@
             oscillator.stop(audioCtx.currentTime + 0.1);
         }
 
+        let lastPendingCount = -1;
+
         async function updateMonitor() {
             const feed = document.getElementById('monitorFeed');
             if(!feed) return;
@@ -2209,11 +2212,25 @@
                 const trans = await resTrans.json();
                 const users = await resUsers.json();
                 
+                // Auto Refresh Transaction Table if pending count changes
+                const currentPendingTrans = trans.filter(t => t.status === 'pending').length;
+                if(lastPendingCount !== -1 && currentPendingTrans !== lastPendingCount) {
+                    // Refresh if count changed (e.g. new deposit)
+                    if(document.getElementById('transactions').style.display !== 'none') {
+                         renderTrans(); 
+                    }
+                    if(currentPendingTrans > lastPendingCount) {
+                        playBeep(); // Alert sound
+                        showToast('มีรายการใหม่เข้ามา!', 'info');
+                    }
+                }
+                lastPendingCount = currentPendingTrans;
+                
                 const usersArray = Object.values(users);
 
                 // Calculate Online Users (Active within last 2 minutes)
                 const now = Date.now();
-                onlineCount = usersArray.filter(u => u.lastActive && (now - u.lastActive) < 120000).length;
+                onlineCount = usersArray.filter(u => u.last_active && (now - u.last_active) < 120000).length;
 
                 // 1. Pending Transactions
                 trans.forEach(t => {
@@ -2492,7 +2509,38 @@
             }
         }
 
+        // Fix Admin Connection to Main Page (User App)
+        // Ensure it points to the Server URL if possible to avoid file:// protocol issues
+        (function() {
+            const link = document.getElementById('adminToAppLink');
+            if(link) {
+                // If we are on file:// protocol, try to point to localhost:3002
+                if (location.protocol === 'file:') {
+                    // Check if server is reachable is not easy without CORS, 
+                    // but we can default to localhost:3002 as it is the standard dev server
+                    link.href = 'http://localhost:3002/index.html';
+                } 
+                // If we are on a different port (e.g. Live Server on 5500)
+                else if (location.port !== '3002') {
+                     link.href = `http://${location.hostname}:3002/index.html`;
+                 }
+             }
 
-    </script>
+             // Verify Server Connection
+             fetch('/api/maintenance-status')
+                .then(res => {
+                    if(res.ok) {
+                        console.log('✅ Server Connection: OK');
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Server Connection: FAILED', err);
+                    // Show a warning toast if showToast is available, otherwise alert
+                    if(typeof showToast === 'function') {
+                        showToast('ไม่สามารถเชื่อมต่อ Server ได้! (Cannot connect to Server)', 'error');
+                    }
+                });
+         })();
+     </script>
 </body>
 </html>
